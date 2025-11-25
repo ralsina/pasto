@@ -1,0 +1,79 @@
+# NOTICE: This lockfile contains some overrides from shard.override.yml
+version: 2.0
+shards:
+  ameba:
+    git: https://github.com/crystal-ameba/ameba.git
+    version: 1.6.4
+
+  backtracer:
+    git: https://github.com/sija/backtracer.cr.git
+    version: 1.2.4
+
+  baked_file_system:
+    git: https://github.com/ralsina/baked_file_system.git
+    version: 0.10.0+git.commit.beb373124c7a235cfb9cd94e36849d8168eaa04b
+
+  base58:
+    git: https://github.com/crystal-china/base58.cr.git
+    version: 0.1.0+git.commit.f7193c497efff614cf87b03f0bd07741915a592f
+
+  docopt: # Overridden
+    git: https://github.com/ralsina/docopt.cr.git
+    version: 0.3.1
+
+  docopt-config:
+    git: https://github.com/ralsina/docopt-config.git
+    version: 0.1.0+git.commit.5421c74745d0212c2d2ab28c72a4a73d8c87adee
+
+  exception_page:
+    git: https://github.com/crystal-loot/exception_page.git
+    version: 0.5.0
+
+  fswatch:
+    git: https://github.com/bcardiff/crystal-fswatch.git
+    version: 0.1.0+git.commit.04aca8703e22fb0ed3d7a39316a49bc0e30eefba
+
+  hansa:
+    git: https://github.com/ralsina/hansa.git
+    version: 0.1.1
+
+  kemal:
+    git: https://github.com/kemalcr/kemal.git
+    version: 1.8.0
+
+  pcf-parser:
+    git: https://github.com/l3kn/pcf-parser.git
+    version: 0.1.1
+
+  radix:
+    git: https://github.com/luislavena/radix.git
+    version: 0.4.1
+
+  rate_limiter:
+    git: https://github.com/ralsina/rate_limiter.git
+    version: 0.1.0+git.commit.7c0abab10a3c1739a27fdedf2d7c742ebb44f59e
+
+  sepia:
+    git: https://github.com/ralsina/sepia.git
+    version: 0.1.0+git.commit.c4888fd0604758570e8ad30395bedae7eaf67e84
+
+  sixteen:
+    git: https://github.com/ralsina/sixteen.git
+    version: 0.5.2
+
+  stumpy_core:
+    git: https://github.com/stumpycr/stumpy_core.git
+    version: 1.9.1
+
+  stumpy_png:
+    git: https://github.com/stumpycr/stumpy_png.git
+    version: 5.0.1
+
+  stumpy_utils:
+    git: https://github.com/stumpycr/stumpy_utils.git
+    version: 0.5.1
+
+  tartrazine:
+    git: https://github.com/ralsina/tartrazine.git
+    version: 0.14.0
+

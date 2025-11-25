@@ -1,0 +1,35 @@
+name: pasto
+version: 0.1.0
+
+authors:
+  - ralsina <ralsina@kde.org>
+
+crystal: 1.13.0
+
+license: MIT
+
+dependencies:
+  kemal:
+    github: kemalcr/kemal
+  docopt-config:
+    github: ralsina/docopt-config
+  hansa:
+    github: ralsina/hansa
+    version: "~> 0.1.1"
+  tartrazine:
+    github: ralsina/tartrazine
+  sepia:
+    github: ralsina/sepia
+  rate_limiter:
+    github: ralsina/rate_limiter
+
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+
+targets:
+  pasto:
+    main: src/pasto.cr
+
+executables:
+  - pasto
