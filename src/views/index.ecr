@@ -1,0 +1,123 @@
+<div class="controls-top">
+  <select class="language-select" id="language" onchange="updatePreview()">
+    <% Pasto::Paste.available_languages.each do |lang| %>
+      <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
+    <% end %>
+  </select>
+  <button class="submit-btn" onclick="createPaste()">Create Paste</button>
+</div>
+
+<div class="editor-preview-container">
+  <div class="editor-pane">
+    <div class="pane-header">
+      <span>📝</span>
+      <span>Editor</span>
+    </div>
+    <textarea id="content" placeholder="Paste your code here..." oninput="debouncedUpdatePreview()"></textarea>
+  </div>
+
+  <div class="preview-pane">
+    <div class="pane-header">
+      <span>👁️</span>
+      <span>Live Preview</span>
+    </div>
+    <div class="preview-content" id="preview">
+      <pre><code>Start typing to see preview...</code></pre>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  let debounceTimer;
+
+  function debouncedUpdatePreview() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(updatePreview, 300);
+  }
+
+  function updatePreview() {
+    const content = document.getElementById('content').value;
+    const language = document.getElementById('language').value;
+    const syntaxTheme = document.getElementById('syntax-theme').value;
+
+    if (!content.trim()) {
+      document.getElementById('preview').innerHTML = '<pre><code>Start typing to see preview...</code></pre>';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('language', language);
+    formData.append('theme', syntaxTheme);
+
+    fetch('/highlight', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('preview').innerHTML = data.html;
+
+      // Update language selector text to show detected language if auto-detection is active
+      const languageSelect = document.getElementById('language');
+      const currentLanguage = languageSelect.value;
+      const isAutoDetect = (currentLanguage === 'Auto-detect' || currentLanguage === '');
+
+      if (isAutoDetect) {
+        const autoDetectOption = Array.from(languageSelect.options).find(
+          option => option.value === 'Auto-detect' || option.value === ''
+        );
+
+        if (autoDetectOption) {
+          if (data.detected_language) {
+            autoDetectOption.textContent = `Auto-detect (${data.detected_language})`;
+          } else {
+            autoDetectOption.textContent = 'Auto-detect';
+          }
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error updating preview:', error);
+      document.getElementById('preview').innerHTML = '<pre><code>Error updating preview</code></pre>';
+    });
+  }
+
+  function createPaste() {
+    const content = document.getElementById('content').value;
+    const language = document.getElementById('language').value;
+
+    if (!content.trim()) {
+      alert('Please enter some content');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('language', language);
+
+    fetch('/', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else {
+        return response.text().then(text => {
+          throw new Error(text);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error creating paste:', error);
+      alert('Error creating paste: ' + error.message);
+    });
+  }
+
+  // Initialize preview on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    updatePreview();
+  });
+</script>

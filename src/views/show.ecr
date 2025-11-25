@@ -1,0 +1,55 @@
+<div class="paste-header">
+  <hgroup>
+    <h2>Paste <%= paste.sepia_id %></h2>
+  </hgroup>
+
+  <div class="paste-meta">
+    <p><strong>Created:</strong> <%= paste.created_at %> UTC</p>
+    <p><strong>Language:</strong> <%= paste.language %></p>
+  </div>
+
+  <div class="nav-buttons">
+    <a href="/">
+      <span>←</span>
+      <span>Create New Paste</span>
+    </a>
+  </div>
+
+  <div class="theme-group">
+    <label for="view-language">View as different language:</label>
+    <select id="view-language" onchange="changeLanguage()">
+      <% Pasto::Paste.available_languages.each do |lang| %>
+        <option value="<%= lang == "Auto-detect" ? "" : lang %>" <%= lang == paste.language ? "selected" : "" %>><%= lang %></option>
+      <% end %>
+    </select>
+  </div>
+</div>
+
+<div class="paste-content">
+  <%= highlighted_content %>
+</div>
+
+<script>
+  function changeLanguage() {
+    const language = document.getElementById('view-language').value;
+    const url = new URL(window.location);
+
+    if (language) {
+      url.searchParams.set('lang', language);
+    } else {
+      url.searchParams.delete('lang');
+    }
+
+    window.location.href = url.toString();
+  }
+
+  // Set initial language selection based on URL parameter
+  document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const langParam = urlParams.get('lang');
+
+    if (langParam) {
+      document.getElementById('view-language').value = langParam;
+    }
+  });
+</script>

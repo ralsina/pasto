@@ -1,0 +1,22 @@
+# Pasto Configuration File
+# This file allows you to configure Pasto without using command line arguments.
+# Configuration values are loaded in this order of precedence:
+# 1. Command line arguments (highest)
+# 2. Environment variables (PASTO_*)
+# 3. This configuration file
+# 4. Default values (lowest)
+
+# Server configuration
+port: 5000
+bind: "0.0.0.0"
+
+# Directory settings
+storage_dir: "./data"
+cache_dir: "./public/cache"
+
+# Application settings
+env: "development"
+theme: "monokai"
+
+# Limits and security
+max_paste_size: 102400  # 100KB default maximum paste size

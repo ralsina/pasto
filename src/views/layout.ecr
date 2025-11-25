@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="<%= saved_pico_theme %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= page_title %> - Pasto</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.<%= saved_pico_color %>.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Chivo fonts */
+    body {
+      font-family: 'Chivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .paste-textarea, .preview-content code, .preview-content pre {
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+    code, pre {
+      font-family: 'Chivo Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    }
+
+    /* Main layout */
+    .paste-form {
+      display: flex;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .paste-form .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+    }
+
+    .paste-form .main-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .app-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      border-right: 1px solid var(--pico-primary-border);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+      position: relative;
+      z-index: 100;
+    }
+
+    .sidebar.collapsed {
+      display: none;
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      left: 300px;
+      top: 1.5rem;
+      background: var(--pico-primary);
+      color: var(--pico-primary-inverse);
+      border: 1px solid var(--pico-primary-border);
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 0.5rem;
+      cursor: pointer;
+      z-index: 1001;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: left 0.3s ease;
+    }
+
+    .sidebar-toggle.collapsed {
+      left: 0;
+    }
+
+    .sidebar-toggle:hover {
+      background: var(--pico-primary-hover);
+      border-color: var(--pico-primary-hover-border);
+    }
+
+    .sidebar-toggle:focus {
+      outline: 2px solid var(--pico-primary-focus);
+      outline-offset: -2px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 2rem;
+    }
+
+    .sidebar-section h2 {
+      color: var(--pico-primary);
+      margin-bottom: 0;
+    }
+
+    .sidebar-section h3 {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      color: var(--pico-primary);
+    }
+
+    .theme-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .theme-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .theme-group select {
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    
+    /* Main content area */
+    .main-content {
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .editor-preview-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .editor-pane, .preview-pane {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--pico-background-color);
+      border: 1px solid var(--pico-border-color);
+      border-radius: var(--pico-border-radius);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .pane-header {
+            padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--pico-border-color);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--pico-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .editor-pane textarea {
+      flex: 1;
+      min-height: 0;
+      padding: 1rem;
+      border: none;
+      resize: none;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .preview-content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 0 !important;
+    }
+
+    .preview-content pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .preview-content code {
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+    /* Override syntax highlighting font-weight to normal */
+    .preview-content .b,
+    .preview-content .b code {
+      font-weight: 400 !important;
+    }
+
+    /* Controls at top */
+    .controls-top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1rem;
+      padding: 0;
+            border-radius: var(--pico-border-radius);
+      border: 1px solid var(--pico-border-color);
+      margin-bottom: 1rem;
+    }
+
+    .controls-top .language-select {
+      width: 270px;
+      padding: 0.5rem;
+      margin: 0;
+    }
+
+    .controls-top .submit-btn {
+      flex-shrink: 0;
+      padding: 0.5rem 1rem;
+      margin: 0;
+    }
+
+    .editor-pane textarea:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--pico-primary);
+    }
+
+    .editor-pane, .preview-pane {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--pico-background-color);
+      border: 1px solid var(--pico-border-color);
+      border-radius: var(--pico-border-radius);
+      overflow: hidden;
+    }
+
+    .pane-header {
+            padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--pico-border-color);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--pico-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .editor-pane textarea {
+      flex: 1;
+      min-height: 0;
+      padding: 1rem;
+      border: none;
+      resize: none;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .editor-pane textarea:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--pico-primary);
+    }
+
+    
+    .preview-content pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .preview-content code {
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+    /* Override syntax highlighting font-weight to normal */
+    .preview-content .b,
+    .preview-content .b code {
+      font-weight: 400 !important;
+    }
+
+    /* Controls at top */
+    .controls-top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1rem;
+      padding: 0;
+            border-radius: var(--pico-border-radius);
+      border: 1px solid var(--pico-border-color);
+      margin-bottom: 1rem;
+    }
+
+    .controls-top .language-select {
+      width: 270px;
+      padding: 0.5rem;
+      margin: 0;
+    }
+
+    .controls-top .submit-btn {
+      flex-shrink: 0;
+      padding: 0.5rem 1rem;
+      margin: 0;
+    }
+
+    /* Paste view specific */
+    .paste-header {
+      margin-bottom: 2rem;
+    }
+
+    .paste-header h2 {
+      margin-bottom: 0.5rem;
+    }
+
+    .paste-meta {
+      margin-bottom: 1.5rem;
+      color: var(--pico-muted-color);
+    }
+
+    .paste-content {
+      background-color: var(--pico-background-color);
+      border: 1px solid var(--pico-border-color);
+      border-radius: var(--pico-border-radius);
+      padding: 1rem;
+      overflow: auto;
+      flex: 1;
+    }
+
+    .paste-content pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .nav-buttons {
+      margin-bottom: 2rem;
+    }
+
+    .nav-buttons a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--pico-color);
+            padding: 0.75rem 1rem;
+      border-radius: var(--pico-border-radius);
+      border: 1px solid var(--pico-border-color);
+    }
+
+    .nav-buttons a:hover {
+      color: var(--pico-primary);
+      text-decoration: none;
+      background-color: var(--pico-secondary-background);
+    }
+
+    
+    /* Mobile overlay */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 99;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 1024px) {
+      .editor-preview-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .paste-form, .app-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-100%);
+        z-index: 1000;
+      }
+
+      .sidebar:not(.collapsed) {
+        transform: translateX(0);
+      }
+
+      .sidebar.collapsed {
+        transform: translateX(-100%);
+      }
+
+      .sidebar-toggle {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        right: auto;
+        z-index: 1001;
+        border-radius: 0 0.5rem 0.5rem 0;
+      }
+
+      .sidebar.collapsed .sidebar-toggle {
+        left: 0;
+      }
+
+      .mobile-overlay.show {
+        display: block;
+      }
+
+      .main-content {
+        padding: 4rem 1rem 1rem;
+      }
+
+      .editor-preview-container {
+        grid-template-rows: 1fr 1fr;
+      }
+
+      .editor-pane, .preview-pane {
+        min-height: 250px;
+      }
+
+      .controls-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+
+      .controls-top .language-select {
+        min-width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
+  <% if is_home_page %>
+    <div class="paste-form" id="paste-form">
+  <% else %>
+    <div class="app-container">
+  <% end %>
+    <!-- Sidebar toggle button -->
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">
+      <span id="toggle-icon">✕</span>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-section">
+        <h2>Pasto</h2>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Theme Preferences</h3>
+
+        <div class="theme-group">
+          <label for="pico-theme">UI Theme:</label>
+          <select id="pico-theme" onchange="updateThemes()">
+            <option value="auto" <%= saved_pico_theme == "auto" ? "selected" : "" %>>Auto (System)</option>
+            <option value="light" <%= saved_pico_theme == "light" ? "selected" : "" %>>Light</option>
+            <option value="dark" <%= saved_pico_theme == "dark" ? "selected" : "" %>>Dark</option>
+          </select>
+          <div class="theme-preview">
+          </div>
+        </div>
+
+        <div class="theme-group">
+          <label for="pico-color">Color Scheme:</label>
+          <select id="pico-color" onchange="updateThemes()">
+            <option value="slate" <%= saved_pico_color == "slate" ? "selected" : "" %>>Slate</option>
+            <option value="blue" <%= saved_pico_color == "blue" ? "selected" : "" %>>Blue</option>
+            <option value="purple" <%= saved_pico_color == "purple" ? "selected" : "" %>>Purple</option>
+            <option value="pink" <%= saved_pico_color == "pink" ? "selected" : "" %>>Pink</option>
+            <option value="red" <%= saved_pico_color == "red" ? "selected" : "" %>>Red</option>
+            <option value="orange" <%= saved_pico_color == "orange" ? "selected" : "" %>>Orange</option>
+            <option value="yellow" <%= saved_pico_color == "yellow" ? "selected" : "" %>>Yellow</option>
+            <option value="green" <%= saved_pico_color == "green" ? "selected" : "" %>>Green</option>
+            <option value="teal" <%= saved_pico_color == "teal" ? "selected" : "" %>>Teal</option>
+            <option value="cyan" <%= saved_pico_color == "cyan" ? "selected" : "" %>>Cyan</option>
+            <option value="grey" <%= saved_pico_color == "grey" ? "selected" : "" %>>Grey</option>
+            <option value="indigo" <%= saved_pico_color == "indigo" ? "selected" : "" %>>Indigo</option>
+            <option value="zinc" <%= saved_pico_color == "zinc" ? "selected" : "" %>>Zinc</option>
+            <option value="neutral" <%= saved_pico_color == "neutral" ? "selected" : "" %>>Neutral</option>
+            <option value="stone" <%= saved_pico_color == "stone" ? "selected" : "" %>>Stone</option>
+          </select>
+                  </div>
+
+        <div class="theme-group">
+          <label for="syntax-theme">Syntax Highlighting:</label>
+          <select id="syntax-theme" onchange="updateThemes()">
+            <% Tartrazine.themes.each do |theme_name| %>
+              <option value="<%= theme_name %>" <%= saved_syntax_theme == theme_name ? "selected" : "" %>><%= theme_name %></option>
+            <% end %>
+          </select>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <%= content %>
+    </main>
+  </div>
+
+  <script>
+    function updateThemes() {
+      const picoTheme = document.getElementById('pico-theme').value;
+      const picoColor = document.getElementById('pico-color').value;
+      const syntaxTheme = document.getElementById('syntax-theme').value;
+
+      // Update CSS link
+      const cssLink = document.querySelector('link[href*="picocss"]');
+      cssLink.href = `https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.${picoColor}.min.css`;
+
+      // Update HTML data-theme attribute
+      document.documentElement.setAttribute('data-theme', picoTheme);
+
+      // Update syntax theme CSS
+      let syntaxCssLink = document.getElementById('syntax-theme-css');
+      if (!syntaxCssLink) {
+        syntaxCssLink = document.createElement('link');
+        syntaxCssLink.id = 'syntax-theme-css';
+        syntaxCssLink.rel = 'stylesheet';
+        document.head.appendChild(syntaxCssLink);
+      }
+      syntaxCssLink.href = `/syntax-theme.css?theme=${syntaxTheme}`;
+
+      // Save preferences in cookies
+      document.cookie = `pasto_pico_theme=${picoTheme}; path=/; max-age=31536000`;
+      document.cookie = `pasto_pico_color=${picoColor}; path=/; max-age=31536000`;
+      document.cookie = `pasto_syntax_theme=${syntaxTheme}; path=/; max-age=31536000`;
+
+      // Update preview if it exists
+      if (typeof updatePreview === 'function') {
+        updatePreview();
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      const toggleButton = document.getElementById('sidebar-toggle');
+      const toggleIcon = document.getElementById('toggle-icon');
+
+      sidebar.classList.toggle('collapsed');
+      toggleButton.classList.toggle('collapsed');
+      overlay.classList.toggle('show');
+
+      if (sidebar.classList.contains('collapsed')) {
+        toggleIcon.textContent = '☰';
+      } else {
+        toggleIcon.textContent = '✕';
+      }
+    }
+
+    function generateLanguageOptions() {
+      return [
+        'Auto-detect', 'C', 'C++', 'C#', 'Go', 'Rust', 'Python', 'Python 2', 'Ruby', 'PHP', 'Perl',
+        'JavaScript', 'TypeScript', 'ActionScript', 'Java', 'Kotlin', 'Scala', 'HTML', 'CSS', 'SCSS',
+        'Sass', 'SQL', 'MySQL', 'PostgreSQL', 'Transact-SQL', 'Bash', 'Shell', 'PowerShell',
+        'JSON', 'YAML', 'XML', 'CSV', 'Markdown', 'Dockerfile', 'Plain Text'
+      ];
+    }
+
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateThemes();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Crystal dependencies
+lib/
+.shards/
+
+# Build artifacts
+bin/ameba
+*.dwarf
+
+# Runtime data
+data/
+public/cache/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
