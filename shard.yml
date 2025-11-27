@@ -22,6 +22,8 @@ dependencies:
     github: ralsina/sepia
   rate_limiter:
     github: ralsina/rate_limiter
+  shirk:
+    github: ralsina/shirk
 
 development_dependencies:
   ameba:

@@ -84,7 +84,7 @@ get "/" do |env|
   is_home_page = true  # ameba:disable Lint/UselessAssign
   page_title = "Pasto" # ameba:disable Lint/UselessAssign
 
-  content = render "src/views/index.ecr"
+  content = render "src/views/index.ecr" # ameba:disable Lint/UselessAssign
   render "src/views/layout.ecr"
 end
 
@@ -244,7 +244,7 @@ get "/:id" do |env|
   is_home_page = false                   # ameba:disable Lint/UselessAssign
   page_title = "Paste #{paste.sepia_id}" # ameba:disable Lint/UselessAssign
 
-  content = render "src/views/show.ecr"
+  content = render "src/views/show.ecr" # ameba:disable Lint/UselessAssign
   render "src/views/layout.ecr"
 end
 
