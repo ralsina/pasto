@@ -12,8 +12,10 @@ module Pasto
     property theme : String
     property created_at : Time
     property updated_at : Time
+    property ssh_fingerprint : String?
+    property ssh_ip : String?
 
-    def initialize(@content : String, @language : String? = nil, @theme : String = "default-dark")
+    def initialize(@content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil)
       @created_at = Time.utc
       @updated_at = Time.utc
 
@@ -26,23 +28,27 @@ module Pasto
     # Sepia serialization methods
     def to_sepia : String
       {
-        content:    @content,
-        language:   @language,
-        theme:      @theme,
-        created_at: @created_at.to_rfc3339,
-        updated_at: @updated_at.to_rfc3339,
+        content:         @content,
+        language:        @language,
+        theme:           @theme,
+        created_at:      @created_at.to_rfc3339,
+        updated_at:      @updated_at.to_rfc3339,
+        ssh_fingerprint: @ssh_fingerprint,
+        ssh_ip:          @ssh_ip,
       }.to_json
     end
 
     def self.from_sepia(sepia_string : String) : Paste
-      data = Hash(String, String).from_json(sepia_string)
+      data = Hash(String, String?).from_json(sepia_string)
       paste = new(
-        content: data["content"],
-        language: data["language"]? == "null" ? nil : data["language"]?,
-        theme: data["theme"]? || "default-dark"
+        content: data["content"].as(String),
+        language: data["language"]? == "null" ? nil : data["language"]?.as(String?),
+        theme: data["theme"]?.as(String?) || "default-dark",
+        ssh_fingerprint: data["ssh_fingerprint"]?.as(String?),
+        ssh_ip: data["ssh_ip"]?.as(String?)
       )
-      paste.created_at = Time.parse_rfc3339(data["created_at"])
-      paste.updated_at = Time.parse_rfc3339(data["updated_at"])
+      paste.created_at = Time.parse_rfc3339(data["created_at"].as(String))
+      paste.updated_at = Time.parse_rfc3339(data["updated_at"].as(String))
       paste
     end
 
