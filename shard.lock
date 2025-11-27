@@ -63,7 +63,7 @@ shards:
 
   shirk:
     git: https://github.com/ralsina/shirk.git
-    version: 0.1.0+git.commit.e3111f246d2c265410de5c2e5cd16b976dd768b0
+    version: 0.1.0+git.commit.03d3572e77d16503865fb58b1d80063a88aed4fe
 
   sixteen:
     git: https://github.com/ralsina/sixteen.git

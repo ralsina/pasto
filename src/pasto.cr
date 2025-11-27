@@ -129,16 +129,27 @@ DOC
         # Add logging callback for connection tracking
         ssh_server.add_event_callback(Shirk::SSH::LoggingCallback.new)
 
-        ssh_server.on_message do |content|
+        ssh_server.on_message do |content, connection|
           begin
-            # For now, create paste without SSH metadata
-            # TODO: When Shirk API exposes connection metadata in message handlers, add fingerprint/IP tracking
+            # Extract SSH connection metadata for paste tracking
+            fingerprint = connection.key_fingerprint
+            ip_address = connection.remote_ip
+            username = connection.username
 
-            paste = Pasto::Paste.new(content, nil, config.theme)
+            puts "SSH paste from #{username || "anonymous"} at #{ip_address} (fingerprint: #{fingerprint})"
+
+            # Create paste with SSH metadata
+            paste = Pasto::Paste.new(
+              content: content,
+              language: nil,
+              theme: config.theme,
+              ssh_fingerprint: fingerprint,
+              ssh_ip: ip_address
+            )
 
             if paste.save
               url = "https://#{config.bind}:#{config.port}/#{paste.sepia_id}"
-              puts "SSH paste created: #{url}"
+              puts "SSH paste created: #{url} by #{username || "anonymous"}"
               url
             else
               "Error: Failed to create paste"
@@ -157,7 +168,7 @@ DOC
     puts "Starting Pasto on #{config.bind}:#{config.port} with theme: #{config.theme} (max paste size: #{config.max_paste_size} bytes)"
     if config.ssh_enabled?
       puts "SSH paste server enabled on #{config.ssh_bind}:#{config.ssh_port}"
-      puts "Features: Rate limiting (10 connections per IP), connection logging"
+      puts "Features: Rate limiting, connection logging, SSH key fingerprint tracking"
       puts "Create pastes via SSH: echo 'content' | ssh #{config.bind} -p #{config.ssh_port}"
     end
     Kemal.run
