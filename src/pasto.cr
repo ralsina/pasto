@@ -118,19 +118,33 @@ DOC
         # Generate host keys if they don't exist
         generate_host_keys if host_keys_missing?
 
+        # Initialize rate limiter (10 requests per minute per IP)
+        rate_limiter = RateLimiter.new(10, 60)
+
         ssh_server = Shirk::SSH::Server.new(config.ssh_port, config.ssh_bind)
+
+        # Add rate limiting using built-in Shirk rate limiter
+        ssh_server.add_connection_validator(Shirk::SSH::RateLimitValidator.new(10))
+
+        # Add logging callback for connection tracking
+        ssh_server.add_event_callback(Shirk::SSH::LoggingCallback.new)
 
         ssh_server.on_message do |content|
           begin
-            # Create paste using existing infrastructure
+            # For now, create paste without SSH metadata
+            # TODO: When Shirk API exposes connection metadata in message handlers, add fingerprint/IP tracking
+
             paste = Pasto::Paste.new(content, nil, config.theme)
 
             if paste.save
-              "https://#{config.bind}:#{config.port}/#{paste.sepia_id}"
+              url = "https://#{config.bind}:#{config.port}/#{paste.sepia_id}"
+              puts "SSH paste created: #{url}"
+              url
             else
               "Error: Failed to create paste"
             end
           rescue ex
+            puts "Error processing SSH message: #{ex.message}"
             "Error: #{ex.message}"
           end
         end
@@ -143,6 +157,7 @@ DOC
     puts "Starting Pasto on #{config.bind}:#{config.port} with theme: #{config.theme} (max paste size: #{config.max_paste_size} bytes)"
     if config.ssh_enabled?
       puts "SSH paste server enabled on #{config.ssh_bind}:#{config.ssh_port}"
+      puts "Features: Rate limiting (10 connections per IP), connection logging"
       puts "Create pastes via SSH: echo 'content' | ssh #{config.bind} -p #{config.ssh_port}"
     end
     Kemal.run
