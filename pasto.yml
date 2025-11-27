@@ -20,3 +20,8 @@ theme: "monokai"
 
 # Limits and security
 max_paste_size: 102400  # 100KB default maximum paste size
+
+# SSH Server Configuration
+ssh_enabled: true
+ssh_port: 2222
+ssh_bind: "0.0.0.0"
