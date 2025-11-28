@@ -1,13 +1,81 @@
+
 <!DOCTYPE html>
-<html lang="en" data-theme="<%= saved_pico_theme %>">
+<html lang="en" data-theme="auto">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= page_title %> - Pasto</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.<%= saved_pico_color %>.min.css">
+  <title>Pasto</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* User menu styles */
+    .user-menu {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1001;
+    }
+
+    .user-menu button {
+      background: var(--pico-primary);
+      color: var(--pico-primary-inverse);
+      border: 1px solid var(--pico-primary-border);
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .user-menu button:hover {
+      background: var(--pico-primary-hover);
+      border-color: var(--pico-primary-hover-border);
+      transform: scale(1.05);
+    }
+
+    .user-menu button:focus {
+      outline: 2px solid var(--pico-primary-focus);
+      outline-offset: 2px;
+    }
+
+    /* Adjust main content for user menu */
+    .main-content {
+      padding-top: 3rem;
+    }
+
+    .app-container {
+      padding-top: 3rem;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+      .user-menu {
+        top: 0.5rem;
+        right: 0.5rem;
+      }
+
+      .user-menu button {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1rem;
+      }
+
+      .main-content {
+        padding-top: 3rem;
+      }
+
+      .app-container {
+        padding-top: 3rem;
+      }
+    }
+  </style>
   <style>
     /* Chivo fonts */
     body {
@@ -47,19 +115,26 @@
       margin: 0;
     }
 
+    .app-container.sidebar-collapsed {
+      grid-template-columns: 0px 1fr;
+    }
+
     /* Sidebar */
     .sidebar {
       border-right: 1px solid var(--pico-primary-border);
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      transition: transform 0.3s ease;
+      transition: all 0.3s ease;
       position: relative;
       z-index: 100;
     }
 
     .sidebar.collapsed {
-      display: none;
+      width: 0;
+      padding: 0;
+      overflow: hidden;
+      border: none;
     }
 
     .sidebar-toggle {
@@ -448,12 +523,17 @@
   </style>
 </head>
 <body>
+  <!-- User Menu -->
+  <div class="user-menu">
+    <a href="/profile" title="Profile / Login" aria-label="Profile">
+      <button type="button" aria-label="Account">
+        🔒
+      </button>
+    </a>
+  </div>
+
   <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
-  <% if is_home_page %>
-    <div class="paste-form" id="paste-form">
-  <% else %>
-    <div class="app-container">
-  <% end %>
+  <div class="app-container">
     <!-- Sidebar toggle button -->
     <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">
       <span id="toggle-icon">✕</span>
@@ -472,9 +552,9 @@
         <div class="theme-group">
           <label for="pico-theme">UI Theme:</label>
           <select id="pico-theme" onchange="updateThemes()">
-            <option value="auto" <%= saved_pico_theme == "auto" ? "selected" : "" %>>Auto (System)</option>
-            <option value="light" <%= saved_pico_theme == "light" ? "selected" : "" %>>Light</option>
-            <option value="dark" <%= saved_pico_theme == "dark" ? "selected" : "" %>>Dark</option>
+            <option value="auto" selected>Auto (System)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
           </select>
           <div class="theme-preview">
           </div>
@@ -483,21 +563,21 @@
         <div class="theme-group">
           <label for="pico-color">Color Scheme:</label>
           <select id="pico-color" onchange="updateThemes()">
-            <option value="slate" <%= saved_pico_color == "slate" ? "selected" : "" %>>Slate</option>
-            <option value="blue" <%= saved_pico_color == "blue" ? "selected" : "" %>>Blue</option>
-            <option value="purple" <%= saved_pico_color == "purple" ? "selected" : "" %>>Purple</option>
-            <option value="pink" <%= saved_pico_color == "pink" ? "selected" : "" %>>Pink</option>
-            <option value="red" <%= saved_pico_color == "red" ? "selected" : "" %>>Red</option>
-            <option value="orange" <%= saved_pico_color == "orange" ? "selected" : "" %>>Orange</option>
-            <option value="yellow" <%= saved_pico_color == "yellow" ? "selected" : "" %>>Yellow</option>
-            <option value="green" <%= saved_pico_color == "green" ? "selected" : "" %>>Green</option>
-            <option value="teal" <%= saved_pico_color == "teal" ? "selected" : "" %>>Teal</option>
-            <option value="cyan" <%= saved_pico_color == "cyan" ? "selected" : "" %>>Cyan</option>
-            <option value="grey" <%= saved_pico_color == "grey" ? "selected" : "" %>>Grey</option>
-            <option value="indigo" <%= saved_pico_color == "indigo" ? "selected" : "" %>>Indigo</option>
-            <option value="zinc" <%= saved_pico_color == "zinc" ? "selected" : "" %>>Zinc</option>
-            <option value="neutral" <%= saved_pico_color == "neutral" ? "selected" : "" %>>Neutral</option>
-            <option value="stone" <%= saved_pico_color == "stone" ? "selected" : "" %>>Stone</option>
+            <option value="slate" selected>Slate</option>
+            <option value="blue">Blue</option>
+            <option value="purple">Purple</option>
+            <option value="pink">Pink</option>
+            <option value="red">Red</option>
+            <option value="orange">Orange</option>
+            <option value="yellow">Yellow</option>
+            <option value="green">Green</option>
+            <option value="teal">Teal</option>
+            <option value="cyan">Cyan</option>
+            <option value="grey">Grey</option>
+            <option value="indigo">Indigo</option>
+            <option value="zinc">Zinc</option>
+            <option value="neutral">Neutral</option>
+            <option value="stone">Stone</option>
           </select>
                   </div>
 
@@ -505,7 +585,7 @@
           <label for="syntax-theme">Syntax Highlighting:</label>
           <select id="syntax-theme" onchange="updateThemes()">
             <% Tartrazine.themes.each do |theme_name| %>
-              <option value="<%= theme_name %>" <%= saved_syntax_theme == theme_name ? "selected" : "" %>><%= theme_name %></option>
+              <option value="<%= theme_name %>" <%= theme_name == "default-dark" ? "selected" : "" %>><%= theme_name %></option>
             <% end %>
           </select>
         </div>
@@ -557,10 +637,12 @@
       const overlay = document.getElementById('mobile-overlay');
       const toggleButton = document.getElementById('sidebar-toggle');
       const toggleIcon = document.getElementById('toggle-icon');
+      const appContainer = document.querySelector('.app-container');
 
       sidebar.classList.toggle('collapsed');
       toggleButton.classList.toggle('collapsed');
       overlay.classList.toggle('show');
+      appContainer.classList.toggle('sidebar-collapsed');
 
       if (sidebar.classList.contains('collapsed')) {
         toggleIcon.textContent = '☰';

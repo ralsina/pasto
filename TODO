@@ -1,0 +1,49 @@
+# Pasto TODO
+
+## High Priority
+
+### SSH Server Issues
+- [ ] Implement auto-restart mechanism for SSH process when it crashes
+- [ ] Investigate Shirk 0.1.2 stability compared to 0.1.0
+- [ ] Consider process monitoring with PID tracking and restart logic
+- [ ] Add error logging for SSH process crashes
+
+### Cross-Process Coordination Testing
+- [ ] Test SSH login → HTTP token validation flow
+- [ ] Test concurrent paste creation (SSH + HTTP simultaneously)
+- [ ] Verify session persistence across process restarts
+- [ ] Test user fingerprint mapping between SSH and web
+
+## Medium Priority
+
+### User Experience
+- [ ] Implement user preferences in database instead of cookies/localStorage
+- [ ] Add user profile customization options
+- [ ] Improve error messages for SSH authentication failures
+- [ ] Add session expiration handling
+
+### Performance & Reliability
+- [ ] Add graceful shutdown handling for both processes
+- [ ] Implement rate limiting that works across processes
+- [ ] Add health checks for both HTTP and SSH servers
+- [ ] Monitor memory usage and potential leaks
+
+## Low Priority
+
+### Features
+- [ ] Add SSH command help interface
+- [ ] Implement paste expiration with user control
+- [ ] Add paste statistics and analytics
+- [ ] Support for SSH key management in user profile
+
+### Code Quality
+- [ ] Add comprehensive error handling
+- [ ] Improve logging with structured output
+- [ ] Add configuration validation
+- [ ] Write integration tests for SSH/HTTP coordination
+
+## Technical Debt
+- [ ] Review and optimize Sepia storage usage
+- [ ] Consolidate theme handling across web and SSH
+- [ ] Standardize error response formats
+- [ ] Add unit tests for critical components

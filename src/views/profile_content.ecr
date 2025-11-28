@@ -1,0 +1,176 @@
+<div class="profile-container">
+  <% if current_user %>
+    <div class="user-info">
+      <h2>User Profile</h2>
+      <div class="user-details">
+        <div class="detail-row">
+          <strong>Username:</strong> <%= current_user.username %>
+        </div>
+        <div class="detail-row">
+          <strong>Display Name:</strong> <%= current_user.display_name %>
+        </div>
+        <% if current_user.email %>
+        <div class="detail-row">
+          <strong>Email:</strong> <%= current_user.email %>
+        </div>
+        <% end %>
+        <div class="detail-row">
+          <strong>Account Created:</strong> <%= current_user.created_at.to_rfc3339 %>
+        </div>
+        <div class="detail-row">
+          <strong>Last Updated:</strong> <%= current_user.updated_at.to_rfc3339 %>
+        </div>
+      </div>
+
+      <div class="profile-actions">
+        <form method="post" action="/logout">
+          <button type="submit" class="logout-btn">Logout</button>
+        </form>
+      </div>
+    </div>
+  <% else %>
+    <div class="not-logged-in">
+      <h2>Not Logged In</h2>
+      <div class="login-instructions">
+        <h3>How to Login</h3>
+        <p>To access your profile, you need to log in using a valid login token.</p>
+
+        <div class="login-steps">
+          <h4>Steps:</h4>
+          <ol>
+            <li>Request a login token from an administrator</li>
+            <li>Use the secure login URL you receive</li>
+            <li>The link expires after 15 minutes for security</li>
+          </ol>
+        </div>
+
+        <div class="security-info">
+          <h4>Security Note:</h4>
+          <p>This system uses secure token-based authentication for login.</p>
+        </div>
+      </div>
+
+      <div class="profile-actions">
+        <a href="/" class="back-btn">← Back to Pasto</a>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .user-info, .not-logged-in {
+    background-color: var(--pico-background-color);
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 2rem;
+  }
+
+  .user-details {
+    margin: 2rem 0;
+  }
+
+  .detail-row {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .detail-row strong {
+    min-width: 120px;
+    color: var(--pico-primary);
+  }
+
+  .profile-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .logout-btn {
+    background-color: var(--pico-del-background);
+    color: var(--pico-del-color);
+    border: 1px solid var(--pico-del-border);
+  }
+
+  .logout-btn:hover {
+    background-color: var(--pico-del-hover-background);
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--pico-secondary-background);
+    color: var(--pico-color);
+    text-decoration: none;
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+  }
+
+  .back-btn:hover {
+    background-color: var(--pico-secondary-hover-background);
+  }
+
+  .login-instructions {
+    margin: 2rem 0;
+  }
+
+  .login-steps {
+    margin: 1.5rem 0;
+  }
+
+  .login-steps ol {
+    padding-left: 1.5rem;
+  }
+
+  .login-steps li {
+    margin-bottom: 0.5rem;
+  }
+
+  .security-info {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background-color: var(--pico-ins-background);
+    border: 1px solid var(--pico-ins-border);
+    border-radius: var(--pico-border-radius);
+  }
+
+  .security-info p {
+    margin: 0;
+    color: var(--pico-ins-color);
+  }
+
+  @media (max-width: 768px) {
+    .profile-container {
+      padding: 1rem;
+    }
+
+    .user-info, .not-logged-in {
+      padding: 1.5rem;
+    }
+
+    .detail-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+
+    .detail-row strong {
+      min-width: auto;
+    }
+
+    .profile-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
