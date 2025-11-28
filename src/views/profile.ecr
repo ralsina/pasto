@@ -1,0 +1,172 @@
+<%# Template variables needed from parent route:
+   - current_user
+   - saved_pico_theme
+   - saved_pico_color
+   - saved_syntax_theme
+   - is_home_page (set to false)
+   - page_title (set to "Profile")
+%>
+
+<% content = render "src/views/profile_content.ecr" %>
+<%= render "src/views/layout.ecr" %>
+
+<style>
+  .profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .user-info, .not-logged-in {
+    background-color: var(--pico-background-color);
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 2rem;
+  }
+
+  .user-details {
+    margin: 2rem 0;
+  }
+
+  .detail-row {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .detail-row strong {
+    min-width: 120px;
+    color: var(--pico-primary);
+  }
+
+  .ssh-keys {
+    margin: 2rem 0;
+  }
+
+  .ssh-key-item {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    background-color: var(--pico-secondary-background);
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-border-color);
+  }
+
+  .ssh-key-item code {
+    font-family: 'Chivo Mono', monospace;
+    font-size: 0.9rem;
+    background: none;
+    padding: 0;
+  }
+
+  .fingerprint-full {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--pico-muted-color);
+    font-size: 0.8rem;
+    font-family: 'Chivo Mono', monospace;
+  }
+
+  .profile-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .logout-btn {
+    background-color: var(--pico-del-background);
+    color: var(--pico-del-color);
+    border: 1px solid var(--pico-del-border);
+  }
+
+  .logout-btn:hover {
+    background-color: var(--pico-del-hover-background);
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--pico-secondary-background);
+    color: var(--pico-color);
+    text-decoration: none;
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+  }
+
+  .back-btn:hover {
+    background-color: var(--pico-secondary-hover-background);
+  }
+
+  .login-instructions {
+    margin: 2rem 0;
+  }
+
+  .ssh-command {
+    margin: 1.5rem 0;
+  }
+
+  .ssh-command pre {
+    background-color: var(--pico-code-background-color);
+    padding: 1rem;
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-border-color);
+  }
+
+  .ssh-command code {
+    background: none;
+    padding: 0;
+  }
+
+  .login-steps {
+    margin: 1.5rem 0;
+  }
+
+  .login-steps ol {
+    padding-left: 1.5rem;
+  }
+
+  .login-steps li {
+    margin-bottom: 0.5rem;
+  }
+
+  .security-info {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background-color: var(--pico-ins-background);
+    border: 1px solid var(--pico-ins-border);
+    border-radius: var(--pico-border-radius);
+  }
+
+  .security-info p {
+    margin: 0;
+    color: var(--pico-ins-color);
+  }
+
+  @media (max-width: 768px) {
+    .profile-container {
+      padding: 1rem;
+    }
+
+    .user-info, .not-logged-in {
+      padding: 1.5rem;
+    }
+
+    .detail-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+
+    .detail-row strong {
+      min-width: auto;
+    }
+
+    .profile-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>

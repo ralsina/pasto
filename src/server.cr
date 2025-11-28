@@ -3,9 +3,31 @@ require "http"
 require "file_utils"
 require "rate_limiter"
 require "tartrazine"
+require "ecr"
+require "kemal-session"
 require "./paste"
+require "./user"
+require "./user_session"
+require "./services/user_service"
+require "./services/login_token_service"
 
 module Pasto
+  # Helper to validate session and get current user
+  def self.get_current_user(env) : User?
+    user_session = env.session.object?("user").as(Pasto::UserSession?)
+    return nil unless user_session
+
+    # Check if session has expired
+    return nil if user_session.expired?
+
+    # Update last accessed time
+    user_session.touch
+    env.session.object("user", user_session)
+
+    # Get user from database
+    UserService.get_user_by_username(user_session.user_id)
+  end
+
   # Simple rate limiter for paste creation
   class RateLimit
     @@limiter = RateLimiter.new(10, 60)
@@ -66,25 +88,107 @@ module Pasto
   end
 end
 
-# Set up Kemal routes
+# Add security headers to all requests
 before_all do |env|
   env.response.headers["X-Content-Type-Options"] = "nosniff"
   env.response.headers["X-Frame-Options"] = "DENY"
   env.response.headers["X-XSS-Protection"] = "1; mode=block"
 end
 
+# Login route - validate login token and create session
+get "/login/:token" do |env|
+  token = env.params.url["token"]
+  ip_address = env.request.headers["X-Forwarded-For"]? || env.request.headers["X-Real-IP"]? || env.request.remote_address.to_s
+
+  user = Pasto::LoginTokenService.validate_token(token)
+
+  if user
+    # Create session using kemal-session
+    user_session = Pasto::UserSession.new(user.username, nil, ip_address)
+    env.session.object("user", user_session)
+
+    puts "User #{user.display_name_for_ui} logged in via login token from #{ip_address}"
+
+    # Redirect to home page with success message
+    env.redirect "/?login=success"
+  else
+    env.response.status_code = 404
+    content = <<-HTML
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invalid Login Token - Pasto</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    </head>
+    <body>
+      <main class="container">
+        <hgroup>
+          <h2>Invalid Login Token</h2>
+          <p>The login token is invalid, expired, or has already been used.</p>
+          <p>Please request a new login token.</p>
+        </hgroup>
+        <a href="/">Return to Pasto</a>
+      </main>
+    </body>
+    </html>
+    HTML
+    render "src/views/layout.ecr"
+  end
+end
+
+# Logout route - clear session
+post "/logout" do |env|
+  # Clear the session using kemal-session
+  env.session.destroy
+
+  puts "User logged out"
+
+  env.redirect "/?logout=success"
+end
+
+# User profile page
+get "/profile" do |env|
+  # Validate session to get current user
+  # ameba:disable Lint/UselessAssign
+  current_user = Pasto.get_current_user(env)
+
+  # Get saved theme preferences or use defaults
+  # ameba:disable Lint/UselessAssign
+  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+
+  # Set template variables (ECR template will have access to these)
+  # ameba:disable Lint/UselessAssign
+  page_title = "Profile"
+  is_home_page = false
+
+  content = render "src/views/profile_content.ecr"
+  render "src/views/layout.ecr"
+end
+
 # Main page - paste creation form
 get "/" do |env|
-  # Get saved theme preferences or use defaults (used in ECR template)
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"             # ameba:disable Lint/UselessAssign
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"            # ameba:disable Lint/UselessAssign
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark" # ameba:disable Lint/UselessAssign
+  # ameba:disable Lint/UselessAssign
+  # Validate session to get current user
+  current_user = Pasto.get_current_user(env)
 
-  # Set additional variables needed by templates (used in ECR template)
-  is_home_page = true  # ameba:disable Lint/UselessAssign
-  page_title = "Pasto" # ameba:disable Lint/UselessAssign
+  # Get saved theme preferences or use defaults
+  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
 
-  content = render "src/views/index.ecr" # ameba:disable Lint/UselessAssign
+  # Check for login/logout messages
+  login_message = env.params.query["login"]? == "success"
+  logout_message = env.params.query["logout"]? == "success"
+
+  # Set template variables (ECR template will have access to these)
+  is_home_page = true
+  page_title = "Pasto"
+
+  content = render "src/views/index.ecr"
   render "src/views/layout.ecr"
 end
 
@@ -226,10 +330,14 @@ get "/:id" do |env|
     next "Paste not found"
   end
 
-  # Get saved theme preferences or use defaults (used in ECR template)
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"             # ameba:disable Lint/UselessAssign
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"            # ameba:disable Lint/UselessAssign
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark" # ameba:disable Lint/UselessAssign
+  # ameba:disable Lint/UselessAssign
+  # Validate session to get current user
+  current_user = Pasto.get_current_user(env)
+
+  # Get saved theme preferences or use defaults
+  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
 
   # Get language override from URL parameter if present
   url_lang_override = env.params.query["lang"]?
@@ -237,14 +345,14 @@ get "/:id" do |env|
     language_override = url_lang_override
   end
 
-  # Generate highlighted content (used in ECR template)
-  highlighted_content = paste.highlight(language_override)[0] # ameba:disable Lint/UselessAssign
+  # Generate highlighted content
+  highlighted_content = paste.highlight(language_override)[0]
 
-  # Set additional variables needed by templates (used in ECR template)
-  is_home_page = false                   # ameba:disable Lint/UselessAssign
-  page_title = "Paste #{paste.sepia_id}" # ameba:disable Lint/UselessAssign
+  # Set template variables (ECR template will have access to these)
+  is_home_page = false
+  page_title = "Paste #{paste.sepia_id}"
 
-  content = render "src/views/show.ecr" # ameba:disable Lint/UselessAssign
+  content = render "src/views/show.ecr"
   render "src/views/layout.ecr"
 end
 

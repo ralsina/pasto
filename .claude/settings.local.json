@@ -40,7 +40,15 @@
       "Bash(PASTO_THEME=github PASTO_PORT=3001 ./bin/pasto:*)",
       "Bash(PASTO_THEME=github PASTO_PORT=4000 ./bin/pasto:*)",
       "Bash(kill:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:crystalshards.org)",
+      "WebFetch(domain:github.com)",
+      "Bash(ssh:*)",
+      "Bash(shards update:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(xargs cat:*)",
+      "mcp__web-reader__webReader"
     ],
     "deny": [],
     "ask": []

@@ -12,10 +12,9 @@ module Pasto
     property theme : String
     property created_at : Time
     property updated_at : Time
-    property ssh_fingerprint : String?
-    property ssh_ip : String?
+    property user_id : String?
 
-    def initialize(@content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil)
+    def initialize(@content : String, @language : String? = nil, @theme : String = "default-dark", @user_id : String? = nil)
       @created_at = Time.utc
       @updated_at = Time.utc
 
@@ -28,27 +27,25 @@ module Pasto
     # Sepia serialization methods
     def to_sepia : String
       {
-        content:         @content,
-        language:        @language,
-        theme:           @theme,
-        created_at:      @created_at.to_rfc3339,
-        updated_at:      @updated_at.to_rfc3339,
-        ssh_fingerprint: @ssh_fingerprint,
-        ssh_ip:          @ssh_ip,
+        content:    @content,
+        language:   @language,
+        theme:      @theme,
+        created_at: @created_at.to_rfc3339,
+        updated_at: @updated_at.to_rfc3339,
+        user_id:    @user_id,
       }.to_json
     end
 
     def self.from_sepia(sepia_string : String) : Paste
-      data = Hash(String, String?).from_json(sepia_string)
+      data = Hash(String, JSON::Any).from_json(sepia_string)
       paste = new(
-        content: data["content"].as(String),
-        language: data["language"]? == "null" ? nil : data["language"]?.as(String?),
-        theme: data["theme"]?.as(String?) || "default-dark",
-        ssh_fingerprint: data["ssh_fingerprint"]?.as(String?),
-        ssh_ip: data["ssh_ip"]?.as(String?)
+        content: data["content"].as_s,
+        language: data["language"]?.try(&.as_s?),
+        theme: data["theme"]?.try(&.as_s?) || "default-dark",
+        user_id: data["user_id"]?.try(&.as_s?)
       )
-      paste.created_at = Time.parse_rfc3339(data["created_at"].as(String))
-      paste.updated_at = Time.parse_rfc3339(data["updated_at"].as(String))
+      paste.created_at = Time.parse_rfc3339(data["created_at"].as_s)
+      paste.updated_at = Time.parse_rfc3339(data["updated_at"].as_s)
       paste
     end
 

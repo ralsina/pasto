@@ -11,6 +11,8 @@ license: MIT
 dependencies:
   kemal:
     github: kemalcr/kemal
+  kemal-session:
+    github: kemalcr/kemal-session
   docopt-config:
     github: ralsina/docopt-config
   hansa:
@@ -22,8 +24,6 @@ dependencies:
     github: ralsina/sepia
   rate_limiter:
     github: ralsina/rate_limiter
-  shirk:
-    github: ralsina/shirk
 
 development_dependencies:
   ameba:

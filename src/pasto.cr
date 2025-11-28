@@ -1,9 +1,12 @@
 require "docopt-config"
 require "sepia"
 require "kemal"
-require "shirk"
 require "./paste"
 require "./server"
+require "./user"
+require "./services/user_service"
+require "./services/login_token_service"
+require "kemal-session"
 
 module Pasto
   VERSION = "0.1.0"
@@ -36,9 +39,7 @@ Options:
   --env=<environment>       Environment (development or production) [default: development].
   --theme=<theme>           Syntax highlighting theme [default: default-dark].
   --max-paste-size=<size>   Maximum paste size in bytes [default: 102400].
-  --ssh-enabled=<enabled>   Enable SSH server [default: false].
-  --ssh-port=<port>         SSH port to listen on [default: 2222].
-  --ssh-bind=<address>      SSH address to bind to [default: 0.0.0.0].
+  --base-url=<url>          Base URL for web interface [default: http://bind:port].
 
 DOC
 
@@ -50,9 +51,7 @@ DOC
     property environment : String
     property theme : String
     property max_paste_size : Int32
-    property? ssh_enabled : Bool
-    property ssh_port : Int32
-    property ssh_bind : String
+    property base_url : String
 
     def initialize(args)
       docopt_options = Docopt.docopt_config(
@@ -70,9 +69,14 @@ DOC
       @environment = docopt_options["--env"].to_s
       @theme = docopt_options["--theme"].to_s
       @max_paste_size = docopt_options["--max-paste-size"].to_s.to_i
-      @ssh_enabled = docopt_options["--ssh-enabled"].to_s == "true"
-      @ssh_port = docopt_options["--ssh-port"].to_s.to_i
-      @ssh_bind = docopt_options["--ssh-bind"].to_s
+
+      # Handle base_url - use provided value or construct default
+      base_url_option = docopt_options["--base-url"].to_s
+      if base_url_option.empty? || base_url_option == "http://bind:port"
+        @base_url = "http://#{@bind}:#{@port}"
+      else
+        @base_url = base_url_option.rstrip("/")
+      end
     end
 
     def add_kemal_config
@@ -105,89 +109,35 @@ DOC
     # Initialize Sepia storage
     Sepia::Storage.configure(:filesystem, {"path" => config.storage_dir})
 
+    # Initialize user system
+    UserService.initialize_directories
+    UserService.public_user
+
+    # Configure kemal-session
+    Kemal::Session.config do |config|
+      config.cookie_name = "pasto_session"
+      config.secret = ENV["PASTO_SESSION_SECRET"]? || Random::Secure.hex(64)
+      config.timeout = 24.hours
+      config.engine = Kemal::Session::FileEngine.new({
+        :sessions_dir => "./sessions/"
+      })
+      config.gc_interval = 30.minutes
+    end
+
     # Initialize cache
     init_cache(config.cache_dir)
 
     # Configure Kemal
     config.add_kemal_config
 
-    # Start SSH server if enabled
-    if config.ssh_enabled?
-      puts "Starting SSH server on #{config.ssh_bind}:#{config.ssh_port}"
-      spawn do
-        # Generate host keys if they don't exist
-        generate_host_keys if host_keys_missing?
-
-        # Initialize rate limiter (10 requests per minute per IP)
-        rate_limiter = RateLimiter.new(10, 60)
-
-        ssh_server = Shirk::SSH::Server.new(config.ssh_port, config.ssh_bind)
-
-        # Add rate limiting using built-in Shirk rate limiter
-        ssh_server.add_connection_validator(Shirk::SSH::RateLimitValidator.new(10))
-
-        # Add logging callback for connection tracking
-        ssh_server.add_event_callback(Shirk::SSH::LoggingCallback.new)
-
-        ssh_server.on_message do |content, connection|
-          begin
-            # Extract SSH connection metadata for paste tracking
-            fingerprint = connection.key_fingerprint
-            ip_address = connection.remote_ip
-            username = connection.username
-
-            puts "SSH paste from #{username || "anonymous"} at #{ip_address} (fingerprint: #{fingerprint})"
-
-            # Create paste with SSH metadata
-            paste = Pasto::Paste.new(
-              content: content,
-              language: nil,
-              theme: config.theme,
-              ssh_fingerprint: fingerprint,
-              ssh_ip: ip_address
-            )
-
-            if paste.save
-              url = "https://#{config.bind}:#{config.port}/#{paste.sepia_id}"
-              puts "SSH paste created: #{url} by #{username || "anonymous"}"
-              url
-            else
-              "Error: Failed to create paste"
-            end
-          rescue ex
-            puts "Error processing SSH message: #{ex.message}"
-            "Error: #{ex.message}"
-          end
-        end
-
-        ssh_server.start
-      end
-    end
-
     # Start the web server
     puts "Starting Pasto on #{config.bind}:#{config.port} with theme: #{config.theme} (max paste size: #{config.max_paste_size} bytes)"
-    if config.ssh_enabled?
-      puts "SSH paste server enabled on #{config.ssh_bind}:#{config.ssh_port}"
-      puts "Features: Rate limiting, connection logging, SSH key fingerprint tracking"
-      puts "Create pastes via SSH: echo 'content' | ssh #{config.bind} -p #{config.ssh_port}"
-    end
     Kemal.run
   end
 
-  # Helper methods for SSH key management
-  private def self.host_keys_missing?
-    !File.exists?("ssh_host_rsa_key")
-  end
-
-  private def self.generate_host_keys
-    puts "Generating SSH host keys..."
-
-    # Generate RSA host key
-    unless File.exists?("ssh_host_rsa_key")
-      system("ssh-keygen -t rsa -f ssh_host_rsa_key -N '' -q")
-    end
-
-    puts "SSH host keys generated successfully."
+  # Initialize the cache system
+  private def self.init_cache(cache_dir : String)
+    Cache.cache_dir = cache_dir
   end
 end
 
