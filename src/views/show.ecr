@@ -56,6 +56,69 @@
   // Store raw content for copying
   const rawContent = <%= paste.content.to_json %>;
   const pasteFilename = <%= (paste.filename || paste.sepia_id).to_json %>;
+  const pasteLanguage = <%= (paste.language || "text").to_json %>;
+  
+  // Map languages to typical file extensions
+  const languageExtensions = {
+    'python': '.py',
+    'javascript': '.js',
+    'typescript': '.ts',
+    'ruby': '.rb',
+    'php': '.php',
+    'java': '.java',
+    'c': '.c',
+    'cpp': '.cpp',
+    'csharp': '.cs',
+    'go': '.go',
+    'rust': '.rs',
+    'bash': '.sh',
+    'shell': '.sh',
+    'powershell': '.ps1',
+    'sql': '.sql',
+    'mysql': '.sql',
+    'html': '.html',
+    'css': '.css',
+    'scss': '.scss',
+    'sass': '.sass',
+    'json': '.json',
+    'yaml': '.yaml',
+    'xml': '.xml',
+    'markdown': '.md',
+    'dockerfile': '.dockerfile',
+    'makefile': '.makefile',
+    'perl': '.pl',
+    'lua': '.lua',
+    'r': '.r',
+    'scala': '.scala',
+    'kotlin': '.kt',
+    'swift': '.swift',
+    'dart': '.dart',
+    'elixir': '.ex',
+    'erlang': '.erl',
+    'haskell': '.hs',
+    'clojure': '.clj',
+    'crystal': '.cr',
+    'nim': '.nim',
+    'zig': '.zig',
+    'vue': '.vue',
+    'svelte': '.svelte',
+    'jsx': '.jsx',
+    'tsx': '.tsx',
+    'toml': '.toml',
+    'ini': '.ini',
+    'csv': '.csv',
+    'text': '.txt'
+  };
+  
+  function getDownloadFilename() {
+    // If filename already has an extension, use it as-is
+    if (pasteFilename.includes('.')) {
+      return pasteFilename;
+    }
+    // Otherwise, add extension based on language
+    const ext = languageExtensions[pasteLanguage] || '.txt';
+    return pasteFilename + ext;
+  }
   
   function copyToClipboard() {
     const btn = document.querySelector('.copy-overlay-btn');
@@ -106,7 +169,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = pasteFilename;
+    a.download = getDownloadFilename();
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
