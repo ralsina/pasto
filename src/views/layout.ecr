@@ -75,6 +75,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      min-width: 2rem;
+      height: 2rem;
     }
 
     .top-bar button:hover, .top-bar .top-bar-btn:hover {
@@ -104,11 +106,6 @@
       transform: scale(1.05);
     }
 
-    /* Adjust main content for top bar */
-    .main-content {
-      padding-top: 3.5rem;
-    }
-
     .app-container {
       padding-top: 0;
     }
@@ -123,10 +120,6 @@
       .top-bar select {
         max-width: 120px;
         font-size: 0.8rem;
-      }
-
-      .main-content {
-        padding-top: 3.5rem;
       }
     }
   </style>
@@ -261,8 +254,8 @@
     
     /* Main content area */
     .main-content {
-      padding: 2rem;
-      padding-bottom: 1.5rem;
+      padding: 1rem 2rem 1.5rem 2rem;
+      padding-top: 4rem;
       display: flex;
       flex-direction: column;
       height: 100%;
