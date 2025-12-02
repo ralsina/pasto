@@ -361,6 +361,25 @@
     URL.revokeObjectURL(url);
   }
 
+  function forkPaste() {
+    // Create a form and submit it to fork the paste
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/<%= paste.sepia_id %>/fork';
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  function deletePaste() {
+    if (confirm('Are you sure you want to delete this paste? This action cannot be undone.')) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/<%= paste.sepia_id %>/delete';
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+
   function changeLanguage() {
     const language = document.getElementById('view-language').value;
     const url = new URL(window.location);
@@ -381,11 +400,15 @@
       topBarRight.insertAdjacentHTML('afterbegin', `
         <a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>
         <button class="top-bar-btn" onclick="downloadPaste()" title="Download"><i data-lucide="download"></i></button>
+        <% if current_user %>
+        <button class="top-bar-btn" onclick="forkPaste()" title="Fork (create your own copy)"><i data-lucide="git-fork"></i></button>
+        <% end %>
         <% if current_user && paste.user_id == current_user.sepia_id %>
         <a href="/<%= paste.base_id %>/edit" class="top-bar-btn" title="Edit Paste"><i data-lucide="pencil"></i></a>
         <% if version_count > 1 %>
         <a href="/<%= paste.base_id %>/history" class="top-bar-btn" title="View History (<%= version_count %> versions)"><i data-lucide="history"></i></a>
         <% end %>
+        <button class="top-bar-btn" onclick="deletePaste()" title="Delete Paste" style="color: var(--pico-del-color);"><i data-lucide="trash-2"></i></button>
         <% end %>
         <% if is_version_view %>
         <a href="/<%= base_paste_id %>" class="top-bar-btn" title="Back to Latest"><i data-lucide="arrow-left"></i></a>

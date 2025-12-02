@@ -507,6 +507,92 @@ post "/:id/edit" do |env|
   end
 end
 
+# Fork paste (create a copy owned by current user)
+post "/:id/fork" do |env|
+  id = env.params.url["id"]
+
+  original_paste = Pasto::Paste.from_file(id)
+  if original_paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Must be logged in to fork
+  current_user = Pasto.get_current_user(env)
+  unless current_user
+    env.response.status_code = 401
+    next "You must be logged in to fork a paste"
+  end
+
+  # Create new paste with same content
+  forked_paste = Pasto::Paste.new(
+    original_paste.content,
+    original_paste.language,
+    original_paste.theme,
+    user_id: current_user.sepia_id,
+    title: original_paste.title,
+    filename: original_paste.filename
+  )
+
+  if forked_paste.save
+    # If user has SSH keys, associate with first key
+    if !current_user.keys.empty?
+      ssh_key = current_user.keys.first
+      forked_paste.ssh_fingerprint = ssh_key.sepia_id
+      forked_paste.save
+      ssh_key.add_paste(forked_paste)
+      ssh_key.save
+    end
+
+    env.redirect "/#{forked_paste.sepia_id}"
+  else
+    env.response.status_code = 500
+    "Failed to fork paste"
+  end
+end
+
+# Delete paste (owner only)
+post "/:id/delete" do |env|
+  id = env.params.url["id"]
+
+  paste = Pasto::Paste.from_file(id)
+  if paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Must be logged in and own the paste
+  current_user = Pasto.get_current_user(env)
+  unless current_user && paste.user_id == current_user.sepia_id
+    env.response.status_code = 403
+    next "You don't have permission to delete this paste"
+  end
+
+  # Remove paste from user's SSH key pastes array
+  if !current_user.keys.empty?
+    current_user.keys.each do |ssh_key|
+      ssh_key.pastes.reject! { |p| p.sepia_id == paste.sepia_id || p.base_id == paste.base_id }
+      ssh_key.save
+    end
+  end
+
+  # Delete all versions of the paste
+  base_id = paste.base_id
+  versions = Pasto::Paste.versions(base_id)
+  versions.each do |version|
+    Pasto::Cache.invalidate(version.sepia_id)
+    Sepia::Storage.delete(version)
+  end
+
+  # Also delete the base paste if it exists separately
+  if base_paste = Pasto::Paste.from_file(base_id)
+    Pasto::Cache.invalidate(base_id)
+    Sepia::Storage.delete(base_paste)
+  end
+
+  env.redirect "/"
+end
+
 # View paste history (list of versions)
 get "/:id/history" do |env|
   id = env.params.url["id"]
