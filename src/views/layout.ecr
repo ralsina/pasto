@@ -10,6 +10,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    /* Reset body margins and prevent overflow */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      max-height: 100vh;
+      overflow-y: hidden;
+    }
+
     /* User menu styles */
     .user-menu {
       position: fixed;
@@ -111,8 +124,9 @@
     .app-container {
       display: grid;
       grid-template-columns: 300px 1fr;
-      min-height: 100vh;
+      height: 100vh;
       margin: 0;
+      overflow: hidden;
     }
 
     .app-container.sidebar-collapsed {
@@ -207,10 +221,12 @@
     /* Main content area */
     .main-content {
       padding: 2rem;
+      padding-bottom: 1.5rem;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100%;
       box-sizing: border-box;
+      overflow: hidden;
     }
 
     .editor-preview-container {
@@ -527,7 +543,7 @@
   <div class="user-menu">
     <a href="/profile" title="Profile" aria-label="Profile">
       <button type="button" aria-label="Profile">
-        🔒
+        👤
       </button>
     </a>
   </div>
