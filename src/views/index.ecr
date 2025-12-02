@@ -1,19 +1,5 @@
-<div class="controls-top">
-  <select class="language-select" id="language" onchange="updateLanguage()">
-    <% Pasto::Paste.available_languages.each do |lang| %>
-      <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
-    <% end %>
-  </select>
-  <button class="submit-btn" onclick="createPaste()" title="Create Paste">+</button>
-  <button class="preview-toggle-btn" id="preview-toggle" onclick="togglePreview()" title="Toggle Preview">👁️</button>
-</div>
-
 <div class="editor-preview-container">
   <div class="editor-pane">
-    <div class="pane-header">
-      <span>📝</span>
-      <span>Editor</span>
-    </div>
     <div class="codejar-wrap">
       <div class="codejar-editor" id="editor"></div>
     </div>
@@ -35,28 +21,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
 <style>
-  .preview-toggle-btn {
-    background: var(--pico-secondary-background);
-    border: 1px solid var(--pico-muted-border-color);
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.2s;
-  }
-
-  .preview-toggle-btn:hover {
-    background: var(--pico-secondary-hover-background);
-  }
-
-  .editor-preview-container.preview-hidden .preview-pane {
-    display: none;
-  }
-
-  .editor-preview-container.preview-hidden .editor-pane {
-    flex: 1;
-  }
-
   .codejar-wrap {
     flex: 1;
     min-height: 0;
@@ -74,12 +38,18 @@
     line-height: 1.5;
     overflow: auto;
     outline: none;
-    background: var(--pico-background-color);
+    background: var(--pico-card-background-color, var(--pico-background-color));
     color: var(--pico-color);
     tab-size: 2;
     -moz-tab-size: 2;
     white-space: pre-wrap;
     word-wrap: break-word;
+    border: 2px solid var(--pico-primary);
+    border-radius: var(--pico-border-radius);
+  }
+
+  .codejar-editor:focus-within {
+    box-shadow: 0 0 0 3px var(--pico-primary-focus);
   }
 
   .codejar-editor:empty::before {
@@ -260,6 +230,20 @@
 
   // Initialize CodeJar on page load
   document.addEventListener('DOMContentLoaded', async function() {
+    // Inject controls into top bar
+    const topBarLeft = document.querySelector('.top-bar-left');
+    if (topBarLeft) {
+      topBarLeft.innerHTML = `
+        <select id="language" onchange="updateLanguage()">
+          <% Pasto::Paste.available_languages.each do |lang| %>
+            <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
+          <% end %>
+        </select>
+        <button onclick="createPaste()" title="Create Paste">+</button>
+        <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview">👁️</button>
+      `;
+    }
+
     // Dynamically import CodeJar as ES module
     const { CodeJar } = await import('https://cdn.jsdelivr.net/npm/codejar@4.2.0/dist/codejar.min.js');
     
