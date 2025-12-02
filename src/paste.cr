@@ -9,6 +9,7 @@ module Pasto
 
     property content : String
     property title : String?
+    property filename : String?
     property language : String?
     property theme : String
     property created_at : Time
@@ -17,16 +18,24 @@ module Pasto
     property ssh_ip : String?
     property user_id : String?
 
-    def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil, @title : String? = nil)
+    def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil, @title : String? = nil, @filename : String? = nil)
       # Normalize line endings to just '\n'
       @content = content.gsub("\r\n", "\n").gsub("\r", "\n")
 
       @created_at = Time.utc
       @updated_at = Time.utc
 
-      # Auto-detect language if not provided
+      # Auto-detect language: first from filename, then from content
       if @language.nil?
-        @language = self.class.get_best_supported_language(@content)
+        if @filename
+          ext = File.extname(@filename.not_nil!)
+          detected = language_for_extension(ext)
+          @language = detected unless detected == "text"
+        end
+        # If still nil, try content-based detection
+        if @language.nil?
+          @language = self.class.get_best_supported_language(@content)
+        end
       end
     end
 
@@ -62,6 +71,7 @@ module Pasto
       {
         content:         @content,
         title:           @title,
+        filename:        @filename,
         language:        @language,
         theme:           @theme,
         created_at:      @created_at.to_rfc3339,
@@ -81,7 +91,8 @@ module Pasto
         ssh_fingerprint: data["ssh_fingerprint"]?.try(&.as_s?),
         ssh_ip: data["ssh_ip"]?.try(&.as_s?),
         user_id: data["user_id"]?.try(&.as_s?),
-        title: data["title"]?.try(&.as_s?)
+        title: data["title"]?.try(&.as_s?),
+        filename: data["filename"]?.try(&.as_s?)
       )
       paste.created_at = Time.parse_rfc3339(data["created_at"].as_s)
       paste.updated_at = Time.parse_rfc3339(data["updated_at"].as_s)

@@ -3,6 +3,7 @@ require "../src/models/auth_token"
 require "shirk"
 require "sepia"
 require "uri"
+require "docopt"
 
 module PastoSSH
   @@current_fingerprint = ""
@@ -36,9 +37,14 @@ module PastoSSH
     server.on_exec do |ctx|
       puts "SSH exec: command='#{ctx.command}' from user='#{ctx.user}'"
 
-      case ctx.command
+      # Parse command and arguments
+      parts = ctx.command.split(/\s+/, 2)
+      cmd = parts[0]? || ""
+      args = parts[1]? || ""
+
+      case cmd
       when "paste"
-        handle_paste(ctx, @@current_fingerprint, @@base_url)
+        handle_paste(ctx, @@current_fingerprint, @@base_url, args)
       when "login"
         handle_login(ctx, @@current_fingerprint, @@base_url)
       when "list"
@@ -55,26 +61,76 @@ module PastoSSH
     # Handle shell requests (ssh host without command - treat as paste)
     server.on_shell do |ctx|
       puts "SSH shell: from user='#{ctx.user}' (treating as paste)"
-      handle_paste(ctx, @@current_fingerprint, @@base_url)
+      handle_paste(ctx, @@current_fingerprint, @@base_url, "")
     end
 
     server
   end
 
+  PASTE_DOC = <<-DOC
+Create a paste.
+
+Usage:
+  paste [-l LANG] [-f FILE] [-t TITLE]
+
+Options:
+  -l LANG, --language LANG   Set the language for syntax highlighting
+  -f FILE, --filename FILE   Set a filename (used for language detection)
+  -t TITLE, --title TITLE    Set a title for the paste
+
+DOC
+
   # Handle paste command
-  private def self.handle_paste(ctx, fingerprint : String, base_url : String) : Int32
+  private def self.handle_paste(ctx, fingerprint : String, base_url : String, args : String) : Int32
     content = ctx.stdin
 
     puts "SSH: received #{content.bytesize} bytes of content"
 
     if content.strip.empty?
-      ctx.write_stderr("No content provided. Usage: echo 'text' | ssh -p PORT host paste\n")
+      ctx.write_stderr("No content provided. Usage: echo 'text' | ssh host\n")
       return 1
+    end
+
+    # Parse options with docopt
+    language : String? = nil
+    filename : String? = nil
+    title : String? = nil
+
+    unless args.empty?
+      begin
+        # Split args into array for docopt
+        argv = args.split(/\s+/)
+        opts = Docopt.docopt(PASTE_DOC, argv: argv, exit: false)
+        
+        # Docopt returns long option names as keys
+        language = opts["--language"]?.try(&.to_s)
+        language = nil if language.nil? || language == "false" || language == "" || language == "nil"
+        
+        filename = opts["--filename"]?.try(&.to_s)
+        filename = nil if filename.nil? || filename == "false" || filename == "" || filename == "nil"
+        
+        title = opts["--title"]?.try(&.to_s)
+        title = nil if title.nil? || title == "false" || title == "" || title == "nil"
+        
+        puts "SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}"
+      rescue ex : Docopt::DocoptException
+        ctx.write_stderr("Invalid options: #{ex.message}\n")
+        ctx.write_stderr(PASTE_DOC)
+        return 1
+      end
     end
 
     # Load or create SSHKey, create paste through it
     ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
-    paste = ssh_key.create_paste(content: content, theme: "default-dark")
+    
+    # Create paste - language detection from filename happens in Paste constructor
+    paste = ssh_key.create_paste(
+      content: content,
+      theme: "default-dark",
+      language: language,
+      filename: filename,
+      title: title
+    )
 
     # Save the paste as a standalone object (so web server can find it)
     unless paste.save
@@ -126,6 +182,14 @@ module PastoSSH
     ctx.write("Create paste from file:\n")
     ctx.write("  cat file.txt | ssh #{host}\n")
     ctx.write("  ssh #{host} < file.txt\n\n")
+    ctx.write("Paste options:\n")
+    ctx.write("  -l LANG      Set language (e.g., -l python)\n")
+    ctx.write("  -f FILE      Set filename (used for language detection)\n")
+    ctx.write("  -t TITLE     Set title\n\n")
+    ctx.write("Examples with options:\n")
+    ctx.write("  cat code.py | ssh #{host} paste -l python\n")
+    ctx.write("  cat code | ssh #{host} paste -f script.rb\n")
+    ctx.write("  echo 'test' | ssh #{host} paste -t 'My Test'\n\n")
     ctx.write("List your pastes:\n")
     ctx.write("  ssh #{host} list\n\n")
     ctx.write("Login to associate pastes with your account:\n")

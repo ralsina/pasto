@@ -28,12 +28,14 @@ module Pasto
     end
 
     # Create a paste and add it to this key
-    def create_paste(content : String, theme : String = "default-dark", language : String? = nil) : Paste
+    def create_paste(content : String, theme : String = "default-dark", language : String? = nil, filename : String? = nil, title : String? = nil) : Paste
       paste = Paste.new(
         content: content,
         theme: theme,
         language: language,
-        ssh_fingerprint: @sepia_id
+        ssh_fingerprint: @sepia_id,
+        filename: filename,
+        title: title
       )
       add_paste(paste)
       paste
@@ -43,7 +45,7 @@ module Pasto
     def to_sepia : String
       {
         owner_id:   @owner_id,
-        pastes:     @pastes.map { |p| {id: p.sepia_id, content: p.content, language: p.language, theme: p.theme, created_at: p.created_at.to_rfc3339, updated_at: p.updated_at.to_rfc3339} },
+        pastes:     @pastes.map { |p| {id: p.sepia_id, content: p.content, language: p.language, theme: p.theme, title: p.title, filename: p.filename, created_at: p.created_at.to_rfc3339, updated_at: p.updated_at.to_rfc3339} },
         created_at: @created_at.to_rfc3339,
       }.to_json
     end
@@ -60,7 +62,9 @@ module Pasto
           paste = Paste.new(
             content: p["content"].as_s,
             language: p["language"]?.try(&.as_s?),
-            theme: p["theme"]?.try(&.as_s?) || "default-dark"
+            theme: p["theme"]?.try(&.as_s?) || "default-dark",
+            title: p["title"]?.try(&.as_s?),
+            filename: p["filename"]?.try(&.as_s?)
           )
           paste.sepia_id = p["id"].as_s
           paste.created_at = Time.parse_rfc3339(p["created_at"].as_s)
