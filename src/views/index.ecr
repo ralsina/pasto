@@ -1,5 +1,5 @@
 <div class="controls-top">
-  <select class="language-select" id="language" onchange="updatePreview()">
+  <select class="language-select" id="language" onchange="updateLanguage()">
     <% Pasto::Paste.available_languages.each do |lang| %>
       <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
     <% end %>
@@ -13,7 +13,9 @@
       <span>📝</span>
       <span>Editor</span>
     </div>
-    <textarea id="content" placeholder="Paste your code here..." oninput="debouncedUpdatePreview()"></textarea>
+    <div class="codejar-wrap">
+      <div class="codejar-editor" id="editor"></div>
+    </div>
   </div>
 
   <div class="preview-pane">
@@ -27,17 +29,115 @@
   </div>
 </div>
 
+<!-- CodeJar and Highlight.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<style>
+  .codejar-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .codejar-editor {
+    flex: 1;
+    min-height: 0;
+    padding: 1rem;
+    font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow: auto;
+    outline: none;
+    background: var(--pico-background-color);
+    color: var(--pico-color);
+    tab-size: 2;
+    -moz-tab-size: 2;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .codejar-editor:empty::before {
+    content: 'Paste your code here...';
+    color: var(--pico-muted-color);
+    pointer-events: none;
+  }
+
+  /* Highlight.js styling adjustments */
+  .codejar-editor.hljs {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+</style>
 
 <script>
+  let jar;
   let debounceTimer;
+  let currentLanguage = '';
+
+  // Map common language names to highlight.js names
+  function mapLanguage(lang) {
+    if (!lang) return 'plaintext';
+    const langLower = lang.toLowerCase();
+    const mapping = {
+      'c++': 'cpp',
+      'c#': 'csharp',
+      'objective-c': 'objectivec',
+      'shell': 'bash',
+      'dockerfile': 'docker',
+      'console': 'bash',
+      'text': 'plaintext',
+      'plain text': 'plaintext',
+      'crystal': 'ruby',  // Crystal is similar to Ruby
+      'auto-detect': 'plaintext'
+    };
+    return mapping[langLower] || langLower;
+  }
+
+  // Highlight function for CodeJar
+  function highlight(editor) {
+    const code = editor.textContent;
+    if (!code) return;
+    
+    const lang = currentLanguage || '';
+    const mappedLang = mapLanguage(lang);
+    
+    try {
+      if (mappedLang !== 'plaintext' && hljs.getLanguage(mappedLang)) {
+        editor.innerHTML = hljs.highlight(code, { language: mappedLang, ignoreIllegals: true }).value;
+      } else if (!lang || lang === '' || mappedLang === 'plaintext') {
+        // Auto-detect mode or plaintext
+        const result = hljs.highlightAuto(code);
+        editor.innerHTML = result.value;
+      } else {
+        // Unknown language, try auto-detection
+        const result = hljs.highlightAuto(code);
+        editor.innerHTML = result.value;
+      }
+    } catch (e) {
+      // Fallback to plain text
+      editor.textContent = code;
+    }
+  }
 
   function debouncedUpdatePreview() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(updatePreview, 300);
   }
 
+  function updateLanguage() {
+    currentLanguage = document.getElementById('language').value;
+    if (jar) {
+      // Re-highlight with new language
+      jar.updateCode(jar.toString());
+    }
+    updatePreview();
+  }
+
   function updatePreview() {
-    const content = document.getElementById('content').value;
+    const content = jar ? jar.toString() : '';
     const language = document.getElementById('language').value;
     const syntaxTheme = document.getElementById('syntax-theme').value;
 
@@ -61,8 +161,7 @@
 
       // Update language selector text to show detected language if auto-detection is active
       const languageSelect = document.getElementById('language');
-      const currentLanguage = languageSelect.value;
-      const isAutoDetect = (currentLanguage === 'Auto-detect' || currentLanguage === '');
+      const isAutoDetect = (languageSelect.value === 'Auto-detect' || languageSelect.value === '');
 
       if (isAutoDetect) {
         const autoDetectOption = Array.from(languageSelect.options).find(
@@ -72,6 +171,8 @@
         if (autoDetectOption) {
           if (data.detected_language) {
             autoDetectOption.textContent = `Auto-detect (${data.detected_language})`;
+            // Update editor highlighting with detected language
+            currentLanguage = data.detected_language;
           } else {
             autoDetectOption.textContent = 'Auto-detect';
           }
@@ -85,7 +186,7 @@
   }
 
   function createPaste() {
-    const content = document.getElementById('content').value;
+    const content = jar ? jar.toString() : '';
     const language = document.getElementById('language').value;
 
     if (!content.trim()) {
@@ -116,8 +217,30 @@
     });
   }
 
-  // Initialize preview on page load
-  document.addEventListener('DOMContentLoaded', function() {
+  // Initialize CodeJar on page load
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Dynamically import CodeJar as ES module
+    const { CodeJar } = await import('https://cdn.jsdelivr.net/npm/codejar@4.2.0/dist/codejar.min.js');
+    
+    const editorElement = document.getElementById('editor');
+    
+    jar = CodeJar(editorElement, highlight, {
+      tab: '  ',
+      indentOn: /[{[(]$/,
+      moveToNewLine: /^[}\])]$/,
+      spellcheck: false,
+      catchTab: true,
+      preserveIdent: true,
+      addClosing: true,
+      history: true
+    });
+
+    // Update preview on content change
+    jar.onUpdate(() => {
+      debouncedUpdatePreview();
+    });
+
+    // Initialize
     updatePreview();
   });
 </script>
