@@ -211,6 +211,25 @@ get "/profile" do |env|
   # ameba:disable Lint/UselessAssign
   current_user = Pasto.get_current_user(env)
 
+  # Get SSH connection info from config
+  config = Pasto.config
+  # ameba:disable Lint/UselessAssign
+  ssh_host = config.try(&.bind) || "localhost"
+  # Use base_url host if bind is 0.0.0.0
+  if ssh_host == "0.0.0.0" && config
+    # Extract host from base_url
+    base_url = config.base_url
+    if match = base_url.match(%r{https?://([^:/]+)})
+      ssh_host = match[1]
+    else
+      ssh_host = "localhost"
+    end
+  end
+  # ameba:disable Lint/UselessAssign
+  ssh_port = config.try(&.ssh_port) || 2222
+  # ameba:disable Lint/UselessAssign
+  ssh_enabled = config.try(&.ssh_enabled) || false
+
   # Get saved theme preferences or use defaults
   # ameba:disable Lint/UselessAssign
   saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"

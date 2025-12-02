@@ -196,6 +196,38 @@ DOC
     end
   end
 
+  private def self.get_or_create_session_secret(config_file : String = "pasto.yml") : String
+    # Check environment variable first
+    if secret = ENV["PASTO_SESSION_SECRET"]?
+      return secret
+    end
+
+    # Try to read from config file
+    if File.exists?(config_file)
+      content = File.read(config_file)
+      if match = content.match(/^session_secret:\s*["']?([^"'\n]+)["']?\s*$/m)
+        secret = match[1].strip
+        return secret unless secret.empty?
+      end
+    end
+
+    # Generate new secret and append to config file
+    secret = Random::Secure.hex(64)
+    
+    if File.exists?(config_file)
+      File.open(config_file, "a") do |f|
+        f.puts ""
+        f.puts "# Session secret (auto-generated, do not share)"
+        f.puts "session_secret: \"#{secret}\""
+      end
+      puts "🔑 Generated new session secret (saved to #{config_file})"
+    else
+      puts "🔑 Generated new session secret (config file not found, using in-memory)"
+    end
+    
+    secret
+  end
+
   def self.run(args)
     # Parse config first before Kemal interferes with ARGV
     config = Config.new(args)
@@ -211,10 +243,13 @@ DOC
     # Initialize Sepia storage
     Sepia::Storage.configure(:filesystem, {"path" => config.storage_dir})
 
+    # Get or generate session secret (persisted to config file for consistency across restarts)
+    session_secret = get_or_create_session_secret()
+
     # Configure kemal-session
     Kemal::Session.config do |sess_config|
       sess_config.cookie_name = "pasto_session"
-      sess_config.secret = ENV["PASTO_SESSION_SECRET"]? || Random::Secure.hex(64)
+      sess_config.secret = session_secret
       sess_config.timeout = 24.hours
       sess_config.engine = Kemal::Session::FileEngine.new({
         :sessions_dir => "./sessions/"
