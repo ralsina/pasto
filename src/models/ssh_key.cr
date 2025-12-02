@@ -1,5 +1,5 @@
 require "sepia"
-require "./paste"
+require "../paste"
 
 module Pasto
   class SSHKey < Sepia::Object

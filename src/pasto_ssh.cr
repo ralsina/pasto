@@ -1,6 +1,6 @@
 require "docopt-config"
 require "sepia"
-require "./models/paste"
+require "./paste"
 require "./ssh_server"
 
 module PastoSshServer

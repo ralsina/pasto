@@ -16,9 +16,9 @@ module Pasto
     property ssh_ip : String?
     property user_id : String?
 
-    def initialize(@content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil)
+    def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil)
       # Normalize line endings to just '\n'
-      @content = @content.gsub("\r\n", "\n").gsub("\r", "\n")
+      @content = content.gsub("\r\n", "\n").gsub("\r", "\n")
 
       @created_at = Time.utc
       @updated_at = Time.utc
