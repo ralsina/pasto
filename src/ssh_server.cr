@@ -2,6 +2,7 @@ require "../src/models/ssh_key"
 require "../src/models/auth_token"
 require "shirk"
 require "sepia"
+require "uri"
 
 module PastoSSH
   @@current_fingerprint = ""
@@ -31,7 +32,7 @@ module PastoSSH
       true # Accept all keys
     end
 
-    # Handle exec requests
+    # Handle exec requests (ssh host command)
     server.on_exec do |ctx|
       puts "SSH exec: command='#{ctx.command}' from user='#{ctx.user}'"
 
@@ -40,13 +41,19 @@ module PastoSSH
         handle_paste(ctx, @@current_fingerprint, @@base_url)
       when "login"
         handle_login(ctx, @@current_fingerprint, @@base_url)
+      when "help"
+        handle_help(ctx, @@base_url)
       else
         ctx.write_stderr("Unknown command: #{ctx.command}\n")
-        ctx.write_stderr("Commands: paste, login\n")
-        ctx.write_stderr("  paste - echo 'text' | ssh -p PORT host paste\n")
-        ctx.write_stderr("  login - ssh -p PORT host login\n")
+        ctx.write_stderr("Use 'help' for usage information.\n")
         1
       end
+    end
+
+    # Handle shell requests (ssh host without command - treat as paste)
+    server.on_shell do |ctx|
+      puts "SSH shell: from user='#{ctx.user}' (treating as paste)"
+      handle_paste(ctx, @@current_fingerprint, @@base_url)
     end
 
     server
@@ -101,5 +108,26 @@ module PastoSSH
       ctx.write_stderr("Failed to create login token\n")
       1
     end
+  end
+
+  # Handle help command
+  private def self.handle_help(ctx, base_url : String) : Int32
+    # Extract host and port from base_url for examples
+    uri = URI.parse(base_url)
+    host = uri.host || "localhost"
+
+    ctx.write("Pasto SSH Interface\n")
+    ctx.write("===================\n\n")
+    ctx.write("Create a paste (two equivalent methods):\n")
+    ctx.write("  echo 'Hello World' | ssh #{host}\n")
+    ctx.write("  echo 'Hello World' | ssh #{host} paste\n\n")
+    ctx.write("Create paste from file:\n")
+    ctx.write("  cat file.txt | ssh #{host}\n")
+    ctx.write("  ssh #{host} < file.txt\n\n")
+    ctx.write("Login to associate pastes with your account:\n")
+    ctx.write("  ssh #{host} login\n\n")
+    ctx.write("Show this help:\n")
+    ctx.write("  ssh #{host} help\n")
+    0
   end
 end

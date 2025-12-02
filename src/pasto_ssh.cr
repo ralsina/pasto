@@ -86,8 +86,10 @@ DOC
     puts "🔗 Base URL: #{config.base_url}"
     puts ""
     puts "Usage examples:"
-    puts "  echo 'Hello World' | ssh -p #{config.ssh_port} #{config.ssh_bind} paste"
+    puts "  echo 'Hello World' | ssh -p #{config.ssh_port} #{config.ssh_bind}"
+    puts "  cat file.txt | ssh -p #{config.ssh_port} #{config.ssh_bind}"
     puts "  ssh -p #{config.ssh_port} #{config.ssh_bind} login"
+    puts "  ssh -p #{config.ssh_port} #{config.ssh_bind} help"
 
     # Create and start SSH server
     ssh_server = PastoSSH.create_server(config.host_key, config.ssh_port, config.ssh_bind)

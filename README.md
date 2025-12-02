@@ -63,14 +63,30 @@ shards build --release
 Create a paste via SSH:
 
 ```bash
-# Pipe content directly
+# Simplest form - just pipe content
 cat myfile.py | ssh -p 2222 pasto.example.com
 
 # Or use echo
 echo "Hello, World!" | ssh -p 2222 pasto.example.com
+
+# Redirect from file
+ssh -p 2222 pasto.example.com < myfile.py
+
+# Explicit paste command (also works)
+cat myfile.py | ssh -p 2222 pasto.example.com paste
 ```
 
 The server returns the URL of your new paste.
+
+Other SSH commands:
+
+```bash
+# Login to link SSH key with web account
+ssh -p 2222 pasto.example.com login
+
+# Show help
+ssh -p 2222 pasto.example.com help
+```
 
 ### Web Usage
 
