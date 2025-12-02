@@ -3,9 +3,6 @@
     <div class="user-info">
       <h2>User Profile</h2>
       <div class="user-details">
-        <div class="detail-row">
-          <strong>User ID:</strong> <%= current_user.sepia_id %>
-        </div>
         <% if current_user.name %>
         <div class="detail-row">
           <strong>Name:</strong> <%= current_user.name %>
@@ -18,7 +15,7 @@
           <strong>Total Pastes:</strong> <%= current_user.all_pastes.size %>
         </div>
         <div class="detail-row">
-          <strong>Account Created:</strong> <%= current_user.created_at.to_rfc3339 %>
+          <strong>Member Since:</strong> <%= current_user.created_at.to_s("%B %d, %Y") %>
         </div>
       </div>
 
@@ -27,6 +24,50 @@
           <button type="submit" class="logout-btn">Logout</button>
         </form>
       </div>
+    </div>
+
+    <!-- SSH Keys Section -->
+    <div class="ssh-keys-section">
+      <h3>🔑 SSH Keys</h3>
+      <% if current_user.keys.empty? %>
+        <p class="no-items">No SSH keys linked to your account.</p>
+      <% else %>
+        <div class="keys-list">
+          <% current_user.keys.each do |ssh_key| %>
+            <div class="key-item">
+              <code class="fingerprint"><%= ssh_key.sepia_id.gsub("_", "/") %></code>
+              <span class="key-meta"><%= ssh_key.pastes.size %> paste<%= ssh_key.pastes.size == 1 ? "" : "s" %></span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- User's Pastes Section -->
+    <div class="pastes-section">
+      <h3>📋 Your Pastes</h3>
+      <% user_pastes = current_user.all_pastes %>
+      <% if user_pastes.empty? %>
+        <p class="no-items">You haven't created any pastes yet.</p>
+        <p>Create pastes via the web interface or using SSH:</p>
+        <code class="command-example">echo "Hello World" | ssh -p PORT host paste</code>
+      <% else %>
+        <div class="pastes-list">
+          <% user_pastes.sort_by(&.created_at).reverse.first(20).each do |paste| %>
+          <div class="paste-item">
+            <a href="/paste/<%= paste.sepia_id %>" class="paste-link">
+              <span class="paste-id"><%= paste.sepia_id[0..7] %>...</span>
+              <span class="paste-lang"><%= paste.language || "text" %></span>
+              <span class="paste-size"><%= paste.content.bytesize %> bytes</span>
+              <span class="paste-date"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %></span>
+            </a>
+          </div>
+          <% end %>
+          <% if user_pastes.size > 20 %>
+          <p class="more-pastes">Showing 20 of <%= user_pastes.size %> pastes</p>
+          <% end %>
+        </div>
+      <% end %>
     </div>
   <% else %>
     <div class="not-logged-in">
@@ -59,24 +100,30 @@
 
 <style>
   .profile-container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 2rem;
   }
 
-  .user-info, .not-logged-in {
+  .user-info, .not-logged-in, .ssh-keys-section, .pastes-section {
     background-color: var(--pico-background-color);
     border: 1px solid var(--pico-border-color);
     border-radius: var(--pico-border-radius);
     padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .ssh-keys-section h3, .pastes-section h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
   }
 
   .user-details {
-    margin: 2rem 0;
+    margin: 1.5rem 0;
   }
 
   .detail-row {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -88,7 +135,7 @@
   }
 
   .profile-actions {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
     display: flex;
     gap: 1rem;
     align-items: center;
@@ -102,6 +149,103 @@
 
   .logout-btn:hover {
     background-color: var(--pico-del-hover-background);
+  }
+
+  /* SSH Keys */
+  .keys-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .key-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: var(--pico-code-background-color);
+    border-radius: var(--pico-border-radius);
+  }
+
+  .fingerprint {
+    font-size: 0.85rem;
+    background: none;
+    padding: 0;
+  }
+
+  .key-meta {
+    color: var(--pico-muted-color);
+    font-size: 0.85rem;
+  }
+
+  /* Pastes List */
+  .pastes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .paste-item {
+    border-radius: var(--pico-border-radius);
+    overflow: hidden;
+  }
+
+  .paste-link {
+    display: grid;
+    grid-template-columns: 100px 80px 1fr auto;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--pico-code-background-color);
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.2s;
+  }
+
+  .paste-link:hover {
+    background-color: var(--pico-secondary-background);
+  }
+
+  .paste-id {
+    font-family: var(--pico-font-family-monospace);
+    color: var(--pico-primary);
+  }
+
+  .paste-lang {
+    color: var(--pico-muted-color);
+    font-size: 0.9rem;
+  }
+
+  .paste-size {
+    color: var(--pico-muted-color);
+    font-size: 0.85rem;
+    text-align: right;
+  }
+
+  .paste-date {
+    color: var(--pico-muted-color);
+    font-size: 0.85rem;
+  }
+
+  .no-items {
+    color: var(--pico-muted-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .command-example {
+    display: block;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--pico-code-background-color);
+    border-radius: var(--pico-border-radius);
+    font-size: 0.9rem;
+  }
+
+  .more-pastes {
+    color: var(--pico-muted-color);
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 0;
   }
 
   .back-btn {
@@ -154,7 +298,7 @@
       padding: 1rem;
     }
 
-    .user-info, .not-logged-in {
+    .user-info, .not-logged-in, .ssh-keys-section, .pastes-section {
       padding: 1.5rem;
     }
 
@@ -171,6 +315,25 @@
     .profile-actions {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .key-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .fingerprint {
+      word-break: break-all;
+    }
+
+    .paste-link {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .paste-size {
+      text-align: left;
     }
   }
 </style>

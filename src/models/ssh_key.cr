@@ -84,6 +84,13 @@ module Pasto
       new(fingerprint)
     end
 
+    # Find an SSHKey by sanitized fingerprint/ID
+    def self.find(id : String) : SSHKey?
+      Sepia::Storage.load(SSHKey, id)
+    rescue
+      nil
+    end
+
     def save : Bool
       begin
         Sepia::Storage.save(self)
