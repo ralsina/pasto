@@ -41,6 +41,8 @@ module PastoSSH
         handle_paste(ctx, @@current_fingerprint, @@base_url)
       when "login"
         handle_login(ctx, @@current_fingerprint, @@base_url)
+      when "list"
+        handle_list(ctx, @@current_fingerprint, @@base_url)
       when "help"
         handle_help(ctx, @@base_url)
       else
@@ -124,10 +126,51 @@ module PastoSSH
     ctx.write("Create paste from file:\n")
     ctx.write("  cat file.txt | ssh #{host}\n")
     ctx.write("  ssh #{host} < file.txt\n\n")
+    ctx.write("List your pastes:\n")
+    ctx.write("  ssh #{host} list\n\n")
     ctx.write("Login to associate pastes with your account:\n")
     ctx.write("  ssh #{host} login\n\n")
     ctx.write("Show this help:\n")
     ctx.write("  ssh #{host} help\n")
+    0
+  end
+
+  # Handle list command - show all pastes for this SSH key
+  private def self.handle_list(ctx, fingerprint : String, base_url : String) : Int32
+    ssh_key = Pasto::SSHKey.find(Pasto::SSHKey.sanitize_fingerprint(fingerprint))
+
+    unless ssh_key
+      ctx.write("No pastes found for this SSH key.\n")
+      ctx.write("Create one with: echo 'text' | ssh host\n")
+      return 0
+    end
+
+    pastes = ssh_key.pastes
+    if pastes.empty?
+      ctx.write("No pastes found for this SSH key.\n")
+      ctx.write("Create one with: echo 'text' | ssh host\n")
+      return 0
+    end
+
+    ctx.write("Your pastes (#{pastes.size} total):\n")
+    ctx.write("=" * 50 + "\n\n")
+
+    pastes.reverse.each do |paste|
+      # Format the date nicely
+      created = paste.created_at.to_s("%Y-%m-%d %H:%M UTC")
+      
+      # Get a preview of the content (first line, truncated)
+      preview = paste.content.lines.first?.try(&.strip) || ""
+      preview = preview[0, 40] + "..." if preview.size > 40
+      
+      # Show language if detected
+      lang = paste.language.try { |l| " [#{l}]" } || ""
+      
+      ctx.write("#{base_url}/#{paste.sepia_id}\n")
+      ctx.write("  Created: #{created}#{lang}\n")
+      ctx.write("  Preview: #{preview}\n\n")
+    end
+
     0
   end
 end
