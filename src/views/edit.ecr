@@ -1,18 +1,19 @@
 <div class="controls-top">
   <select class="language-select" id="language" onchange="updateLanguage()">
     <% Pasto::Paste.available_languages.each do |lang| %>
-      <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
+      <option value="<%= lang == "Auto-detect" ? "" : lang %>" <%= paste.language == lang || (lang != "Auto-detect" && paste.language == lang.downcase) ? "selected" : "" %>><%= lang %></option>
     <% end %>
   </select>
-  <button class="submit-btn" onclick="createPaste()" title="Create Paste">+</button>
+  <button class="submit-btn" onclick="updatePaste()" title="Save Changes">💾</button>
   <button class="preview-toggle-btn" id="preview-toggle" onclick="togglePreview()" title="Toggle Preview">👁️</button>
+  <a href="/<%= paste.sepia_id %>" class="cancel-btn" title="Cancel">✖️</a>
 </div>
 
 <div class="editor-preview-container">
   <div class="editor-pane">
     <div class="pane-header">
-      <span>📝</span>
-      <span>Editor</span>
+      <span>✏️</span>
+      <span>Edit Paste</span>
     </div>
     <div class="codejar-wrap">
       <div class="codejar-editor" id="editor"></div>
@@ -25,7 +26,7 @@
       <span>Live Preview</span>
     </div>
     <div class="preview-content" id="preview">
-      <pre><code>Start typing to see preview...</code></pre>
+      <pre><code>Loading...</code></pre>
     </div>
   </div>
 </div>
@@ -35,6 +36,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
 <style>
+  .cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pico-secondary-background);
+    border: 1px solid var(--pico-muted-border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .cancel-btn:hover {
+    background: var(--pico-secondary-hover-background);
+  }
+
   .preview-toggle-btn {
     background: var(--pico-secondary-background);
     border: 1px solid var(--pico-muted-border-color);
@@ -83,7 +102,7 @@
   }
 
   .codejar-editor:empty::before {
-    content: 'Paste your code here...';
+    content: 'Enter your code here...';
     color: var(--pico-muted-color);
     pointer-events: none;
   }
@@ -98,7 +117,9 @@
 <script>
   let jar;
   let debounceTimer;
-  let currentLanguage = '';
+  let currentLanguage = '<%= paste.language || "" %>';
+  const pasteId = '<%= paste.sepia_id %>';
+  const initialContent = <%= paste.content.to_json %>;
 
   // Map common language names to highlight.js names
   function mapLanguage(lang) {
@@ -226,7 +247,7 @@
     });
   }
 
-  function createPaste() {
+  function updatePaste() {
     const content = jar ? jar.toString() : '';
     const language = document.getElementById('language').value;
 
@@ -239,13 +260,15 @@
     formData.append('content', content);
     formData.append('language', language);
 
-    fetch('/', {
+    fetch('/' + pasteId + '/edit', {
       method: 'POST',
       body: formData
     })
     .then(response => {
       if (response.redirected) {
         window.location.href = response.url;
+      } else if (response.ok) {
+        window.location.href = '/' + pasteId;
       } else {
         return response.text().then(text => {
           throw new Error(text);
@@ -253,8 +276,8 @@
       }
     })
     .catch(error => {
-      console.error('Error creating paste:', error);
-      alert('Error creating paste: ' + error.message);
+      console.error('Error updating paste:', error);
+      alert('Error updating paste: ' + error.message);
     });
   }
 
@@ -276,6 +299,9 @@
       history: true
     });
 
+    // Set initial content
+    jar.updateCode(initialContent);
+
     // Update preview on content change
     jar.onUpdate(() => {
       debouncedUpdatePreview();
@@ -289,7 +315,7 @@
       document.getElementById('preview-toggle').title = 'Show Preview';
     }
 
-    // Initialize
+    // Initialize preview
     updatePreview();
   });
 </script>

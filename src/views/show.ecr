@@ -9,10 +9,14 @@
   </div>
 
   <div class="nav-buttons">
-    <a href="/">
-      <span>←</span>
-      <span>Create New Paste</span>
+    <a href="/" title="Create New Paste">
+      <span>+</span>
     </a>
+    <% if current_user && paste.user_id == current_user.sepia_id %>
+    <a href="/<%= paste.sepia_id %>/edit" class="edit-btn" title="Edit Paste">
+      <span>✏️</span>
+    </a>
+    <% end %>
   </div>
 
   <div class="theme-group">

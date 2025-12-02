@@ -381,10 +381,103 @@ post "/" do |env|
     next "Paste too large. Maximum size is #{config.max_paste_size} bytes (got #{content_bytesize} bytes)."
   end
 
-  paste = Pasto::Paste.new(content, language, syntax_theme)
+  # Get current user for ownership
+  current_user = Pasto.get_current_user(env)
+  user_id = current_user.try(&.sepia_id)
+
+  paste = Pasto::Paste.new(content, language, syntax_theme, user_id: user_id)
 
   if paste.save
     # Invalidate any existing cache for this paste
+    Pasto::Cache.invalidate(paste.sepia_id)
+
+    # Redirect to the paste view
+    env.redirect "/#{paste.sepia_id}"
+  else
+    env.response.status_code = 500
+    "Failed to save paste"
+  end
+end
+
+# Edit paste page (GET)
+get "/:id/edit" do |env|
+  id = env.params.url["id"]
+
+  paste = Pasto::Paste.from_file(id)
+  if paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Validate session to get current user
+  current_user = Pasto.get_current_user(env)
+
+  # Check ownership
+  unless current_user && paste.user_id == current_user.sepia_id
+    env.response.status_code = 403
+    next "You don't have permission to edit this paste"
+  end
+
+  # Get saved theme preferences
+  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+
+  # Set template variables
+  is_home_page = false
+  page_title = "Edit Paste #{paste.sepia_id}"
+
+  content = render "src/views/edit.ecr"
+  render "src/views/layout.ecr"
+end
+
+# Edit paste submission (POST)
+post "/:id/edit" do |env|
+  id = env.params.url["id"]
+
+  paste = Pasto::Paste.from_file(id)
+  if paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Validate session to get current user
+  current_user = Pasto.get_current_user(env)
+
+  # Check ownership
+  unless current_user && paste.user_id == current_user.sepia_id
+    env.response.status_code = 403
+    next "You don't have permission to edit this paste"
+  end
+
+  new_content = env.params.body["content"]?.to_s
+  new_language = env.params.body["language"]?.to_s
+  new_language = nil if new_language.empty?
+
+  if new_content.empty?
+    env.response.status_code = 400
+    next "Content cannot be empty"
+  end
+
+  # Size validation
+  config = Pasto.config
+  if config.nil?
+    env.response.status_code = 500
+    next "Configuration not available"
+  end
+
+  content_bytesize = new_content.bytesize
+  if content_bytesize > config.max_paste_size
+    env.response.status_code = 413
+    next "Paste too large. Maximum size is #{config.max_paste_size} bytes (got #{content_bytesize} bytes)."
+  end
+
+  # Update paste content (normalize line endings)
+  paste.content = new_content.gsub("\r\n", "\n").gsub("\r", "\n")
+  paste.language = new_language
+
+  if paste.save
+    # Invalidate cache
     Pasto::Cache.invalidate(paste.sepia_id)
 
     # Redirect to the paste view
