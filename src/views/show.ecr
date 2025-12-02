@@ -58,18 +58,47 @@
   const pasteFilename = <%= (paste.filename || paste.sepia_id).to_json %>;
   
   function copyToClipboard() {
-    navigator.clipboard.writeText(rawContent).then(() => {
-      const btn = document.querySelector('.copy-overlay-btn');
-      btn.classList.add('copied');
-      btn.innerHTML = '<i data-lucide="check"></i>';
+    const btn = document.querySelector('.copy-overlay-btn');
+    
+    // Try modern clipboard API first, fall back to execCommand
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(rawContent).then(() => {
+        showCopySuccess(btn);
+      }).catch(() => {
+        fallbackCopy(btn);
+      });
+    } else {
+      fallbackCopy(btn);
+    }
+  }
+  
+  function fallbackCopy(btn) {
+    // Fallback for non-HTTPS or older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = rawContent;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      showCopySuccess(btn);
+    } catch (e) {
+      console.error('Copy failed:', e);
+    }
+    document.body.removeChild(textarea);
+  }
+  
+  function showCopySuccess(btn) {
+    btn.classList.add('copied');
+    btn.innerHTML = '<i data-lucide="check"></i>';
+    lucide.createIcons();
+    
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<i data-lucide="copy"></i>';
       lucide.createIcons();
-      
-      setTimeout(() => {
-        btn.classList.remove('copied');
-        btn.innerHTML = '<i data-lucide="copy"></i>';
-        lucide.createIcons();
-      }, 2000);
-    });
+    }, 2000);
   }
   
   function downloadPaste() {
