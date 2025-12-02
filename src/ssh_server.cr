@@ -67,13 +67,20 @@ module PastoSSH
     ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
     paste = ssh_key.create_paste(content: content, theme: "default-dark")
 
+    # Save the paste as a standalone object (so web server can find it)
+    unless paste.save
+      ctx.write_stderr("Failed to save paste\n")
+      return 1
+    end
+
+    # Save the SSHKey (with reference to the paste)
     if ssh_key.save
       url = "#{base_url}/paste/#{paste.sepia_id}\n"
       ctx.write(url)
       puts "SSH: created paste #{paste.sepia_id} (key has #{ssh_key.pastes.size} pastes)"
       0
     else
-      ctx.write_stderr("Failed to create paste\n")
+      ctx.write_stderr("Failed to save SSH key\n")
       1
     end
   end
