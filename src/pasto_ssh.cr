@@ -17,17 +17,19 @@ Usage:
 Options:
   -h --help                 Show this screen.
   --version                 Show version.
-  --port=<port>             SSH port to listen on [default: 2222].
-  --bind=<address>          SSH address to bind to [default: 0.0.0.0].
+  --ssh-port=<port>         SSH port to listen on [default: 2222].
+  --ssh-bind=<address>      SSH address to bind to [default: 0.0.0.0].
   --storage-dir=<dir>       Directory to store pastes [default: ./data].
   --host-key=<file>         SSH host key file [default: ssh_host_rsa_key].
   --base-url=<url>          Base URL for paste links [default: http://localhost:5000].
+  --port=<port>             Web server port (used to construct base-url if not set) [default: 5000].
+  --bind=<address>          Web server bind address (used to construct base-url if not set) [default: 0.0.0.0].
 
 DOC
 
   class Config
-    property port : Int32
-    property bind : String
+    property ssh_port : Int32
+    property ssh_bind : String
     property storage_dir : String
     property host_key : String
     property base_url : String
@@ -36,16 +38,27 @@ DOC
       docopt_options = Docopt.docopt_config(
         SSH_DOC,
         argv: args,
-        config_file_path: "pasto_ssh.yml",
-        env_prefix: "PASTO_SSH",
+        config_file_path: "pasto.yml",
+        env_prefix: "PASTO",
         version: VERSION
       )
 
-      @port = docopt_options["--port"].to_s.to_i
-      @bind = docopt_options["--bind"].to_s
+      @ssh_port = docopt_options["--ssh-port"].to_s.to_i
+      @ssh_bind = docopt_options["--ssh-bind"].to_s
       @storage_dir = docopt_options["--storage-dir"].to_s
       @host_key = docopt_options["--host-key"].to_s
-      @base_url = docopt_options["--base-url"].to_s
+
+      # Handle base_url - use provided value or construct from web server settings
+      base_url_option = docopt_options["--base-url"].to_s
+      if base_url_option.empty? || base_url_option == "http://localhost:5000"
+        web_port = docopt_options["--port"].to_s.to_i
+        web_bind = docopt_options["--bind"].to_s
+        # Use localhost if binding to 0.0.0.0
+        host = web_bind == "0.0.0.0" ? "localhost" : web_bind
+        @base_url = "http://#{host}:#{web_port}"
+      else
+        @base_url = base_url_option.rstrip("/")
+      end
     end
   end
 
@@ -67,17 +80,17 @@ DOC
     # Set base URL for paste links
     PastoSSH.base_url = config.base_url
 
-    puts "🔐 Starting Pasto SSH server on #{config.bind}:#{config.port}"
+    puts "🔐 Starting Pasto SSH server on #{config.ssh_bind}:#{config.ssh_port}"
     puts "📁 Storing pastes in: #{config.storage_dir}"
     puts "🔑 Using host key: #{config.host_key}"
     puts "🔗 Base URL: #{config.base_url}"
     puts ""
     puts "Usage examples:"
-    puts "  echo 'Hello World' | ssh -p #{config.port} #{config.bind}"
-    puts "  cat file.txt | ssh -p #{config.port} #{config.bind}"
+    puts "  echo 'Hello World' | ssh -p #{config.ssh_port} #{config.ssh_bind} paste"
+    puts "  ssh -p #{config.ssh_port} #{config.ssh_bind} login"
 
     # Create and start SSH server
-    ssh_server = PastoSSH.create_server(config.host_key, config.port, config.bind)
+    ssh_server = PastoSSH.create_server(config.host_key, config.ssh_port, config.ssh_bind)
 
     # Keep main thread alive
     puts "✅ SSH server started. Press Ctrl+C to stop."
