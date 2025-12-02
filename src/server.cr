@@ -492,8 +492,10 @@ post "/:id/edit" do |env|
   paste.content = new_content.gsub("\r\n", "\n").gsub("\r", "\n")
   paste.language = new_language
   paste.title = new_title
+  paste.updated_at = Time.utc
 
-  if paste.save
+  # Save with versioning to keep edit history
+  if paste.save(force_new_generation: true)
     # Invalidate cache
     Pasto::Cache.invalidate(paste.sepia_id)
 
@@ -503,6 +505,98 @@ post "/:id/edit" do |env|
     env.response.status_code = 500
     "Failed to save paste"
   end
+end
+
+# View paste history (list of versions)
+get "/:id/history" do |env|
+  id = env.params.url["id"]
+
+  # Get the base ID (strip any generation suffix)
+  base_id = if id.includes?(".")
+    parts = id.split(".")
+    if parts.last.matches?(/^\d+$/)
+      parts[0..-2].join(".")
+    else
+      id
+    end
+  else
+    id
+  end
+
+  # Get all versions of the paste
+  versions = Pasto::Paste.versions(base_id)
+  
+  if versions.empty?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Get current user for ownership check
+  current_user = Pasto.get_current_user(env)
+  
+  # Check if user can see history (owner only for now)
+  latest = versions.last
+  unless current_user && latest.user_id == current_user.sepia_id
+    env.response.status_code = 403
+    next "Only the paste owner can view history"
+  end
+
+  # Get saved theme preferences
+  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+
+  # Sort by generation (newest first)
+  versions = versions.reverse
+
+  # Set template variables
+  is_home_page = false
+  page_title = "History: #{latest.display_title}"
+
+  content = render "src/views/history.ecr"
+  render "src/views/layout.ecr"
+end
+
+# View a specific version of a paste
+get "/:id/version/:gen" do |env|
+  id = env.params.url["id"]
+  gen = env.params.url["gen"].to_i
+
+  # Construct the versioned ID
+  versioned_id = "#{id}.#{gen}"
+
+  begin
+    paste = Pasto::Paste.load(versioned_id)
+  rescue
+    env.response.status_code = 404
+    next "Version not found"
+  end
+
+  # Get current user
+  current_user = Pasto.get_current_user(env)
+
+  # Get saved theme preferences
+  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+
+  # Generate highlighted content
+  highlighted_content = paste.highlight(nil)[0]
+
+  # Version count for the history button
+  version_count = 0
+  if current_user && paste.user_id == current_user.sepia_id
+    version_count = Pasto::Paste.versions(id).size
+  end
+
+  # Set template variables
+  is_home_page = false
+  page_title = paste.display_title
+  is_version_view = true
+  base_paste_id = id
+
+  content = render "src/views/show.ecr"
+  render "src/views/layout.ecr"
 end
 
 # View paste with specific language override via extension (more specific, comes first)
@@ -558,6 +652,16 @@ get "/:id" do |env|
 
   # Generate highlighted content
   highlighted_content = paste.highlight(language_override)[0]
+
+  # Get version count for history button (only if user owns the paste)
+  version_count = 0
+  if current_user && paste.user_id == current_user.sepia_id
+    version_count = Pasto::Paste.versions(paste.base_id).size
+  end
+
+  # Set version view flags (not a version view in main route)
+  is_version_view = false
+  base_paste_id = paste.base_id
 
   # Set template variables (ECR template will have access to these)
   is_home_page = false

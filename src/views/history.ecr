@@ -1,0 +1,184 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const topBarRight = document.querySelector('.top-bar-right');
+    if (topBarRight) {
+      topBarRight.insertAdjacentHTML('afterbegin', `
+        <a href="/<%= base_id %>" class="top-bar-btn" title="Back to Latest"><i data-lucide="arrow-left"></i></a>
+      `);
+      lucide.createIcons();
+    }
+  });
+</script>
+
+<div class="history-container">
+  <div class="history-header">
+    <h2>Version History</h2>
+    <p class="history-subtitle"><%= versions.size %> version<%= versions.size == 1 ? "" : "s" %></p>
+  </div>
+
+  <div class="history-list">
+    <% versions.each_with_index do |version, index| %>
+      <div class="history-item <%= index == 0 ? "current" : "" %>">
+        <div class="history-item-header">
+          <div class="history-item-info">
+            <span class="history-version">
+              <% if index == 0 %>
+                <i data-lucide="star" style="width: 14px; height: 14px;"></i>
+                Current (v<%= version.generation %>)
+              <% else %>
+                v<%= version.generation %>
+              <% end %>
+            </span>
+            <span class="history-date"><%= version.updated_at.to_s("%Y-%m-%d %H:%M:%S UTC") %></span>
+          </div>
+          <div class="history-item-actions">
+            <% if index == 0 %>
+              <a href="/<%= base_id %>" class="history-btn" title="View Current">
+                <i data-lucide="eye"></i> View
+              </a>
+            <% else %>
+              <a href="/<%= base_id %>/version/<%= version.generation %>" class="history-btn" title="View This Version">
+                <i data-lucide="eye"></i> View
+              </a>
+            <% end %>
+          </div>
+        </div>
+        
+        <div class="history-item-preview">
+          <code class="history-preview-text"><%= HTML.escape(version.content.lines.first(3).join("\n"))[0..200] %><%= version.content.lines.size > 3 || version.content.size > 200 ? "..." : "" %></code>
+        </div>
+        
+        <div class="history-item-meta">
+          <span><i data-lucide="file-text" style="width: 12px; height: 12px;"></i> <%= version.content.lines.size %> lines</span>
+          <span><i data-lucide="code" style="width: 12px; height: 12px;"></i> <%= version.language || "Unknown" %></span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<style>
+  .history-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+
+  .history-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    padding-bottom: 1rem;
+  }
+
+  .history-header h2 {
+    margin: 0 0 0.25rem 0;
+  }
+
+  .history-subtitle {
+    color: var(--pico-muted-color);
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .history-item {
+    background: var(--pico-card-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .history-item:hover {
+    border-color: var(--pico-primary);
+  }
+
+  .history-item.current {
+    border-color: var(--pico-primary);
+    border-width: 2px;
+  }
+
+  .history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .history-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .history-version {
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .history-date {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+  }
+
+  .history-item-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .history-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    background: var(--pico-secondary-background);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    color: var(--pico-color);
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .history-btn:hover {
+    background: var(--pico-secondary-hover-background);
+  }
+
+  .history-item-preview {
+    background: var(--pico-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+
+  .history-preview-text {
+    font-family: 'Chivo Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+    white-space: pre-wrap;
+    word-break: break-all;
+    display: block;
+  }
+
+  .history-item-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+  }
+
+  .history-item-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+</style>

@@ -30,7 +30,13 @@
       topBarRight.insertAdjacentHTML('afterbegin', `
         <a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>
         <% if current_user && paste.user_id == current_user.sepia_id %>
-        <a href="/<%= paste.sepia_id %>/edit" class="top-bar-btn" title="Edit Paste"><i data-lucide="pencil"></i></a>
+        <a href="/<%= paste.base_id %>/edit" class="top-bar-btn" title="Edit Paste"><i data-lucide="pencil"></i></a>
+        <% if version_count > 1 %>
+        <a href="/<%= paste.base_id %>/history" class="top-bar-btn" title="View History (<%= version_count %> versions)"><i data-lucide="history"></i></a>
+        <% end %>
+        <% end %>
+        <% if is_version_view %>
+        <a href="/<%= base_paste_id %>" class="top-bar-btn" title="Back to Latest"><i data-lucide="arrow-left"></i></a>
         <% end %>
         <select id="view-language" onchange="changeLanguage()">
           <% Pasto::Paste.available_languages.each do |lang| %>
