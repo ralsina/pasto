@@ -1,4 +1,4 @@
-require "../src/models/paste"
+require "../src/models/ssh_key"
 require "shirk"
 require "sepia"
 
@@ -50,18 +50,14 @@ module PastoSSH
         next 1
       end
 
-      # Create paste
-      paste = Pasto::Paste.new(
-        content: content,
-        theme: "default-dark",
-        ssh_fingerprint: @@current_fingerprint,
-        ssh_ip: "ssh_client"
-      )
+      # Load or create SSHKey, create paste through it
+      ssh_key = Pasto::SSHKey.find_or_create(@@current_fingerprint)
+      paste = ssh_key.create_paste(content: content, theme: "default-dark")
 
-      if paste.save
+      if ssh_key.save
         url = "#{@@base_url}/paste/#{paste.sepia_id}\n"
         ctx.write(url)
-        puts "SSH: created paste #{paste.sepia_id}"
+        puts "SSH: created paste #{paste.sepia_id} (key has #{ssh_key.pastes.size} pastes)"
         0
       else
         ctx.write_stderr("Failed to create paste\n")
