@@ -39,7 +39,7 @@ Options:
   --env=<environment>       Environment (development or production) [default: development].
   --theme=<theme>           Syntax highlighting theme [default: default-dark].
   --max-paste-size=<size>   Maximum paste size in bytes [default: 102400].
-  --base-url=<url>          Base URL for web interface [default: http://bind:port].
+    --base-url=<url>          Base URL for web interface [default: http://bind:port].
 
 DOC
 

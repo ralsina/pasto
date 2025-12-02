@@ -24,6 +24,8 @@ dependencies:
     github: ralsina/sepia
   rate_limiter:
     github: ralsina/rate_limiter
+  shirk:
+    path: ../shirk
 
 development_dependencies:
   ameba:
@@ -32,6 +34,12 @@ development_dependencies:
 targets:
   pasto:
     main: src/pasto.cr
+  pasto-ssh:
+    main: src/pasto_ssh.cr
+  paste-helper:
+    main: src/paste_helper.cr
 
 executables:
   - pasto
+  - pasto-ssh
+  - paste-helper

@@ -65,6 +65,10 @@ shards:
     git: https://github.com/ralsina/sepia.git
     version: 0.2.0
 
+  shirk:
+    path: ../shirk
+    version: 0.1.0
+
   sixteen:
     git: https://github.com/ralsina/sixteen.git
     version: 0.5.2
