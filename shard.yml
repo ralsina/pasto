@@ -36,10 +36,7 @@ targets:
     main: src/pasto.cr
   pasto-ssh:
     main: src/pasto_ssh.cr
-  paste-helper:
-    main: src/paste_helper.cr
 
 executables:
   - pasto
   - pasto-ssh
-  - paste-helper
