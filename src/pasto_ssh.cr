@@ -21,6 +21,7 @@ Options:
   --bind=<address>          SSH address to bind to [default: 0.0.0.0].
   --storage-dir=<dir>       Directory to store pastes [default: ./data].
   --host-key=<file>         SSH host key file [default: ssh_host_rsa_key].
+  --base-url=<url>          Base URL for paste links [default: http://localhost:5000].
 
 DOC
 
@@ -29,6 +30,7 @@ DOC
     property bind : String
     property storage_dir : String
     property host_key : String
+    property base_url : String
 
     def initialize(args)
       docopt_options = Docopt.docopt_config(
@@ -43,6 +45,7 @@ DOC
       @bind = docopt_options["--bind"].to_s
       @storage_dir = docopt_options["--storage-dir"].to_s
       @host_key = docopt_options["--host-key"].to_s
+      @base_url = docopt_options["--base-url"].to_s
     end
   end
 
@@ -61,9 +64,13 @@ DOC
     # Generate host keys if they don't exist
     generate_host_keys(config.host_key) unless File.exists?(config.host_key)
 
+    # Set base URL for paste links
+    PastoSSH.base_url = config.base_url
+
     puts "🔐 Starting Pasto SSH server on #{config.bind}:#{config.port}"
     puts "📁 Storing pastes in: #{config.storage_dir}"
     puts "🔑 Using host key: #{config.host_key}"
+    puts "🔗 Base URL: #{config.base_url}"
     puts ""
     puts "Usage examples:"
     puts "  echo 'Hello World' | ssh -p #{config.port} #{config.bind}"

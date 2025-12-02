@@ -175,14 +175,20 @@ get "/auth/:token" do |env|
            nil
          end
 
-  # If no user exists, create one
+  # If no user exists, create one and link the key
   if user.nil?
     user = Pasto::User.new
-    user.save
-    ssh_key.owner_id = user.sepia_id
-    ssh_key.save
+    user.save  # Save first to get sepia_id
+    user.add_key(ssh_key)  # This sets owner_id and adds to keys array
+    user.save  # Save again with the key added
     puts "Created new user #{user.sepia_id} for SSH key #{token.fingerprint}"
   else
+    # Make sure the key is in the user's keys array (in case of data inconsistency)
+    unless user.keys.any? { |k| k.sepia_id == ssh_key.sepia_id }
+      user.add_key(ssh_key)
+      user.save
+      puts "Added SSH key #{token.fingerprint} to existing user #{user.sepia_id}"
+    end
     puts "Existing user #{user.sepia_id} logging in via SSH key #{token.fingerprint}"
   end
 

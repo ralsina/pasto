@@ -6,7 +6,7 @@ require "sepia"
 module PastoSSH
   @@current_fingerprint = ""
   @@storage_dir = "./data"
-  @@base_url = "http://localhost:3000"
+  @@base_url = "http://localhost:5000"
 
   def self.storage_dir=(dir : String)
     @@storage_dir = dir
