@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -499,7 +500,7 @@
     </div>
     <div class="top-bar-right">
       <a href="/profile" title="Profile" aria-label="Profile" class="user-menu-btn">
-        👤
+        <i data-lucide="user" style="width: 16px; height: 16px;"></i>
       </a>
     </div>
   </div>
@@ -508,7 +509,7 @@
   <div class="app-container sidebar-collapsed">
     <!-- Sidebar toggle button -->
     <button class="sidebar-toggle collapsed" id="sidebar-toggle" onclick="toggleSidebar()">
-      <span id="toggle-icon">☰</span>
+      <span id="toggle-icon"><i data-lucide="menu" style="width: 20px; height: 20px;"></i></span>
     </button>
 
     <!-- Sidebar -->
@@ -698,6 +699,8 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadPreferences();
       updateThemes();
+      // Initialize Lucide icons for static elements
+      lucide.createIcons();
     });
   </script>
 </body>

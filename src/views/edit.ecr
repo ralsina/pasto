@@ -134,13 +134,14 @@
     const isHidden = container.classList.toggle('preview-hidden');
     
     if (isHidden) {
-      button.textContent = '🙈';
+      button.innerHTML = '<i data-lucide="eye-off"></i>';
       button.title = 'Show Preview';
     } else {
-      button.textContent = '👁️';
+      button.innerHTML = '<i data-lucide="eye"></i>';
       button.title = 'Hide Preview';
       updatePreview(); // Refresh preview when shown
     }
+    lucide.createIcons();
     
     // Save preference
     localStorage.setItem('previewHidden', isHidden);
@@ -243,9 +244,9 @@
             <option value="<%= lang == "Auto-detect" ? "" : lang %>" <%= paste.language == lang || (lang != "Auto-detect" && paste.language == lang.downcase) ? "selected" : "" %>><%= lang %></option>
           <% end %>
         </select>
-        <button onclick="updatePaste()" title="Save Changes">💾</button>
-        <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview">👁️</button>
-        <a href="/${pasteId}" class="top-bar-btn" title="Cancel">✖️</a>
+        <button onclick="updatePaste()" title="Save Changes"><i data-lucide="save"></i></button>
+        <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview"><i data-lucide="eye"></i></button>
+        <a href="/${pasteId}" class="top-bar-btn" title="Cancel"><i data-lucide="x"></i></a>
       `);
     }
 
@@ -277,9 +278,12 @@
     const previewHidden = localStorage.getItem('previewHidden') === 'true';
     if (previewHidden) {
       document.querySelector('.editor-preview-container').classList.add('preview-hidden');
-      document.getElementById('preview-toggle').textContent = '🙈';
+      document.getElementById('preview-toggle').innerHTML = '<i data-lucide="eye-off"></i>';
       document.getElementById('preview-toggle').title = 'Show Preview';
     }
+
+    // Initialize Lucide icons
+    lucide.createIcons();
 
     // Initialize preview
     updatePreview();

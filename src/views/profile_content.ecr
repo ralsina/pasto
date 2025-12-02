@@ -3,9 +3,10 @@
     const topBarRight = document.querySelector('.top-bar-right');
     if (topBarRight) {
       topBarRight.insertAdjacentHTML('afterbegin', `
-        <a href="/" class="top-bar-btn" title="Create New Paste">+</a>
-        <button onclick="document.getElementById('logout-form').submit()" class="top-bar-btn" title="Logout">🚪</button>
+        <a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>
+        <button onclick="document.getElementById('logout-form').submit()" class="top-bar-btn" title="Logout"><i data-lucide="log-out"></i></button>
       `);
+      lucide.createIcons();
     }
   });
 </script>
@@ -18,13 +19,13 @@
 
     <% if updated %>
     <div class="alert alert-success">
-      ✓ Profile updated successfully!
+      <i data-lucide="check" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i> Profile updated successfully!
     </div>
     <% end %>
 
     <% if error %>
     <div class="alert alert-error">
-      ✗ Failed to update profile. Please try again.
+      <i data-lucide="x" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i> Failed to update profile. Please try again.
     </div>
     <% end %>
 
