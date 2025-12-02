@@ -228,6 +228,24 @@ DOC
     secret
   end
 
+  private def self.setup_storage_watcher
+    backend = Sepia::Storage.backend
+    return unless backend.is_a?(Sepia::FileStorage)
+
+    file_storage = backend.as(Sepia::FileStorage)
+    return unless file_storage.watcher_running?
+
+    file_storage.on_watcher_change do |event|
+      # Log external changes for debugging
+      puts "📂 External change detected: #{event.type} #{event.object_class}:#{event.object_id}"
+
+      # The watcher automatically invalidates Sepia's cache
+      # No additional action needed - next load will fetch fresh data
+    end
+
+    puts "👁️  File system watcher enabled for external changes"
+  end
+
   def self.run(args)
     # Parse config first before Kemal interferes with ARGV
     config = Config.new(args)
@@ -240,8 +258,11 @@ DOC
     Dir.mkdir_p(config.storage_dir)
     Dir.mkdir_p(config.cache_dir)
 
-    # Initialize Sepia storage
-    Sepia::Storage.configure(:filesystem, {"path" => config.storage_dir})
+    # Initialize Sepia storage with file system watching enabled
+    Sepia::Storage.configure(:filesystem, {"path" => config.storage_dir, "watch" => true})
+
+    # Set up watcher callback for external changes (e.g., from pasto-ssh)
+    setup_storage_watcher()
 
     # Get or generate session secret (persisted to config file for consistency across restarts)
     session_secret = get_or_create_session_secret()
