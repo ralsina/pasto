@@ -41,7 +41,70 @@ A Crystal-based pastebin application with live syntax highlighting, SSH access, 
 
 ## Quick Start
 
-### Installation
+### Docker (Recommended)
+
+The easiest way to run Pasto is with Docker Compose:
+
+```bash
+# Clone the repository
+git clone https://github.com/ralsina/pasto.git
+cd pasto
+
+# Start Pasto (web + SSH server)
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop Pasto
+docker compose down
+```
+
+The services will be available at:
+
+- **Web interface**: <http://localhost:3000>
+- **SSH access**: `ssh -p 2222 localhost`
+
+#### Docker Configuration
+
+The `docker-compose.yml` file includes:
+
+- **pasto** service: Web interface on port 3000
+- **pasto-ssh** service: SSH server on port 2222
+- **Persistent volumes** for data, sessions, cache, and SSH keys
+
+To customize, edit the environment variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  PASTO_PORT: 3000
+  PASTO_MAX_PASTE_SIZE: 1048576  # 1MB
+  PASTO_THEME: monokai
+  PASTO_RATE_LIMIT: 10
+  PASTO_SESSION_SECRET: "your-secret-here"  # Change in production!
+```
+
+#### Volumes
+
+| Volume | Path | Description |
+|--------|------|-------------|
+| `pasto-data` | `/app/data` | Pastes, users, SSH keys (back this up!) |
+| `pasto-sessions` | `/app/sessions` | Web sessions |
+| `pasto-cache` | `/app/public/cache` | Rendered HTML cache |
+| `pasto-ssh-keys` | `/app/ssh-keys` | SSH host keys |
+
+#### Backup
+
+```bash
+# Backup all data
+docker compose exec pasto tar -czf - /app/data > pasto-backup.tar.gz
+
+# Or copy volumes
+docker run --rm -v pasto-data:/data -v $(pwd):/backup alpine \
+  tar -czf /backup/pasto-data-backup.tar.gz /data
+```
+
+### Manual Installation
 
 ```bash
 # Clone the repository

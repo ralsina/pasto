@@ -25,7 +25,7 @@ dependencies:
   rate_limiter:
     github: ralsina/rate_limiter
   shirk:
-    path: ../shirk
+    github: ralsina/shirk
 
 development_dependencies:
   ameba:

@@ -1,0 +1,161 @@
+# Pasto Docker Compose Configuration
+# 
+# This file defines the complete Pasto deployment with:
+# - Web server (HTTP on port 3000)
+# - SSH server (SSH on port 2222)
+# - Persistent volumes for data, sessions, cache, and SSH keys
+#
+# Usage:
+#   docker compose up -d          # Start in background
+#   docker compose logs -f        # View logs
+#   docker compose down           # Stop containers
+#   docker compose down -v        # Stop and remove volumes (⚠️ deletes data)
+
+services:
+  # ============================================
+  # Main Pasto Web Server
+  # ============================================
+  pasto:
+    build: .
+    container_name: pasto-web
+    restart: unless-stopped
+    
+    # Port mappings
+    ports:
+      - "3000:3000"   # HTTP web interface
+    
+    # Persistent volumes
+    volumes:
+      # Data storage - contains all pastes, users, SSH keys
+      # This is the most important volume - back it up!
+      - pasto-data:/app/data
+      
+      # Session storage - web sessions
+      # Losing this will log out all users but won't lose data
+      - pasto-sessions:/app/sessions
+      
+      # Cache directory - rendered paste HTML cache
+      # Can be safely deleted, will be regenerated on demand
+      - pasto-cache:/app/public/cache
+      
+      # Optional: mount a custom config file
+      # - ./pasto.yml:/app/pasto.yml:ro
+    
+    # Environment configuration
+    # These override pasto.yml settings
+    environment:
+      # Server settings
+      PASTO_PORT: 3000
+      PASTO_BIND: "0.0.0.0"
+      PASTO_ENV: production
+      
+      # Storage paths (match volume mounts)
+      PASTO_STORAGE_DIR: /app/data
+      PASTO_CACHE_DIR: /app/public/cache
+      
+      # Paste limits
+      PASTO_MAX_PASTE_SIZE: 1048576  # 1MB max paste size
+      
+      # Rate limiting (pastes per minute per IP)
+      PASTO_RATE_LIMIT: 10
+      PASTO_RATE_WINDOW: 60
+      
+      # Default theme
+      PASTO_THEME: monokai
+      
+      # SSH is handled by separate container
+      PASTO_SSH_ENABLED: "false"
+      
+      # Session secret - CHANGE THIS IN PRODUCTION!
+      # Generate with: openssl rand -hex 64
+      PASTO_SESSION_SECRET: "change-me-to-a-random-64-byte-hex-string-in-production"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # SSH Server for paste creation
+  # ============================================
+  pasto-ssh:
+    build: .
+    container_name: pasto-ssh
+    restart: unless-stopped
+    
+    # Override the default command to run SSH server
+    command: ["/app/bin/pasto-ssh"]
+    
+    # SSH port mapping
+    ports:
+      - "2222:2222"   # SSH paste interface
+    
+    # Share data volume with web server
+    volumes:
+      # MUST share the same data volume as web server
+      # This allows SSH-created pastes to appear on web
+      - pasto-data:/app/data
+      
+      # SSH host keys - persist these to avoid key changes
+      # Users will get "host key changed" warnings if these are regenerated
+      - pasto-ssh-keys:/app/ssh-keys
+    
+    # Environment configuration
+    environment:
+      PASTO_SSH_PORT: 2222
+      PASTO_SSH_BIND: "0.0.0.0"
+      PASTO_STORAGE_DIR: /app/data
+      
+      # Base URL for paste links returned by SSH
+      # Change this to your actual domain!
+      PASTO_BASE_URL: "http://localhost:3000"
+    
+    # Depends on web server for shared data
+    depends_on:
+      pasto:
+        condition: service_healthy
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================
+# Named volumes for persistent data
+# ============================================
+volumes:
+  # Main data storage - pastes, users, SSH key associations
+  # Back this up regularly!
+  pasto-data:
+    driver: local
+  
+  # Web session storage
+  pasto-sessions:
+    driver: local
+  
+  # Rendered HTML cache (can be regenerated)
+  pasto-cache:
+    driver: local
+  
+  # SSH host keys (important to persist)
+  pasto-ssh-keys:
+    driver: local
+
+# ============================================
+# Optional: Custom network
+# ============================================
+# networks:
+#   pasto-network:
+#     driver: bridge
