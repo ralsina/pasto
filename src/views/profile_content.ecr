@@ -4,21 +4,21 @@
       <h2>User Profile</h2>
       <div class="user-details">
         <div class="detail-row">
-          <strong>Username:</strong> <%= current_user.username %>
+          <strong>User ID:</strong> <%= current_user.sepia_id %>
         </div>
+        <% if current_user.name %>
         <div class="detail-row">
-          <strong>Display Name:</strong> <%= current_user.display_name %>
-        </div>
-        <% if current_user.email %>
-        <div class="detail-row">
-          <strong>Email:</strong> <%= current_user.email %>
+          <strong>Name:</strong> <%= current_user.name %>
         </div>
         <% end %>
         <div class="detail-row">
-          <strong>Account Created:</strong> <%= current_user.created_at.to_rfc3339 %>
+          <strong>SSH Keys:</strong> <%= current_user.keys.size %>
         </div>
         <div class="detail-row">
-          <strong>Last Updated:</strong> <%= current_user.updated_at.to_rfc3339 %>
+          <strong>Total Pastes:</strong> <%= current_user.all_pastes.size %>
+        </div>
+        <div class="detail-row">
+          <strong>Account Created:</strong> <%= current_user.created_at.to_rfc3339 %>
         </div>
       </div>
 
@@ -33,20 +33,20 @@
       <h2>Not Logged In</h2>
       <div class="login-instructions">
         <h3>How to Login</h3>
-        <p>To access your profile, you need to log in using a valid login token.</p>
+        <p>To access your profile, log in using SSH:</p>
 
         <div class="login-steps">
           <h4>Steps:</h4>
           <ol>
-            <li>Request a login token from an administrator</li>
-            <li>Use the secure login URL you receive</li>
-            <li>The link expires after 15 minutes for security</li>
+            <li>Run: <code>ssh -p PORT host login</code></li>
+            <li>Open the URL shown in your browser</li>
+            <li>The link expires after 10 minutes for security</li>
           </ol>
         </div>
 
         <div class="security-info">
           <h4>Security Note:</h4>
-          <p>This system uses secure token-based authentication for login.</p>
+          <p>Your SSH public key is used for authentication - no passwords needed.</p>
         </div>
       </div>
 

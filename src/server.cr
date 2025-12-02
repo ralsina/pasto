@@ -6,10 +6,10 @@ require "tartrazine"
 require "ecr"
 require "kemal-session"
 require "./paste"
-require "./user"
 require "./user_session"
-require "./services/user_service"
-require "./services/login_token_service"
+require "./models/user"
+require "./models/auth_token"
+require "./models/ssh_key"
 
 module Pasto
   # Helper to validate session and get current user
@@ -25,7 +25,7 @@ module Pasto
     env.session.object("user", user_session)
 
     # Get user from database
-    UserService.get_user_by_username(user_session.user_id)
+    User.find(user_session.user_id)
   end
 
   # Simple rate limiter for paste creation
@@ -95,49 +95,6 @@ before_all do |env|
   env.response.headers["X-XSS-Protection"] = "1; mode=block"
 end
 
-# Login route - validate login token and create session
-get "/login/:token" do |env|
-  token = env.params.url["token"]
-  ip_address = env.request.headers["X-Forwarded-For"]? || env.request.headers["X-Real-IP"]? || env.request.remote_address.to_s
-
-  user = Pasto::LoginTokenService.validate_token(token)
-
-  if user
-    # Create session using kemal-session
-    user_session = Pasto::UserSession.new(user.username, nil, ip_address)
-    env.session.object("user", user_session)
-
-    puts "User #{user.display_name_for_ui} logged in via login token from #{ip_address}"
-
-    # Redirect to home page with success message
-    env.redirect "/?login=success"
-  else
-    env.response.status_code = 404
-    content = <<-HTML
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Invalid Login Token - Pasto</title>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    </head>
-    <body>
-      <main class="container">
-        <hgroup>
-          <h2>Invalid Login Token</h2>
-          <p>The login token is invalid, expired, or has already been used.</p>
-          <p>Please request a new login token.</p>
-        </hgroup>
-        <a href="/">Return to Pasto</a>
-      </main>
-    </body>
-    </html>
-    HTML
-    render "src/views/layout.ecr"
-  end
-end
-
 # Logout route - clear session
 post "/logout" do |env|
   # Clear the session using kemal-session
@@ -146,6 +103,71 @@ post "/logout" do |env|
   puts "User logged out"
 
   env.redirect "/?logout=success"
+end
+
+# SSH Auth token route - validate token and create session
+get "/auth/:token" do |env|
+  token_id = env.params.url["token"]
+  ip_address = env.request.headers["X-Forwarded-For"]? || env.request.headers["X-Real-IP"]? || env.request.remote_address.to_s
+
+  token = Pasto::AuthToken.find(token_id)
+
+  if token.nil? || token.expired?
+    # Delete expired token if it exists
+    token.try(&.delete)
+
+    env.response.status_code = 404
+    # ameba:disable Lint/UselessAssign
+    saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+    saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+    saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+    current_user = nil
+    is_home_page = false
+    page_title = "Invalid Token"
+
+    content = <<-HTML
+      <hgroup>
+        <h2>Invalid or Expired Token</h2>
+        <p>The login token is invalid, expired, or has already been used.</p>
+        <p>Please run <code>ssh -p PORT host login</code> again to get a new token.</p>
+      </hgroup>
+      <a href="/">Return to Pasto</a>
+    HTML
+    next render "src/views/layout.ecr"
+  end
+
+  # Load or create SSHKey
+  ssh_key = Pasto::SSHKey.find_or_create(token.fingerprint)
+
+  # Check if key already has an owner
+  user = if owner_id = ssh_key.owner_id
+           Pasto::User.find(owner_id)
+         else
+           nil
+         end
+
+  # If no user exists, create one
+  if user.nil?
+    user = Pasto::User.new
+    user.save
+    ssh_key.owner_id = user.sepia_id
+    ssh_key.save
+    puts "Created new user #{user.sepia_id} for SSH key #{token.fingerprint}"
+  else
+    puts "Existing user #{user.sepia_id} logging in via SSH key #{token.fingerprint}"
+  end
+
+  # Create session
+  user_session = Pasto::UserSession.new(user.sepia_id, nil, ip_address)
+  env.session.object("user", user_session)
+
+  # Delete the token (one-time use)
+  token.delete
+
+  puts "SSH auth successful for user #{user.sepia_id} from #{ip_address}"
+
+  # Redirect to home with success message
+  env.redirect "/?login=success"
 end
 
 # User profile page

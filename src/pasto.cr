@@ -3,9 +3,7 @@ require "sepia"
 require "kemal"
 require "./paste"
 require "./server"
-require "./user"
-require "./services/user_service"
-require "./services/login_token_service"
+require "./models/user"
 require "kemal-session"
 
 module Pasto
@@ -109,19 +107,15 @@ DOC
     # Initialize Sepia storage
     Sepia::Storage.configure(:filesystem, {"path" => config.storage_dir})
 
-    # Initialize user system
-    UserService.initialize_directories
-    UserService.public_user
-
     # Configure kemal-session
-    Kemal::Session.config do |config|
-      config.cookie_name = "pasto_session"
-      config.secret = ENV["PASTO_SESSION_SECRET"]? || Random::Secure.hex(64)
-      config.timeout = 24.hours
-      config.engine = Kemal::Session::FileEngine.new({
+    Kemal::Session.config do |sess_config|
+      sess_config.cookie_name = "pasto_session"
+      sess_config.secret = ENV["PASTO_SESSION_SECRET"]? || Random::Secure.hex(64)
+      sess_config.timeout = 24.hours
+      sess_config.engine = Kemal::Session::FileEngine.new({
         :sessions_dir => "./sessions/"
       })
-      config.gc_interval = 30.minutes
+      sess_config.gc_interval = 30.minutes
     end
 
     # Initialize cache

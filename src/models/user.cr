@@ -67,5 +67,11 @@ module Pasto
         false
       end
     end
+
+    def self.find(id : String) : User?
+      Sepia::Storage.load(User, id)
+    rescue
+      nil
+    end
   end
 end
