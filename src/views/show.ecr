@@ -5,11 +5,85 @@
   </hgroup>
 </div>
 
-<div class="paste-content">
-  <%= highlighted_content %>
+<div class="paste-content-wrapper">
+  <div class="paste-content">
+    <%= highlighted_content %>
+  </div>
+  <button class="copy-overlay-btn" onclick="copyToClipboard()" title="Copy to clipboard">
+    <i data-lucide="copy"></i>
+  </button>
 </div>
 
+<style>
+  .paste-content-wrapper {
+    position: relative;
+  }
+  
+  .copy-overlay-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: var(--pico-secondary-background);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 0.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s, background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .copy-overlay-btn:hover {
+    opacity: 1;
+    background: var(--pico-primary-background);
+  }
+  
+  .copy-overlay-btn.copied {
+    background: var(--pico-ins-color);
+  }
+  
+  .copy-overlay-btn i,
+  .copy-overlay-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--pico-color);
+  }
+</style>
+
 <script>
+  // Store raw content for copying
+  const rawContent = <%= paste.content.to_json %>;
+  const pasteFilename = <%= (paste.filename || paste.sepia_id).to_json %>;
+  
+  function copyToClipboard() {
+    navigator.clipboard.writeText(rawContent).then(() => {
+      const btn = document.querySelector('.copy-overlay-btn');
+      btn.classList.add('copied');
+      btn.innerHTML = '<i data-lucide="check"></i>';
+      lucide.createIcons();
+      
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<i data-lucide="copy"></i>';
+        lucide.createIcons();
+      }, 2000);
+    });
+  }
+  
+  function downloadPaste() {
+    const blob = new Blob([rawContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = pasteFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   function changeLanguage() {
     const language = document.getElementById('view-language').value;
     const url = new URL(window.location);
@@ -29,6 +103,7 @@
     if (topBarRight) {
       topBarRight.insertAdjacentHTML('afterbegin', `
         <a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>
+        <button class="top-bar-btn" onclick="downloadPaste()" title="Download"><i data-lucide="download"></i></button>
         <% if current_user && paste.user_id == current_user.sepia_id %>
         <a href="/<%= paste.base_id %>/edit" class="top-bar-btn" title="Edit Paste"><i data-lucide="pencil"></i></a>
         <% if version_count > 1 %>
