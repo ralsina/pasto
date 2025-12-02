@@ -42,7 +42,7 @@ module Pasto
       add_key(key)
     end
 
-    # Get all pastes across all keys for this user
+    # Get all pastes for this user (from SSH keys)
     def all_pastes : Array(Paste)
       @keys.flat_map(&.pastes)
     end

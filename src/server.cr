@@ -388,6 +388,15 @@ post "/" do |env|
   paste = Pasto::Paste.new(content, language, syntax_theme, user_id: user_id)
 
   if paste.save
+    # If user has SSH keys, add paste to their first key for consistency
+    if current_user && !current_user.keys.empty?
+      ssh_key = current_user.keys.first
+      paste.ssh_fingerprint = ssh_key.sepia_id
+      paste.save
+      ssh_key.add_paste(paste)
+      ssh_key.save
+    end
+
     # Invalidate any existing cache for this paste
     Pasto::Cache.invalidate(paste.sepia_id)
 
