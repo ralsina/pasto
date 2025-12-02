@@ -8,6 +8,7 @@ module Pasto
     include Sepia::Serializable
 
     property content : String
+    property title : String?
     property language : String?
     property theme : String
     property created_at : Time
@@ -16,7 +17,7 @@ module Pasto
     property ssh_ip : String?
     property user_id : String?
 
-    def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil)
+    def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil, @title : String? = nil)
       # Normalize line endings to just '\n'
       @content = content.gsub("\r\n", "\n").gsub("\r", "\n")
 
@@ -29,10 +30,38 @@ module Pasto
       end
     end
 
+    # Get display title - returns explicit title or auto-generated from content
+    def display_title : String
+      if @title && !@title.not_nil!.strip.empty?
+        return @title.not_nil!
+      end
+      
+      # Generate from first line of content
+      first_line = @content.split('\n').first?.try(&.strip) || ""
+      
+      # Clean up the line (remove common comment prefixes)
+      cleaned = first_line
+        .gsub(/^(\/\/|#|--|\/\*|\*|;|%|--|<!--|REM\s)/i, "")
+        .strip
+      
+      # Limit to ~50 chars, break at word boundary
+      if cleaned.size > 50
+        truncated = cleaned[0..50]
+        # Try to break at last space
+        if last_space = truncated.rindex(' ')
+          truncated = truncated[0...last_space]
+        end
+        cleaned = truncated + "..."
+      end
+      
+      cleaned.empty? ? "Untitled paste" : cleaned
+    end
+
     # Sepia serialization methods
     def to_sepia : String
       {
         content:         @content,
+        title:           @title,
         language:        @language,
         theme:           @theme,
         created_at:      @created_at.to_rfc3339,
@@ -51,7 +80,8 @@ module Pasto
         theme: data["theme"]?.try(&.as_s?) || "default-dark",
         ssh_fingerprint: data["ssh_fingerprint"]?.try(&.as_s?),
         ssh_ip: data["ssh_ip"]?.try(&.as_s?),
-        user_id: data["user_id"]?.try(&.as_s?)
+        user_id: data["user_id"]?.try(&.as_s?),
+        title: data["title"]?.try(&.as_s?)
       )
       paste.created_at = Time.parse_rfc3339(data["created_at"].as_s)
       paste.updated_at = Time.parse_rfc3339(data["updated_at"].as_s)

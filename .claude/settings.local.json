@@ -48,7 +48,9 @@
       "Bash(echo:*)",
       "Bash(cat:*)",
       "Bash(xargs cat:*)",
-      "mcp__web-reader__webReader"
+      "mcp__web-reader__webReader",
+      "Bash(git checkout:*)",
+      "Bash(./bin/pasto-ssh:*)"
     ],
     "deny": [],
     "ask": []

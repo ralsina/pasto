@@ -1,3 +1,16 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const topBarRight = document.querySelector('.top-bar-right');
+    if (topBarRight) {
+      topBarRight.insertAdjacentHTML('afterbegin', `
+        <a href="/" class="top-bar-btn" title="Create New Paste">+</a>
+        <button onclick="document.getElementById('logout-form').submit()" class="top-bar-btn" title="Logout">🚪</button>
+      `);
+    }
+  });
+</script>
+<form id="logout-form" method="post" action="/logout" style="display: none;"></form>
+
 <div class="profile-container">
   <% if current_user %>
     <% updated = env.params.query["updated"]? == "true" %>
@@ -45,11 +58,6 @@
         </div>
       </div>
 
-      <div class="profile-actions">
-        <form method="post" action="/logout">
-          <button type="submit" class="logout-btn">Logout</button>
-        </form>
-      </div>
     </div>
 
     <!-- SSH Keys Section -->
@@ -81,9 +89,8 @@
           <% user_pastes.sort_by(&.created_at).reverse.first(20).each do |paste| %>
           <div class="paste-item">
             <a href="/<%= paste.sepia_id %>" class="paste-link">
-              <span class="paste-id"><%= paste.sepia_id[0..7] %>...</span>
+              <span class="paste-title"><%= HTML.escape(paste.display_title) %></span>
               <span class="paste-lang"><%= paste.language || "text" %></span>
-              <span class="paste-size"><%= paste.content.bytesize %> bytes</span>
               <span class="paste-date"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %></span>
             </a>
           </div>
@@ -291,7 +298,7 @@
 
   .paste-link {
     display: grid;
-    grid-template-columns: 100px 80px 1fr auto;
+    grid-template-columns: 1fr auto auto;
     gap: 1rem;
     padding: 0.75rem 1rem;
     background-color: var(--pico-code-background-color);
@@ -304,20 +311,17 @@
     background-color: var(--pico-secondary-background);
   }
 
-  .paste-id {
-    font-family: var(--pico-font-family-monospace);
+  .paste-title {
     color: var(--pico-primary);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .paste-lang {
     color: var(--pico-muted-color);
     font-size: 0.9rem;
-  }
-
-  .paste-size {
-    color: var(--pico-muted-color);
-    font-size: 0.85rem;
-    text-align: right;
   }
 
   .paste-date {

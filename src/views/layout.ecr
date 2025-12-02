@@ -90,6 +90,9 @@
       border-radius: 50%;
       width: 2rem;
       height: 2rem;
+      min-width: 2rem;
+      min-height: 2rem;
+      flex-shrink: 0;
       padding: 0;
       display: flex;
       align-items: center;
@@ -260,6 +263,11 @@
       flex-direction: column;
       height: 100%;
       box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    /* Only constrain overflow on home page (editor) */
+    .main-content.editor-page {
       overflow: hidden;
     }
 
@@ -345,7 +353,7 @@
 
     /* Paste view specific */
     .paste-header {
-      margin-bottom: 2rem;
+      margin-bottom: 0.5rem;
     }
 
     .paste-header h2 {
@@ -557,7 +565,7 @@
     </aside>
 
     <!-- Main content -->
-    <main class="main-content">
+    <main class="main-content<%= is_home_page ? " editor-page" : "" %>">
       <%= content %>
     </main>
   </div>

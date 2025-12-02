@@ -4,7 +4,6 @@ require "kemal"
 require "./paste"
 require "./server"
 require "./models/user"
-require "./models/session"
 require "kemal-session"
 
 module Pasto
@@ -268,12 +267,18 @@ DOC
     # Get or generate session secret (persisted to config file for consistency across restarts)
     session_secret = get_or_create_session_secret()
 
-    # Configure kemal-session with Sepia-based storage
+    # Ensure sessions directory exists
+    Dir.mkdir_p("./sessions")
+
+    # Configure kemal-session with file-based storage
+    # Note: SepiaEngine has issues with StorableObject serialization
     Kemal::Session.config do |sess_config|
       sess_config.cookie_name = "pasto_session"
       sess_config.secret = session_secret
       sess_config.timeout = 24.hours
-      sess_config.engine = Kemal::Session::SepiaEngine.new
+      sess_config.engine = Kemal::Session::FileEngine.new({
+        :sessions_dir => "./sessions/"
+      })
       sess_config.gc_interval = 30.minutes
     end
 

@@ -1,32 +1,8 @@
 <div class="paste-header">
   <hgroup>
-    <h2>Paste <%= paste.sepia_id %></h2>
+    <h2><%= HTML.escape(paste.display_title) %></h2>
+    <p class="paste-meta"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %> UTC</p>
   </hgroup>
-
-  <div class="paste-meta">
-    <p><strong>Created:</strong> <%= paste.created_at %> UTC</p>
-    <p><strong>Language:</strong> <%= paste.language %></p>
-  </div>
-
-  <div class="nav-buttons">
-    <a href="/" title="Create New Paste">
-      <span>+</span>
-    </a>
-    <% if current_user && paste.user_id == current_user.sepia_id %>
-    <a href="/<%= paste.sepia_id %>/edit" class="edit-btn" title="Edit Paste">
-      <span>✏️</span>
-    </a>
-    <% end %>
-  </div>
-
-  <div class="theme-group">
-    <label for="view-language">View as different language:</label>
-    <select id="view-language" onchange="changeLanguage()">
-      <% Pasto::Paste.available_languages.each do |lang| %>
-        <option value="<%= lang == "Auto-detect" ? "" : lang %>" <%= lang == paste.language ? "selected" : "" %>><%= lang %></option>
-      <% end %>
-    </select>
-  </div>
 </div>
 
 <div class="paste-content">
@@ -47,8 +23,23 @@
     window.location.href = url.toString();
   }
 
-  // Set initial language selection based on URL parameter
+  // Inject controls into top bar and set initial language
   document.addEventListener('DOMContentLoaded', function() {
+    const topBarRight = document.querySelector('.top-bar-right');
+    if (topBarRight) {
+      topBarRight.insertAdjacentHTML('afterbegin', `
+        <a href="/" class="top-bar-btn" title="Create New Paste">+</a>
+        <% if current_user && paste.user_id == current_user.sepia_id %>
+        <a href="/<%= paste.sepia_id %>/edit" class="top-bar-btn" title="Edit Paste">✏️</a>
+        <% end %>
+        <select id="view-language" onchange="changeLanguage()">
+          <% Pasto::Paste.available_languages.each do |lang| %>
+            <option value="<%= lang == "Auto-detect" ? "" : lang %>" <%= lang == paste.language ? "selected" : "" %>><%= lang %></option>
+          <% end %>
+        </select>
+      `);
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const langParam = urlParams.get('lang');
 

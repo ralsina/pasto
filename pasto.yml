@@ -25,3 +25,5 @@ max_paste_size: 102400  # 100KB default maximum paste size
 ssh_enabled: true
 ssh_port: 2222
 ssh_bind: "0.0.0.0"
+# Session secret (auto-generated, do not share)
+session_secret: "2f5a4f557af105ddc26f5b7927bb3bdaa73ca5d618c185c5a80f49b44707d1bfe08682423c2500d45b49a0811fd802eeb7c7030120db44f9d25386530db3e6f3"

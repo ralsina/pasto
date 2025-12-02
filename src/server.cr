@@ -359,6 +359,10 @@ post "/" do |env|
   language = env.params.body["language"]?.to_s
   language = nil if language.empty?
 
+  # Get title from form
+  title = env.params.body["title"]?.to_s
+  title = nil if title.strip.empty?
+
   # Get syntax theme from form or use default
   syntax_theme = env.params.body["syntax_theme"]?.to_s
   syntax_theme = "default-dark" if syntax_theme.empty?
@@ -385,7 +389,7 @@ post "/" do |env|
   current_user = Pasto.get_current_user(env)
   user_id = current_user.try(&.sepia_id)
 
-  paste = Pasto::Paste.new(content, language, syntax_theme, user_id: user_id)
+  paste = Pasto::Paste.new(content, language, syntax_theme, user_id: user_id, title: title)
 
   if paste.save
     # If user has SSH keys, add paste to their first key for consistency
@@ -463,6 +467,9 @@ post "/:id/edit" do |env|
   new_language = env.params.body["language"]?.to_s
   new_language = nil if new_language.empty?
 
+  new_title = env.params.body["title"]?.to_s
+  new_title = nil if new_title.strip.empty?
+
   if new_content.empty?
     env.response.status_code = 400
     next "Content cannot be empty"
@@ -484,6 +491,7 @@ post "/:id/edit" do |env|
   # Update paste content (normalize line endings)
   paste.content = new_content.gsub("\r\n", "\n").gsub("\r", "\n")
   paste.language = new_language
+  paste.title = new_title
 
   if paste.save
     # Invalidate cache

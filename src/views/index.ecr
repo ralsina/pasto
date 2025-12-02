@@ -195,6 +195,7 @@
   function createPaste() {
     const content = jar ? jar.toString() : '';
     const language = document.getElementById('language').value;
+    const title = document.getElementById('paste-title').value;
 
     if (!content.trim()) {
       alert('Please enter some content');
@@ -204,6 +205,7 @@
     const formData = new FormData();
     formData.append('content', content);
     formData.append('language', language);
+    formData.append('title', title);
 
     fetch('/', {
       method: 'POST',
@@ -227,9 +229,10 @@
   // Initialize CodeJar on page load
   document.addEventListener('DOMContentLoaded', async function() {
     // Inject controls into top bar
-    const topBarLeft = document.querySelector('.top-bar-left');
-    if (topBarLeft) {
-      topBarLeft.innerHTML = `
+    const topBarRight = document.querySelector('.top-bar-right');
+    if (topBarRight) {
+      topBarRight.insertAdjacentHTML('afterbegin', `
+        <input type="text" id="paste-title" placeholder="Title (optional)" style="width: 200px; padding: 0.25rem 0.5rem; font-size: 0.85rem; margin: 0; height: auto;">
         <select id="language" onchange="updateLanguage()">
           <% Pasto::Paste.available_languages.each do |lang| %>
             <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
@@ -237,7 +240,7 @@
         </select>
         <button onclick="createPaste()" title="Create Paste">+</button>
         <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview">👁️</button>
-      `;
+      `);
     }
 
     // Dynamically import CodeJar as ES module
