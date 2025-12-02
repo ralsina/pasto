@@ -599,6 +599,70 @@
   </div>
 
   <script>
+    // Check if user is logged in (server passes this info)
+    const isLoggedIn = <%= current_user ? "true" : "false" %>;
+    
+    // Server-provided preferences (from user profile if logged in)
+    const serverPrefs = {
+      picoTheme: <%= current_user.try(&.pico_theme) ? "\"#{current_user.try(&.pico_theme)}\"" : "null" %>,
+      picoColor: <%= current_user.try(&.pico_color) ? "\"#{current_user.try(&.pico_color)}\"" : "null" %>,
+      syntaxTheme: <%= current_user.try(&.syntax_theme) ? "\"#{current_user.try(&.syntax_theme)}\"" : "null" %>
+    };
+
+    function getPreference(key, defaultValue) {
+      // Priority: server (if logged in) > localStorage > cookie > default
+      if (isLoggedIn && serverPrefs[key]) {
+        return serverPrefs[key];
+      }
+      
+      const stored = localStorage.getItem('pasto_' + key);
+      if (stored) return stored;
+      
+      // Try cookie as fallback
+      const cookie = document.cookie.split('; ').find(row => row.startsWith('pasto_' + key + '='));
+      if (cookie) return cookie.split('=')[1];
+      
+      return defaultValue;
+    }
+
+    function savePreferences(picoTheme, picoColor, syntaxTheme) {
+      // Always save to localStorage
+      localStorage.setItem('pasto_picoTheme', picoTheme);
+      localStorage.setItem('pasto_picoColor', picoColor);
+      localStorage.setItem('pasto_syntaxTheme', syntaxTheme);
+      
+      // Also save to cookies for server-side reading
+      document.cookie = `pasto_pico_theme=${picoTheme}; path=/; max-age=31536000`;
+      document.cookie = `pasto_pico_color=${picoColor}; path=/; max-age=31536000`;
+      document.cookie = `pasto_syntax_theme=${syntaxTheme}; path=/; max-age=31536000`;
+      
+      // If logged in, save to server (async, fire and forget)
+      if (isLoggedIn) {
+        const formData = new FormData();
+        formData.append('pico_theme', picoTheme);
+        formData.append('pico_color', picoColor);
+        formData.append('syntax_theme', syntaxTheme);
+        
+        fetch('/profile', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        }).catch(err => console.log('Failed to save preferences to server:', err));
+      }
+    }
+
+    function loadPreferences() {
+      const picoTheme = getPreference('picoTheme', 'auto');
+      const picoColor = getPreference('picoColor', 'slate');
+      const syntaxTheme = getPreference('syntaxTheme', 'default-dark');
+      
+      document.getElementById('pico-theme').value = picoTheme;
+      document.getElementById('pico-color').value = picoColor;
+      document.getElementById('syntax-theme').value = syntaxTheme;
+      
+      return { picoTheme, picoColor, syntaxTheme };
+    }
+
     function updateThemes() {
       const picoTheme = document.getElementById('pico-theme').value;
       const picoColor = document.getElementById('pico-color').value;
@@ -621,10 +685,8 @@
       }
       syntaxCssLink.href = `/syntax-theme.css?theme=${syntaxTheme}`;
 
-      // Save preferences in cookies
-      document.cookie = `pasto_pico_theme=${picoTheme}; path=/; max-age=31536000`;
-      document.cookie = `pasto_pico_color=${picoColor}; path=/; max-age=31536000`;
-      document.cookie = `pasto_syntax_theme=${syntaxTheme}; path=/; max-age=31536000`;
+      // Save preferences
+      savePreferences(picoTheme, picoColor, syntaxTheme);
 
       // Update preview if it exists
       if (typeof updatePreview === 'function') {
@@ -662,6 +724,7 @@
 
     // Initialize theme on page load
     document.addEventListener('DOMContentLoaded', function() {
+      loadPreferences();
       updateThemes();
     });
   </script>

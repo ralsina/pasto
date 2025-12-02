@@ -62,7 +62,6 @@
           <% current_user.keys.each do |ssh_key| %>
             <div class="key-item">
               <code class="fingerprint"><%= ssh_key.sepia_id.gsub("_", "/") %></code>
-              <span class="key-meta"><%= ssh_key.pastes.size %> paste<%= ssh_key.pastes.size == 1 ? "" : "s" %></span>
             </div>
           <% end %>
         </div>
@@ -81,7 +80,7 @@
         <div class="pastes-list">
           <% user_pastes.sort_by(&.created_at).reverse.first(20).each do |paste| %>
           <div class="paste-item">
-            <a href="/paste/<%= paste.sepia_id %>" class="paste-link">
+            <a href="/<%= paste.sepia_id %>" class="paste-link">
               <span class="paste-id"><%= paste.sepia_id[0..7] %>...</span>
               <span class="paste-lang"><%= paste.language || "text" %></span>
               <span class="paste-size"><%= paste.content.bytesize %> bytes</span>

@@ -8,10 +8,18 @@ module Pasto
     property name : String?
     property keys : Array(SSHKey)
     property created_at : Time
+    
+    # Theme preferences
+    property pico_theme : String?
+    property pico_color : String?
+    property syntax_theme : String?
 
     def initialize(@name : String? = nil)
       @keys = [] of SSHKey
       @created_at = Time.utc
+      @pico_theme = nil
+      @pico_color = nil
+      @syntax_theme = nil
     end
 
     # Display name - returns name or a friendly default
@@ -42,9 +50,12 @@ module Pasto
     # Sepia serialization methods
     def to_sepia : String
       {
-        name:       @name,
-        keys:       @keys.map(&.sepia_id),  # Store only key fingerprints
-        created_at: @created_at.to_rfc3339,
+        name:         @name,
+        keys:         @keys.map(&.sepia_id),  # Store only key fingerprints
+        created_at:   @created_at.to_rfc3339,
+        pico_theme:   @pico_theme,
+        pico_color:   @pico_color,
+        syntax_theme: @syntax_theme,
       }.to_json
     end
 
@@ -53,6 +64,9 @@ module Pasto
 
       user = new(name: data["name"]?.try(&.as_s?))
       user.created_at = Time.parse_rfc3339(data["created_at"].as_s)
+      user.pico_theme = data["pico_theme"]?.try(&.as_s?)
+      user.pico_color = data["pico_color"]?.try(&.as_s?)
+      user.syntax_theme = data["syntax_theme"]?.try(&.as_s?)
 
       # Load keys by their fingerprints
       if keys_data = data["keys"]?.try(&.as_a?)

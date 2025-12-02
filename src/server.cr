@@ -114,23 +114,48 @@ post "/profile" do |env|
     next "Unauthorized"
   end
 
-  # Get the new name from form
-  new_name = env.params.body["name"]?.try(&.strip)
+  # Check if this is an AJAX request (for theme updates)
+  is_ajax = env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
 
-  # Sanitize: limit length and remove problematic characters
-  if new_name && !new_name.empty?
-    new_name = new_name.gsub(/<[^>]*>/, "")  # Remove HTML tags
-    new_name = new_name[0..50]  # Limit to 50 chars
-    current_user.name = new_name
-  else
-    current_user.name = nil
+  # Get the new name from form
+  if env.params.body.has_key?("name")
+    new_name = env.params.body["name"]?.try(&.strip)
+    if new_name && !new_name.empty?
+      new_name = new_name.gsub(/<[^>]*>/, "")  # Remove HTML tags
+      new_name = new_name[0..50]  # Limit to 50 chars
+      current_user.name = new_name
+    else
+      current_user.name = nil
+    end
+  end
+
+  # Update theme preferences
+  if env.params.body.has_key?("pico_theme")
+    current_user.pico_theme = env.params.body["pico_theme"]?.try(&.strip)
+  end
+  if env.params.body.has_key?("pico_color")
+    current_user.pico_color = env.params.body["pico_color"]?.try(&.strip)
+  end
+  if env.params.body.has_key?("syntax_theme")
+    current_user.syntax_theme = env.params.body["syntax_theme"]?.try(&.strip)
   end
 
   if current_user.save
-    puts "User #{current_user.sepia_id} updated name to: #{current_user.name}"
-    env.redirect "/profile?updated=true"
+    puts "User #{current_user.sepia_id} updated"
+    if is_ajax
+      env.response.content_type = "application/json"
+      next {"status" => "ok"}.to_json
+    else
+      env.redirect "/profile?updated=true"
+    end
   else
-    env.redirect "/profile?error=save_failed"
+    if is_ajax
+      env.response.status_code = 500
+      env.response.content_type = "application/json"
+      next {"status" => "error"}.to_json
+    else
+      env.redirect "/profile?error=save_failed"
+    end
   end
 end
 
