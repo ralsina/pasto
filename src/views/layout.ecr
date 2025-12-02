@@ -71,23 +71,30 @@
       padding: 0.25rem 0.5rem;
       cursor: pointer;
       font-size: 1rem;
-      transition: background 0.2s;
+      transition: background 0.2s, color 0.2s;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-width: 2rem;
       height: 2rem;
+      color: var(--pico-primary);
     }
 
     .top-bar button:hover, .top-bar .top-bar-btn:hover {
       background: var(--pico-secondary-hover-background);
+      color: var(--pico-primary-hover);
+    }
+
+    .top-bar button svg, .top-bar .top-bar-btn svg,
+    .top-bar button i, .top-bar .top-bar-btn i {
+      color: inherit;
     }
 
     .user-menu-btn {
-      background: var(--pico-primary);
-      color: var(--pico-primary-inverse);
-      border: 1px solid var(--pico-primary-border);
+      background: var(--pico-secondary-background);
+      color: var(--pico-primary);
+      border: 1px solid var(--pico-muted-border-color);
       border-radius: 50%;
       width: 2rem;
       height: 2rem;
@@ -105,8 +112,8 @@
     }
 
     .user-menu-btn:hover {
-      background: var(--pico-primary-hover);
-      border-color: var(--pico-primary-hover-border);
+      background: var(--pico-secondary-hover-background);
+      color: var(--pico-primary-hover);
       transform: scale(1.05);
     }
 
