@@ -1,13 +1,39 @@
 <div class="profile-container">
   <% if current_user %>
+    <% updated = env.params.query["updated"]? == "true" %>
+    <% error = env.params.query["error"]? %>
+
+    <% if updated %>
+    <div class="alert alert-success">
+      ✓ Profile updated successfully!
+    </div>
+    <% end %>
+
+    <% if error %>
+    <div class="alert alert-error">
+      ✗ Failed to update profile. Please try again.
+    </div>
+    <% end %>
+
     <div class="user-info">
       <h2>User Profile</h2>
-      <div class="user-details">
-        <% if current_user.name %>
-        <div class="detail-row">
-          <strong>Name:</strong> <%= current_user.name %>
+      
+      <!-- Edit Name Form -->
+      <form method="post" action="/profile" class="edit-name-form">
+        <label for="name">Display Name</label>
+        <div class="input-group">
+          <input type="text" 
+                 id="name" 
+                 name="name" 
+                 value="<%= current_user.name || "" %>" 
+                 placeholder="Enter your display name"
+                 maxlength="50">
+          <button type="submit" class="save-btn">Save</button>
         </div>
-        <% end %>
+        <small>This name will be shown on your profile. Leave empty to remain anonymous.</small>
+      </form>
+
+      <div class="user-details">
         <div class="detail-row">
           <strong>SSH Keys:</strong> <%= current_user.keys.size %>
         </div>
@@ -105,12 +131,69 @@
     padding: 2rem;
   }
 
+  .alert {
+    padding: 1rem;
+    border-radius: var(--pico-border-radius);
+    margin-bottom: 1.5rem;
+  }
+
+  .alert-success {
+    background-color: var(--pico-ins-background);
+    border: 1px solid var(--pico-ins-border);
+    color: var(--pico-ins-color);
+  }
+
+  .alert-error {
+    background-color: var(--pico-del-background);
+    border: 1px solid var(--pico-del-border);
+    color: var(--pico-del-color);
+  }
+
   .user-info, .not-logged-in, .ssh-keys-section, .pastes-section {
     background-color: var(--pico-background-color);
     border: 1px solid var(--pico-border-color);
     border-radius: var(--pico-border-radius);
     padding: 2rem;
     margin-bottom: 1.5rem;
+  }
+
+  .edit-name-form {
+    margin: 1.5rem 0;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--pico-border-color);
+  }
+
+  .edit-name-form label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-group input {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .save-btn {
+    background-color: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+    border: none;
+    padding: 0.5rem 1.5rem;
+    white-space: nowrap;
+  }
+
+  .save-btn:hover {
+    background-color: var(--pico-primary-hover-background);
+  }
+
+  .edit-name-form small {
+    color: var(--pico-muted-color);
   }
 
   .ssh-keys-section h3, .pastes-section h3 {
@@ -300,6 +383,14 @@
 
     .user-info, .not-logged-in, .ssh-keys-section, .pastes-section {
       padding: 1.5rem;
+    }
+
+    .input-group {
+      flex-direction: column;
+    }
+
+    .save-btn {
+      width: 100%;
     }
 
     .detail-row {

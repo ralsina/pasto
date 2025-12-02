@@ -105,6 +105,35 @@ post "/logout" do |env|
   env.redirect "/?logout=success"
 end
 
+# Update user profile
+post "/profile" do |env|
+  current_user = Pasto.get_current_user(env)
+
+  unless current_user
+    env.response.status_code = 401
+    next "Unauthorized"
+  end
+
+  # Get the new name from form
+  new_name = env.params.body["name"]?.try(&.strip)
+
+  # Sanitize: limit length and remove problematic characters
+  if new_name && !new_name.empty?
+    new_name = new_name.gsub(/<[^>]*>/, "")  # Remove HTML tags
+    new_name = new_name[0..50]  # Limit to 50 chars
+    current_user.name = new_name
+  else
+    current_user.name = nil
+  end
+
+  if current_user.save
+    puts "User #{current_user.sepia_id} updated name to: #{current_user.name}"
+    env.redirect "/profile?updated=true"
+  else
+    env.redirect "/profile?error=save_failed"
+  end
+end
+
 # SSH Auth token route - validate token and create session
 get "/auth/:token" do |env|
   token_id = env.params.url["token"]

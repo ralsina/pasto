@@ -14,6 +14,11 @@ module Pasto
       @created_at = Time.utc
     end
 
+    # Display name - returns name or a friendly default
+    def display_name : String
+      @name.presence || "Anonymous User"
+    end
+
     # Add an SSH key to this user
     # Updates both sides of the relationship
     def add_key(key : SSHKey) : SSHKey
