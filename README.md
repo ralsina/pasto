@@ -1,54 +1,47 @@
 # Pasto
 
-A Crystal-based pastebin application with live syntax highlighting preview and extensive theme support.
+A Crystal-based pastebin application with live syntax highlighting, SSH access, user accounts, and extensive theme support.
 
 ![Pasto](https://img.shields.io/badge/Crystal-000000?style=for-the-badge&logo=crystal&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## Features
 
+### Core Features
 - 🚀 **Fast & Lightweight**: Built with Crystal for excellent performance
 - 🎨 **Live Preview**: Real-time syntax highlighting as you type
 - 🌈 **Extensive Theming**: 321+ syntax highlighting themes from Tartrazine
-- 🎭 **Smart Language Detection**: Filters unsupported languages (no more X10 errors!)
+- 🎭 **Smart Language Detection**: Auto-detects language with Hansa classification
 - 📱 **Responsive Design**: Works beautifully on desktop and mobile
 - 🔒 **Built-in Security**: Rate limiting and size validation
-- 🎯 **Clean UI**: Modern interface with Pico CSS
 
-## Live Preview
+### SSH Access
+- 🔑 **SSH Paste Creation**: Create pastes directly via SSH (`cat file | ssh pasto.example.com`)
+- 👤 **SSH Key Authentication**: Your SSH key becomes your identity
+- 🔗 **Automatic Account Linking**: SSH keys automatically linked to user accounts
 
-Pasto provides an innovative split-pane interface where you can:
+### User Accounts & Profiles
+- 📋 **User Profiles**: View and manage all your pastes in one place
+- ✏️ **Editable Display Names**: Personalize your profile
+- 🎨 **Theme Preferences**: UI and syntax theme preferences saved per user
+- 🔐 **Session Management**: Secure web sessions with cookie-based auth
 
-- **Type code** in the left pane
-- **See instant syntax highlighting** in the right pane
-- **Switch languages** and watch the preview update immediately
-- **Change themes** and see the highlighting update in real-time
-- **Resize panels** for your preferred viewing ratio
+### Paste Management
+- 📝 **Paste Titles**: Add optional titles or auto-generate from content
+- 📜 **Version History**: Full edit history with Sepia versioning
+- 🕐 **View Past Versions**: Browse and compare previous versions
+- ✏️ **Edit Your Pastes**: Modify pastes you own
+- 🗑️ **Delete Pastes**: Remove pastes from your profile
 
-### Theme Support
+### Modern UI
+- 🎯 **Clean Interface**: Modern design with Pico CSS and Lucide icons
+- 📐 **Collapsible Sidebar**: Theme controls in a space-saving sidebar
+- ⌨️ **CodeJar Editor**: Lightweight code editor with syntax highlighting
+- 🔄 **Live Preview Pane**: See rendered output as you type
 
-- **15 Pico CSS color schemes** for UI styling
-- **321 Tartrazine syntax themes** for code highlighting
-- **Light/Dark modes** with system preference detection
-- **Instant switching** with localStorage persistence
+## Quick Start
 
-## Smart Language Filtering
-
-Pasto intelligently handles language detection:
-
-- **Hansa Integration**: Uses advanced language classification
-- **Tartrazine Filtering**: Only shows languages that actually work with syntax highlighting
-- **Graceful Fallback**: Automatically selects the best supported language
-- **No More Errors**: Eliminates unsupported language errors like "X10"
-
-## Installation
-
-### Prerequisites
-
-- Crystal 1.0 or higher
-- Shards (Crystal package manager)
-
-### Build from Source
+### Installation
 
 ```bash
 # Clone the repository
@@ -59,162 +52,207 @@ cd pasto
 shards install
 
 # Build the application
-shards build
+shards build --release
 
 # Run the server
-./bin/pasto --port 3000
+./bin/pasto
 ```
 
-## Usage
+### SSH Usage
 
-### Running the Server
+Create a paste via SSH:
 
 ```bash
-# Start on default port 3000
-./bin/pasto
+# Pipe content directly
+cat myfile.py | ssh -p 2222 pasto.example.com
 
-# Start on custom port
-./bin/pasto --port 8080
-
-# Set maximum paste size (default: 100KB)
-./bin/pasto --max-paste-size 5242880  # 5MB
-
-# Specify default theme
-./bin/pasto --theme dracula
+# Or use echo
+echo "Hello, World!" | ssh -p 2222 pasto.example.com
 ```
 
-### Configuration
+The server returns the URL of your new paste.
 
-Pasto can be configured via:
+### Web Usage
 
-- **Command line arguments**
-- **Environment variables**
-- **Configuration file** (`pasto.yml`)
+1. Navigate to `http://localhost:3000`
+2. Type or paste your code in the editor
+3. Watch the live preview update
+4. Click **+** to create the paste
 
-#### Environment Variables
+## Configuration
+
+Pasto supports three configuration methods (in order of priority):
+
+1. **Command line arguments**
+2. **Environment variables** (prefixed with `PASTO_`)
+3. **Configuration file** (`pasto.yml`)
+
+### Command Line Options
+
+```bash
+./bin/pasto \
+  --port 3000 \
+  --bind 0.0.0.0 \
+  --max-paste-size 102400 \
+  --theme default-dark \
+  --ssh-enabled true \
+  --ssh-port 2222 \
+  --storage-dir ./data \
+  --cache-dir ./public/cache
+```
+
+### Environment Variables
 
 ```bash
 export PASTO_PORT=3000
 export PASTO_MAX_PASTE_SIZE=102400
 export PASTO_THEME=monokai
+export PASTO_SSH_ENABLED=true
+export PASTO_SSH_PORT=2222
 export PASTO_RATE_LIMIT=10
-export PASTO_RATE_WINDOW=60
 ```
 
-#### Configuration File
-
-Create `pasto.yml`:
+### Configuration File (`pasto.yml`)
 
 ```yaml
 port: 3000
+bind: "0.0.0.0"
 max_paste_size: 102400  # 100KB
-theme: monokai
-rate_limit:
-  requests: 10
-  window: 60
+theme: default-dark
+ssh_enabled: true
+ssh_port: 2222
+storage_dir: ./data
+cache_dir: ./public/cache
+rate_limit: 10
+rate_window: 60
 ```
 
 ## API Endpoints
 
-### Create Paste
+### Create Paste (Web)
 
 ```bash
 curl -X POST http://localhost:3000 \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "content=print('Hello, World!')&language=python&theme=dracula"
+  -d "content=print('Hello!')&language=python&title=My%20Paste"
 ```
 
-### Get Paste
+### View Paste
 
 ```bash
+# View paste
 curl http://localhost:3000/{paste-id}
+
+# View with language override
+curl http://localhost:3000/{paste-id}?lang=python
+
+# View with file extension
+curl http://localhost:3000/{paste-id}.py
 ```
 
-### Live Syntax Highlighting API
+### View Paste History
+
+```bash
+# View all versions (owner only)
+curl http://localhost:3000/{paste-id}/history
+
+# View specific version
+curl http://localhost:3000/{paste-id}/version/1
+```
+
+### Live Highlighting API
 
 ```bash
 curl -X POST http://localhost:3000/highlight \
-  -H "Content-Type: application/x-www-form-urlencoded" \
   -d "content=def hello(): pass&language=python&theme=monokai"
 ```
 
-## Security Features
-
-- **Rate Limiting**: 10 requests per minute per IP (configurable)
-- **Size Validation**: Configurable maximum paste size limits
-- **Input Sanitization**: Proper HTML escaping for all content
-- **Error Handling**: Graceful fallbacks for unsupported languages
-
 ## Supported Languages
 
-Pasto supports 32+ programming languages including:
+Pasto supports 35+ programming languages including:
 
 - **Popular**: Python, JavaScript, TypeScript, Java, C, C++, C#, Go, Rust
-- **Web**: HTML, CSS, SCSS, JSON, XML, Markdown
-- **Systems**: Bash, Shell, PowerShell
-- **Data**: SQL, MySQL, PostgreSQL
-- **Many more**: PHP, Ruby, Perl, Kotlin, Scala, and more
+- **Web**: HTML, CSS, SCSS, Sass, JSON, XML, YAML, Markdown
+- **Systems**: Bash, Shell, PowerShell, Dockerfile
+- **Data**: SQL, MySQL, PostgreSQL, CSV
+- **And more**: PHP, Ruby, Perl, Kotlin, Scala, ActionScript...
 
-*Note: Only languages with working Tartrazine lexers are shown in the dropdown.*
+*Only languages with working Tartrazine lexers are available.*
 
-## Development
+## Theme Support
 
-### Project Structure
+### UI Themes (Pico CSS)
+- 15 color schemes: Slate, Zinc, Gray, Neutral, Stone, Red, Orange, Amber, Yellow, Lime, Green, Emerald, Cyan, Sky, Indigo, Violet, Fuchsia, Pink
+- Light/Dark/Auto modes with system preference detection
+
+### Syntax Themes (Tartrazine)
+- 321+ themes including popular ones like Dracula, Monokai, Nord, Solarized, One Dark, GitHub, VS Code themes, and many more
+
+## Project Structure
 
 ```
 pasto/
 ├── src/
-│   ├── pasto.cr          # Main application logic
-│   ├── server.cr         # Web server and routes
-│   └── paste.cr          # Paste model and highlighting
-├── shards.yml            # Crystal dependencies
-├── pasto.yml             # Configuration file
-└── README.md
+│   ├── pasto.cr           # Entry point, configuration
+│   ├── server.cr          # Kemal routes and middleware
+│   ├── paste.cr           # Paste model, highlighting, themes
+│   ├── pasto_ssh.cr       # SSH server entry point
+│   └── views/
+│       ├── layout.ecr     # Main layout with sidebar
+│       ├── index.ecr      # Create paste page
+│       ├── show.ecr       # View paste page
+│       ├── edit.ecr       # Edit paste page
+│       ├── history.ecr    # Version history page
+│       └── profile_content.ecr  # User profile
+├── data/                  # Sepia storage directory
+├── public/cache/          # Cached rendered pastes
+├── sessions/              # Session storage
+└── pasto.yml              # Configuration file
 ```
 
-### Development Commands
+## Development
 
 ```bash
 # Install dependencies
 shards install
 
+# Build
+shards build
+
+# Build release
+shards build --release
+
 # Run tests
 crystal spec
 
-# Check formatting
+# Format code
 crystal tool format src/
 
-# Linting
-ameba src/
-
-# Build in development mode
-shards build
-
-# Build with release optimizations
-shards build --release
+# Lint
+./bin/ameba src/
 ```
 
-### Contributing
+## Security Features
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and ensure they pass
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+- **Rate Limiting**: Configurable per-IP rate limits
+- **Size Validation**: Maximum paste size enforcement
+- **HTML Escaping**: All content properly sanitized
+- **Session Security**: Secure cookie-based sessions
+- **SSH Key Auth**: Public key authentication for SSH access
+
+## Dependencies
+
+- **[Kemal](https://kemalcr.com/)**: Web framework
+- **[Tartrazine](https://github.com/ralsina/tartrazine)**: Syntax highlighting (321+ themes)
+- **[Hansa](https://github.com/ralsina/hansa)**: Language classification
+- **[Sepia](https://github.com/ralsina/sepia)**: Object persistence with versioning
+- **[Shirk](https://github.com/ralsina/shirk)**: SSH server
+- **[Pico CSS](https://picocss.com/)**: Minimal CSS framework
+- **[Lucide](https://lucide.dev/)**: Icon library
+- **[CodeJar](https://medv.io/codejar/)**: Code editor
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- **Tartrazine**: Crystal syntax highlighting library with 321+ themes
-- **Hansa**: Language classification for smart detection
-- **Kemal**: Crystal web framework
-- **Pico CSS**: Minimalist CSS framework
-- **Sepia**: Data serialization library
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## Author
 
@@ -222,4 +260,4 @@ Created by [Roberto Alsina](https://github.com/ralsina)
 
 ---
 
-**Pasto** - The modern pastebin with live preview.
+**Pasto** - Modern pastebin with SSH access and live preview.
