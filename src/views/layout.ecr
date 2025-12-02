@@ -180,6 +180,8 @@
       transition: all 0.3s ease;
       position: relative;
       z-index: 100;
+      overflow: hidden;
+      white-space: nowrap;
     }
 
     .sidebar.collapsed {
@@ -187,6 +189,11 @@
       padding: 0;
       overflow: hidden;
       border: none;
+      visibility: hidden;
+    }
+
+    .sidebar:not(.collapsed) {
+      visibility: visible;
     }
 
     .sidebar-toggle {
