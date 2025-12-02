@@ -75,7 +75,7 @@ module PastoSSH
 
     # Save the SSHKey (with reference to the paste)
     if ssh_key.save
-      url = "#{base_url}/paste/#{paste.sepia_id}\n"
+      url = "#{base_url}/#{paste.sepia_id}\n"
       ctx.write(url)
       puts "SSH: created paste #{paste.sepia_id} (key has #{ssh_key.pastes.size} pastes)"
       0
