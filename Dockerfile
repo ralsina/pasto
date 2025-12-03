@@ -36,6 +36,10 @@ COPY src/ ./src/
 # -Dinotify: use inotify backend for file watching
 RUN shards build --release -Dinotify
 
+# Compress binaries with UPX for smaller image size
+RUN apk add --no-cache upx && \
+    upx --best --lzma /app/bin/pasto /app/bin/pasto-ssh
+
 # ============================================
 # Stage 2: Minimal Alpine runtime
 # ============================================
