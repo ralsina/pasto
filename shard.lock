@@ -17,6 +17,10 @@ shards:
     git: https://github.com/crystal-china/base58.cr.git
     version: 0.1.0+git.commit.f7193c497efff614cf87b03f0bd07741915a592f
 
+  crystar:
+    git: https://github.com/naqvis/crystar.git
+    version: 0.4.0
+
   docopt: # Overridden
     git: https://github.com/ralsina/docopt.cr.git
     version: 0.3.1
@@ -63,7 +67,7 @@ shards:
 
   sepia:
     git: https://github.com/ralsina/sepia.git
-    version: 0.2.0
+    version: 0.3.0
 
   shirk:
     git: https://github.com/ralsina/shirk.git
