@@ -1,11 +1,8 @@
 <div class="help-markdown" id="help-markdown"></div>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-  fetch('/help.md')
-    .then(resp => resp.text())
-    .then(md => {
-      document.getElementById('help-markdown').innerHTML = marked.parse(md);
-    });
+  const helpMarkdown = `<%= Pasto::EmbeddedAssets::HELP_MD %>`;
+  document.getElementById('help-markdown').innerHTML = marked.parse(helpMarkdown);
 </script>
 <style>
   .help-markdown {
