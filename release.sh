@@ -35,7 +35,7 @@ echo "Generated changelog: $GIT_CLIFF_CHANGELOG"
 
 
 # Step 4: Update dependencies and commit version bump, changelogs, and lockfile
-shards update
+shards update --production
 if ! git diff --quiet shard.yml "$GIT_CLIFF_CHANGELOG" CHANGELOG.md shard.lock; then
   git add shard.yml "$GIT_CLIFF_CHANGELOG" CHANGELOG.md shard.lock
   git commit -m "chore(release): v$NEW_VERSION"
