@@ -1,14 +1,116 @@
 <div class="editor-preview-container">
+
   <div class="editor-pane">
     <div class="codejar-wrap">
       <div class="codejar-editor" id="editor"></div>
     </div>
   </div>
+<style>
+  .eye-overlay-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: var(--pico-secondary-background);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 0.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s, background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .eye-overlay-btn:hover {
+    opacity: 1;
+    background: var(--pico-secondary-hover-background);
+  }
+  .eye-overlay-btn i, .eye-overlay-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--pico-primary);
+  }
+  .editor-md-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--pico-card-background-color, var(--pico-background-color));
+    color: var(--pico-color);
+    padding: 1rem;
+    overflow: auto;
+    border: 2px solid var(--pico-primary);
+    border-radius: var(--pico-border-radius);
+    font-size: 0.95rem;
+    z-index: 1;
+  }
+</style>
 
-  <div class="preview-pane">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  // Markdown editor preview toggle logic
+  let editorMarkdownShowing = false;
+  function isEditorMarkdown() {
+    const lang = (document.getElementById('language')?.value || '').toLowerCase();
+    const title = (document.getElementById('paste-title')?.value || '').toLowerCase();
+    // Try to get detected language from the preview (if present)
+      const detected = (window.detectedLanguage || '').toLowerCase();
+      return lang === 'markdown' || title.endsWith('.md') || detected === 'markdown';
+  }
+
+  function updateEditorMarkdownButton() {
+    const btn = document.getElementById('editor-md-toggle');
+    if (isEditorMarkdown()) {
+      btn.style.display = '';
+    } else {
+      btn.style.display = 'none';
+      if (editorMarkdownShowing) toggleEditorMarkdownView(true); // force source view
+    }
+  }
+
+  function toggleEditorMarkdownView(forceSource) {
+    const btn = document.getElementById('editor-md-toggle');
+    const editor = document.getElementById('editor');
+    const mdPreview = document.getElementById('editor-md-preview');
+    const previewContent = document.getElementById('preview');
+    if (!editorMarkdownShowing && !forceSource) {
+      // Show rendered markdown in preview pane
+      mdPreview.innerHTML = marked.parse(jar ? jar.toString() : '');
+      previewContent.style.display = 'none';
+      mdPreview.style.display = '';
+      btn.innerHTML = '<i data-lucide="file-code-2"></i>';
+      btn.title = 'Show source';
+      lucide.createIcons();
+      editorMarkdownShowing = true;
+    } else {
+      // Show source
+      mdPreview.style.display = 'none';
+      previewContent.style.display = '';
+      btn.innerHTML = '<i data-lucide="eye"></i>';
+      btn.title = 'Show rendered Markdown';
+      lucide.createIcons();
+      editorMarkdownShowing = false;
+    }
+  }
+
+  function updateEditorMarkdownPreviewLive() {
+    if (editorMarkdownShowing) {
+      const preview = document.getElementById('editor-md-preview');
+      preview.innerHTML = marked.parse(jar ? jar.toString() : '');
+    }
+  }
+</script>
+
+  <div class="preview-pane" style="position:relative;">
+    <button class="eye-overlay-btn" id="editor-md-toggle" style="display:none; position:absolute; top:0.75rem; right:0.75rem;" title="Show rendered Markdown" onclick="toggleEditorMarkdownView()">
+      <i data-lucide="eye"></i>
+    </button>
     <div class="preview-content" id="preview">
       <pre><code>Start typing to see preview...</code></pre>
     </div>
+    <div id="editor-md-preview" class="editor-md-preview" style="display:none;"></div>
   </div>
 </div>
 
@@ -166,6 +268,9 @@
     .then(response => response.json())
     .then(data => {
       document.getElementById('preview').innerHTML = data.html;
+      window.detectedLanguage = (data.detected_language || '').toLowerCase();
+      console.log('Detected language:', window.detectedLanguage);
+      updateEditorMarkdownButton();
 
       // Update language selector text to show detected language if auto-detection is active
       const languageSelect = document.getElementById('language');
@@ -263,7 +368,12 @@
     // Update preview on content change
     jar.onUpdate(() => {
       debouncedUpdatePreview();
+      updateEditorMarkdownPreviewLive();
     });
+  // Update markdown toggle button on language/title change
+  document.getElementById('language').addEventListener('change', updateEditorMarkdownButton);
+  document.getElementById('paste-title').addEventListener('input', updateEditorMarkdownButton);
+  updateEditorMarkdownButton();
 
     // Restore preview visibility preference
     const previewHidden = localStorage.getItem('previewHidden') === 'true';
