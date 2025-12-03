@@ -176,22 +176,46 @@ DOC
           "--base-url=#{config.base_url}",
         ]
 
-        # Start the SSH server process
+        # Start the SSH server process with filtered stderr
+        # Filter out the epoll_ctl error which is a known Crystal/libssh conflict
         process = Process.new(
           ssh_binary,
           args,
           output: Process::Redirect::Inherit,
-          error: Process::Redirect::Inherit
+          error: Process::Redirect::Pipe
         )
         @@ssh_process = process
 
+        # Filter stderr in a separate fiber
+        err_io = process.error
+        spawn do
+          if err = err_io
+            begin
+              while line = err.gets
+                # Skip the epoll_ctl error and its stack trace
+                next if line.includes?("epoll_ctl(EPOLL_CTL_ADD): File exists")
+                next if line.includes?("signal-loop")
+                next if line.includes?("/usr/lib/crystal/")
+                next if line.includes?("from ???")
+                STDERR.puts line
+              end
+            rescue IO::Error
+              # Pipe closed, process exited
+            end
+          end
+        end
+
         # Wait for the process to exit
         status = process.wait
+        err_io.try &.close rescue nil
         @@ssh_process = nil
 
         if status.success?
           puts "✅ SSH server stopped normally."
           break
+        elsif status.signal_exit?
+          puts "⚠️  SSH server killed by signal #{status.exit_signal?}. Restarting in 5 seconds..."
+          sleep 5.seconds
         else
           puts "⚠️  SSH server exited with code #{status.exit_code}. Restarting in 5 seconds..."
           sleep 5.seconds
