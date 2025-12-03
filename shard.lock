@@ -35,7 +35,7 @@ shards:
 
   hansa:
     git: https://github.com/ralsina/hansa.git
-    version: 0.1.1
+    version: 0.1.2
 
   inotify:
     git: https://github.com/petoem/inotify.cr.git

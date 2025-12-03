@@ -1,70 +1,80 @@
 # Pasto Dockerfile
-# Multi-stage build for smaller final image
+# Dynamic build with minimal Alpine runtime
 
 # ============================================
-# Stage 1: Build the application
+# Stage 1: Build the Crystal application
 # ============================================
-FROM crystallang/crystal:1.14-alpine AS builder
+FROM alpine:edge AS builder
+
+# Install Crystal and build dependencies
+RUN apk add --no-cache \
+    crystal \
+    shards \
+    git \
+    gc-dev \
+    pcre2-dev \
+    yaml-dev \
+    openssl-dev \
+    libxml2-dev \
+    zlib-dev \
+    xz-dev \
+    libevent-dev \
+    libssh-dev
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache \
-    yaml-dev \
-    openssl-dev \
-    zlib-dev \
-    git
-
 # Copy dependency files first for better caching
-COPY shard.yml shard.lock ./
+COPY shard.yml shard.lock shard.override.yml ./
 
 # Install dependencies
 RUN shards install --production
 
 # Copy source code
 COPY src/ ./src/
-COPY public/ ./public/
 
-# Build both binaries in release mode with static linking
-RUN shards build --release --static
+# Build both binaries in release mode
+# -Dinotify: use inotify backend for file watching
+RUN shards build --release -Dinotify
 
 # ============================================
-# Stage 2: Runtime image
+# Stage 2: Minimal Alpine runtime
 # ============================================
-FROM alpine:3.19
+FROM alpine:edge
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install only required runtime libraries
 RUN apk add --no-cache \
-    libgcc \
     ca-certificates \
-    tzdata
+    tzdata \
+    libgcc \
+    gc \
+    pcre2 \
+    yaml \
+    libevent \
+    libssh \
+    libxml2 \
+    zlib \
+    xz-libs
 
-# Create non-root user for security
+# Create non-root user
 RUN addgroup -g 1000 pasto && \
     adduser -D -u 1000 -G pasto pasto
 
-# Copy binaries from builder
+# Copy binaries
 COPY --from=builder /app/bin/pasto /app/bin/pasto
 COPY --from=builder /app/bin/pasto-ssh /app/bin/pasto-ssh
-
-# Copy public assets (CSS, JS, etc)
-COPY --from=builder /app/public /app/public
 
 # Create directories for persistent data
 RUN mkdir -p /app/data /app/public/cache /app/sessions && \
     chown -R pasto:pasto /app
 
-# Switch to non-root user
 USER pasto
 
 # Expose ports
-# 3000 - HTTP server
-# 2222 - SSH server
 EXPOSE 3000 2222
 
-# Default environment variables
+# Environment variables
 ENV PASTO_PORT=3000 \
     PASTO_BIND=0.0.0.0 \
     PASTO_STORAGE_DIR=/app/data \
@@ -72,12 +82,11 @@ ENV PASTO_PORT=3000 \
     PASTO_SSH_ENABLED=true \
     PASTO_SSH_PORT=2222 \
     PASTO_SSH_BIND=0.0.0.0 \
-    PASTO_ENV=production
+    PASTO_ENV=production \
+    TZ=UTC
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
-# Run the main Pasto server
-# The SSH server runs as a separate process/container
-CMD ["/app/bin/pasto"]
+ENTRYPOINT ["/app/bin/pasto"]

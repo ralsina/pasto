@@ -17,7 +17,7 @@ dependencies:
     github: ralsina/docopt-config
   hansa:
     github: ralsina/hansa
-    version: "~> 0.1.1"
+    version: "~> 0.1.2"
   tartrazine:
     github: ralsina/tartrazine
   sepia:
