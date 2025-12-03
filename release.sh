@@ -34,6 +34,12 @@ git cliff --output CHANGELOG.md
 echo "Generated changelog: $GIT_CLIFF_CHANGELOG"
 
 
+
+# Step 5: Build static binaries and files
+./build_static.sh
+
+echo "Static binaries built."
+
 # Step 4: Update dependencies and commit version bump, changelogs, and lockfile
 shards update --production
 if ! git diff --quiet shard.yml "$GIT_CLIFF_CHANGELOG" CHANGELOG.md shard.lock; then
@@ -47,10 +53,7 @@ git push --tags
 
 echo "Committed and pushed release tag v$NEW_VERSION"
 
-# Step 5: Build static binaries and files
-./build_static.sh
 
-echo "Static binaries built."
 
 # Step 6: Build, tag, and push Docker images
 ./upload_docker.sh "$NEW_VERSION"
