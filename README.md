@@ -340,3 +340,7 @@ Created by [Roberto Alsina](https://github.com/ralsina)
 ---
 
 **Pasto** - Modern pastebin with SSH access and live preview.
+
+## Public Instance
+
+A public Pasto instance is available at [https://pasto1.ralsina.me](https://pasto1.ralsina.me).
