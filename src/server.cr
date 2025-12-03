@@ -961,8 +961,9 @@ end
 
 # Favicon handler - returns embedded PNG favicon
 get "/favicon.ico" do |env|
-  # Serve embedded PNG favicon
+  # Serve embedded PNG favicon with caching
   env.response.content_type = "image/png"
+  env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
   env.response.content_length = Pasto::EmbeddedAssets::FAVICON_PNG.size
   Pasto::EmbeddedAssets::FAVICON_PNG
 end
