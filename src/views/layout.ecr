@@ -1,51 +1,17 @@
 
-
 <!DOCTYPE html>
 <html lang="en" data-theme="auto">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      /* Chivo fonts */
-      body {
-        font-family: 'Chivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      }
-
-      .paste-textarea, .preview-content code, .preview-content pre {
-        font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-      }
-
-      code, pre {
-        font-family: 'Chivo Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-      }
-
-      /* Main layout */
-      .paste-form {
-        display: flex;
-        min-height: 100vh;
-        margin: 0;
-        padding: 0;
-      }
-
-      .paste-form .sidebar {
-        width: 300px;
-        flex-shrink: 0;
-      }
-
-      .paste-form .main-content {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .app-container {
-        display: grid;
-        grid-template-columns: 300px 1fr;
-        height: 100vh;
-        margin: 0;
-        overflow: hidden;
-      }
-
-      .app-container.sidebar-collapsed {
-        grid-template-columns: 0px 1fr;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasto</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset body margins and prevent overflow */
     html, body {
       margin: 0;
       padding: 0;
@@ -98,7 +64,7 @@
       height: auto;
     }
 
-    .top-bar button, .top-bar .top-bar-btn, .user-menu-btn {
+    .top-bar button, .top-bar .top-bar-btn {
       background: transparent;
       border: 2px solid var(--pico-primary);
       border-radius: 4px;
@@ -122,8 +88,8 @@
       color: var(--pico-primary-inverse);
     }
 
-    .top-bar button svg, .top-bar .top-bar-btn svg, .user-menu-btn svg,
-    .top-bar button i, .top-bar .top-bar-btn i, .user-menu-btn i {
+    .top-bar button svg, .top-bar .top-bar-btn svg,
+    .top-bar button i, .top-bar .top-bar-btn i {
       color: inherit;
       width: 24px !important;
       height: 24px !important;
@@ -176,6 +142,7 @@
       }
     }
   </style>
+  <style>
     /* Chivo fonts */
     body {
       font-family: 'Chivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

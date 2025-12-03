@@ -2,11 +2,14 @@
   document.addEventListener('DOMContentLoaded', function() {
     const topBarRight = document.querySelector('.top-bar-right');
     if (topBarRight) {
-      topBarRight.insertAdjacentHTML('afterbegin', `
-        <a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>
-        <button onclick="document.getElementById('logout-form').submit()" class="top-bar-btn" title="Logout"><i data-lucide="log-out"></i></button>
-      `);
-      lucide.createIcons();
+      let html = `<a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>`;
+      <% if current_user %>
+      html += `<button onclick=\"document.getElementById('logout-form').submit()\" class=\"top-bar-btn\" title=\"Logout\"><i data-lucide=\"log-out\"></i></button>`;
+      <% end %>
+      topBarRight.insertAdjacentHTML('afterbegin', html);
+      if (window.lucide) {
+        lucide.createIcons();
+      }
     }
   });
 </script>
@@ -127,11 +130,8 @@
         <p>SSH login is not currently enabled on this server.</p>
         <% end %>
       </div>
-
-      <div class="profile-actions">
-        <a href="/" class="back-btn">← Back to Pasto</a>
-      </div>
     </div>
+
   <% end %>
 </div>
 

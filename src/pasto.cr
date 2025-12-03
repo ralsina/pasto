@@ -240,32 +240,18 @@ DOC
     ]
 
     puts "🔍 Looking for pasto-ssh binary..."
-    puts "   Executable path: #{Process.executable_path || "(unknown)"}"
-    puts "   Executable dir: #{File.dirname(Process.executable_path || "")}"
-
     candidates.each do |path|
-      if File.exists?(path)
-        if File.info(path).permissions.owner_execute?
-          puts "   ✓ Found executable: #{path}"
-          return path
-        else
-          puts "   ✗ Found but not executable: #{path}"
-        end
-      else
-        puts "   ✗ Not found: #{path}"
+      puts "   Trying: #{path}"
+      if File.exists?(path) && File.info(path).permissions.owner_execute?
+        return path
       end
     end
-
     # Try to find in PATH
-    puts "   Checking PATH with 'which pasto-ssh'..."
-    result = Process.run("which", ["pasto-ssh"], output: Process::Redirect::Pipe)
-    if result.success?
-      puts "   ✓ Found in PATH: pasto-ssh"
+    puts "   Trying: PATH (which pasto-ssh)"
+    status = Process.run("which", ["pasto-ssh"], output: Process::Redirect::Pipe)
+    if status.success?
       return "pasto-ssh"
-    else
-      puts "   ✗ Not found in PATH"
     end
-
     nil
   end
 
