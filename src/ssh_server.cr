@@ -4,11 +4,18 @@ require "shirk"
 require "sepia"
 require "uri"
 require "docopt"
+require "rate_limiter"
 
 module PastoSSH
   @@current_fingerprint = ""
   @@storage_dir = "./data"
   @@base_url = "http://localhost:5000"
+
+  # Rate limiters for SSH operations
+  @@paste_limiter : RateLimiter?
+  @@login_limiter : RateLimiter?
+  @@conn_limiter : RateLimiter?
+  @@rate_mutex = Mutex.new
 
   def self.storage_dir=(dir : String)
     @@storage_dir = dir
@@ -19,6 +26,61 @@ module PastoSSH
     @@base_url = url
   end
 
+  def self.init_rate_limiters(paste_limit : Int32, paste_window : Int32,
+                              login_limit : Int32, login_window : Int32,
+                              conn_limit : Int32, conn_window : Int32)
+    @@rate_mutex.synchronize do
+      @@paste_limiter = RateLimiter.new(paste_limit, paste_window)
+      @@login_limiter = RateLimiter.new(login_limit, login_window)
+      @@conn_limiter = RateLimiter.new(conn_limit, conn_window)
+    end
+  end
+
+  # Check connection rate limit
+  private def self.allow_connection?(fingerprint : String) : Bool
+    @@rate_mutex.synchronize do
+      if limiter = @@conn_limiter
+        allowed = limiter.allow?(fingerprint)
+        unless allowed
+          puts "⚠️  SSH rate limit hit: connection limit (Key: #{fingerprint})"
+        end
+        allowed
+      else
+        true
+      end
+    end
+  end
+
+  # Check paste rate limit
+  private def self.allow_paste?(fingerprint : String) : Bool
+    @@rate_mutex.synchronize do
+      if limiter = @@paste_limiter
+        allowed = limiter.allow?(fingerprint)
+        unless allowed
+          puts "⚠️  SSH rate limit hit: paste limit (Key: #{fingerprint})"
+        end
+        allowed
+      else
+        true
+      end
+    end
+  end
+
+  # Check login rate limit
+  private def self.allow_login?(fingerprint : String) : Bool
+    @@rate_mutex.synchronize do
+      if limiter = @@login_limiter
+        allowed = limiter.allow?(fingerprint)
+        unless allowed
+          puts "⚠️  SSH rate limit hit: login limit (Key: #{fingerprint})"
+        end
+        allowed
+      else
+        true
+      end
+    end
+  end
+
   def self.create_server(host_key : String, port : Int32, bind_address : String)
     server = Shirk::Server.new(
       host: bind_address,
@@ -26,11 +88,18 @@ module PastoSSH
       host_key: host_key
     )
 
-    # Accept all public keys and store the fingerprint
+    # Accept all public keys and store the fingerprint (with rate limiting)
     server.on_auth_pubkey do |user, fingerprint|
       puts "SSH auth: user '#{user}' with key #{fingerprint}"
+
+      # Check connection rate limit
+      unless allow_connection?(fingerprint)
+        puts "SSH auth: rejected due to rate limit"
+        next false
+      end
+
       @@current_fingerprint = fingerprint
-      true # Accept all keys
+      true # Accept key
     end
 
     # Handle exec requests (ssh host command)
@@ -82,6 +151,12 @@ DOC
 
   # Handle paste command
   private def self.handle_paste(ctx, fingerprint : String, base_url : String, args : String) : Int32
+    # Check paste rate limit
+    unless allow_paste?(fingerprint)
+      ctx.write_stderr("Rate limit exceeded. Please wait before creating another paste.\n")
+      return 1
+    end
+
     content = ctx.stdin
 
     puts "SSH: received #{content.bytesize} bytes of content"
@@ -101,17 +176,17 @@ DOC
         # Split args into array for docopt
         argv = args.split(/\s+/)
         opts = Docopt.docopt(PASTE_DOC, argv: argv, exit: false)
-        
+
         # Docopt returns long option names as keys
         language = opts["--language"]?.try(&.to_s)
         language = nil if language.nil? || language == "false" || language == "" || language == "nil"
-        
+
         filename = opts["--filename"]?.try(&.to_s)
         filename = nil if filename.nil? || filename == "false" || filename == "" || filename == "nil"
-        
+
         title = opts["--title"]?.try(&.to_s)
         title = nil if title.nil? || title == "false" || title == "" || title == "nil"
-        
+
         puts "SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}"
       rescue ex : Docopt::DocoptException
         ctx.write_stderr("Invalid options: #{ex.message}\n")
@@ -122,7 +197,7 @@ DOC
 
     # Load or create SSHKey, create paste through it
     ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
-    
+
     # Create paste - language detection from filename happens in Paste constructor
     paste = ssh_key.create_paste(
       content: content,
@@ -152,6 +227,12 @@ DOC
 
   # Handle login command
   private def self.handle_login(ctx, fingerprint : String, base_url : String) : Int32
+    # Check login rate limit
+    unless allow_login?(fingerprint)
+      ctx.write_stderr("Too many login attempts. Please wait before trying again.\n")
+      return 1
+    end
+
     # Create auth token for this fingerprint
     token = Pasto::AuthToken.new(fingerprint)
 
@@ -222,14 +303,14 @@ DOC
     pastes.reverse.each do |paste|
       # Format the date nicely
       created = paste.created_at.to_s("%Y-%m-%d %H:%M UTC")
-      
+
       # Get a preview of the content (first line, truncated)
       preview = paste.content.lines.first?.try(&.strip) || ""
       preview = preview[0, 40] + "..." if preview.size > 40
-      
+
       # Show language if detected
       lang = paste.language.try { |l| " [#{l}]" } || ""
-      
+
       ctx.write("#{base_url}/#{paste.sepia_id}\n")
       ctx.write("  Created: #{created}#{lang}\n")
       ctx.write("  Preview: #{preview}\n\n")

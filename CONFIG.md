@@ -59,6 +59,18 @@ export PASTO_ENV=production
 | `PASTO_ENV` | Environment (development/production) | development |
 | `PASTO_THEME` | Syntax highlighting theme | default-dark |
 | `PASTO_MAX_PASTE_SIZE` | Maximum paste size in bytes | 102400 |
+| `PASTO_RATE_PASTE_LIMIT` | Max paste creations per IP per window | 10 |
+| `PASTO_RATE_PASTE_WINDOW` | Window in seconds for paste limit | 60 |
+| `PASTO_RATE_PASTE_USER_LIMIT` | Max paste creations per user per window | 30 |
+| `PASTO_RATE_PASTE_USER_WINDOW` | Window in seconds for user paste limit | 60 |
+| `PASTO_RATE_PASTE_GLOBAL_LIMIT` | Max global paste creations per window | 100 |
+| `PASTO_RATE_PASTE_GLOBAL_WINDOW` | Window in seconds for global paste limit | 60 |
+| `PASTO_RATE_HIGHLIGHT_LIMIT` | Max highlight requests per IP per window | 300 |
+| `PASTO_RATE_HIGHLIGHT_WINDOW` | Window in seconds for highlight limit | 60 |
+| `PASTO_RATE_LOGIN_LIMIT` | Max login attempts per IP per window | 5 |
+| `PASTO_RATE_LOGIN_WINDOW` | Window in seconds for login limit | 300 |
+| `PASTO_RATE_HTTP_LIMIT` | Max HTTP requests per IP per window | 200 |
+| `PASTO_RATE_HTTP_WINDOW` | Window in seconds for HTTP limit | 60 |
 
 ## Command Line Arguments
 
@@ -171,11 +183,76 @@ export PASTO_MAX_PASTE_SIZE=1048576  # 1MB
 
 ### Rate Limiting
 
-Pasto includes automatic rate limiting to prevent spam:
+Pasto includes comprehensive rate limiting to prevent abuse across multiple vectors. All rate limiters use a sliding window algorithm for smooth traffic shaping.
 
-- **Default limit**: 10 pastes per minute per IP address
-- **Rate limit response**: HTTP 429 (Too Many Requests) with `Retry-After: 60` header
-- **IP detection**: Uses `X-Forwarded-For`, `X-Real-IP`, or remote address
-- **Per-IP tracking**: Each client IP is tracked independently
+#### Web Server Rate Limits
 
-The rate limiter helps prevent abuse while allowing legitimate usage patterns.
+| Option | Environment Variable | Default | Description |
+|--------|---------------------|---------|-------------|
+| `--rate-paste-limit` | `PASTO_RATE_PASTE_LIMIT` | 10 | Max paste creations per IP per window |
+| `--rate-paste-window` | `PASTO_RATE_PASTE_WINDOW` | 60 | Window in seconds for paste limit |
+| `--rate-paste-user-limit` | `PASTO_RATE_PASTE_USER_LIMIT` | 30 | Max paste creations per user per window |
+| `--rate-paste-user-window` | `PASTO_RATE_PASTE_USER_WINDOW` | 60 | Window in seconds for user paste limit |
+| `--rate-paste-global-limit` | `PASTO_RATE_PASTE_GLOBAL_LIMIT` | 100 | Max global paste creations per window |
+| `--rate-paste-global-window` | `PASTO_RATE_PASTE_GLOBAL_WINDOW` | 60 | Window in seconds for global paste limit |
+| `--rate-highlight-limit` | `PASTO_RATE_HIGHLIGHT_LIMIT` | 300 | Max highlight requests per IP per window |
+| `--rate-highlight-window` | `PASTO_RATE_HIGHLIGHT_WINDOW` | 60 | Window in seconds for highlight limit |
+| `--rate-login-limit` | `PASTO_RATE_LOGIN_LIMIT` | 5 | Max login attempts per IP per window |
+| `--rate-login-window` | `PASTO_RATE_LOGIN_WINDOW` | 300 | Window in seconds for login limit (5 min) |
+| `--rate-http-limit` | `PASTO_RATE_HTTP_LIMIT` | 200 | Max HTTP requests per IP per window |
+| `--rate-http-window` | `PASTO_RATE_HTTP_WINDOW` | 60 | Window in seconds for HTTP limit |
+
+#### SSH Server Rate Limits
+
+| Option | Environment Variable | Default | Description |
+|--------|---------------------|---------|-------------|
+| `--rate-ssh-paste-limit` | `PASTO_RATE_SSH_PASTE_LIMIT` | 20 | Max paste creations per key per window |
+| `--rate-ssh-paste-window` | `PASTO_RATE_SSH_PASTE_WINDOW` | 60 | Window in seconds for SSH paste limit |
+| `--rate-ssh-login-limit` | `PASTO_RATE_SSH_LOGIN_LIMIT` | 3 | Max login/token requests per key per window |
+| `--rate-ssh-login-window` | `PASTO_RATE_SSH_LOGIN_WINDOW` | 600 | Window in seconds for SSH login limit (10 min) |
+| `--rate-ssh-conn-limit` | `PASTO_RATE_SSH_CONN_LIMIT` | 30 | Max connections per IP per window |
+| `--rate-ssh-conn-window` | `PASTO_RATE_SSH_CONN_WINDOW` | 60 | Window in seconds for SSH connection limit |
+
+#### Rate Limit Behavior
+
+- **HTTP Status**: Returns 429 (Too Many Requests) when limit exceeded
+- **Headers**: All responses include rate limit headers:
+  - `X-RateLimit-Remaining`: Requests remaining in current window
+  - `X-RateLimit-Reset`: Unix timestamp when window resets
+  - `Retry-After`: Seconds until rate limit resets (on 429 responses)
+- **IP Detection**: Uses `X-Forwarded-For`, `X-Real-IP`, or remote address
+- **Logging**: All rate limit hits are logged for monitoring
+- **Excluded Paths**: `/highlight`, `/cache/*`, `/favicon.ico`, and `/syntax-theme.css` are excluded from HTTP rate limiting (but `/highlight` has its own dedicated limiter)
+
+#### Rate Limit Configuration Examples
+
+```yaml
+# pasto.yml - Stricter limits for public instance
+rate_paste_limit: 5
+rate_paste_window: 60
+rate_http_limit: 100
+rate_login_limit: 3
+rate_login_window: 600
+```
+
+```bash
+# Environment variables for high-traffic instance
+export PASTO_RATE_PASTE_LIMIT=50
+export PASTO_RATE_PASTE_GLOBAL_LIMIT=500
+export PASTO_RATE_HTTP_LIMIT=1000
+
+./bin/pasto
+```
+
+```bash
+# CLI for development (relaxed limits)
+./bin/pasto --rate-paste-limit=100 --rate-http-limit=1000
+```
+
+#### Rate Limit Design Notes
+
+- **Highlight endpoint** has a high limit (300/60s) because the live preview refreshes frequently while editing
+- **Login attempts** have a long window (5-10 minutes) to prevent brute-force attacks
+- **Global paste limit** prevents coordinated abuse from multiple IPs
+- **SSH and HTTP limits are separate** as they run in different processes
+- **User limits** are tracked by authenticated user ID when available

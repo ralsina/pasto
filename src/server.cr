@@ -28,14 +28,133 @@ module Pasto
     User.find(user_session.user_id)
   end
 
-  # Simple rate limiter for paste creation
-  class RateLimit
-    @@limiter = RateLimiter.new(10, 60)
+  # Helper to extract client IP from request
+  def self.get_client_ip(env) : String
+    if forwarded = env.request.headers["X-Forwarded-For"]?
+      forwarded.split(",")[0].strip
+    elsif real_ip = env.request.headers["X-Real-IP"]?
+      real_ip
+    else
+      env.request.remote_address.to_s.split(":")[0]
+    end
+  end
+
+  # Comprehensive rate limiting for the web server
+  class RateLimits
+    # Individual limiters initialized from config
+    class_property paste_ip : RateLimiter?
+    class_property paste_user : RateLimiter?
+    class_property paste_global : RateLimiter?
+    class_property highlight : RateLimiter?
+    class_property login : RateLimiter?
+    class_property http : RateLimiter?
+
     @@mutex = Mutex.new
 
-    def self.allow?(key : String) : Bool
+    def self.init(config : Config)
       @@mutex.synchronize do
-        @@limiter.allow?(key)
+        @@paste_ip = RateLimiter.new(config.rate_paste_limit, config.rate_paste_window)
+        @@paste_user = RateLimiter.new(config.rate_paste_user_limit, config.rate_paste_user_window)
+        @@paste_global = RateLimiter.new(config.rate_paste_global_limit, config.rate_paste_global_window)
+        @@highlight = RateLimiter.new(config.rate_highlight_limit, config.rate_highlight_window)
+        @@login = RateLimiter.new(config.rate_login_limit, config.rate_login_window)
+        @@http = RateLimiter.new(config.rate_http_limit, config.rate_http_window)
+      end
+    end
+
+    # Check paste creation - returns {allowed, result} for headers
+    def self.allow_paste?(ip : String, user_id : String?) : {Bool, RateLimitResult}
+      @@mutex.synchronize do
+        paste_global = @@paste_global
+        paste_ip = @@paste_ip
+        paste_user = @@paste_user
+
+        # Return allowed if limiters not initialized (shouldn't happen)
+        unless paste_global && paste_ip
+          return {true, RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)}
+        end
+
+        # Check global limit first
+        global_result = paste_global.check("global")
+        unless global_result.allowed?
+          puts "⚠️  Rate limit hit: global paste limit (IP: #{ip})"
+          return {false, global_result}
+        end
+
+        # Check IP limit
+        ip_result = paste_ip.check(ip)
+        unless ip_result.allowed?
+          puts "⚠️  Rate limit hit: paste IP limit (IP: #{ip})"
+          return {false, ip_result}
+        end
+
+        # Check user limit if logged in
+        if user_id && paste_user
+          user_result = paste_user.check(user_id)
+          unless user_result.allowed?
+            puts "⚠️  Rate limit hit: paste user limit (User: #{user_id})"
+            return {false, user_result}
+          end
+          return {true, user_result}
+        end
+
+        {true, ip_result}
+      end
+    end
+
+    # Check highlight API - returns {allowed, result}
+    def self.allow_highlight?(ip : String) : {Bool, RateLimitResult}
+      @@mutex.synchronize do
+        if highlight = @@highlight
+          result = highlight.check(ip)
+          unless result.allowed?
+            puts "⚠️  Rate limit hit: highlight limit (IP: #{ip})"
+          end
+          {result.allowed?, result}
+        else
+          {true, RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)}
+        end
+      end
+    end
+
+    # Check login attempt - returns {allowed, result}
+    def self.allow_login?(ip : String) : {Bool, RateLimitResult}
+      @@mutex.synchronize do
+        if login = @@login
+          result = login.check(ip)
+          unless result.allowed?
+            puts "⚠️  Rate limit hit: login limit (IP: #{ip})"
+          end
+          {result.allowed?, result}
+        else
+          {true, RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)}
+        end
+      end
+    end
+
+    # Check HTTP request (excludes highlight, cache, static) - returns {allowed, result}
+    def self.allow_http?(ip : String) : {Bool, RateLimitResult}
+      @@mutex.synchronize do
+        if http = @@http
+          result = http.check(ip)
+          unless result.allowed?
+            puts "⚠️  Rate limit hit: HTTP limit (IP: #{ip})"
+          end
+          {result.allowed?, result}
+        else
+          {true, RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)}
+        end
+      end
+    end
+
+    # Get status without consuming a request
+    def self.http_status(ip : String) : RateLimitResult
+      @@mutex.synchronize do
+        if http = @@http
+          http.status(ip)
+        else
+          RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)
+        end
       end
     end
   end
@@ -88,11 +207,41 @@ module Pasto
   end
 end
 
-# Add security headers to all requests
+# Helper to add rate limit headers to response
+def add_rate_limit_headers(env, result : RateLimitResult)
+  env.response.headers["X-RateLimit-Remaining"] = result.remaining.to_s
+  env.response.headers["X-RateLimit-Reset"] = result.reset_time.to_unix.to_s
+end
+
+# Add security headers and HTTP rate limiting to all requests
 before_all do |env|
+  # Security headers
   env.response.headers["X-Content-Type-Options"] = "nosniff"
   env.response.headers["X-Frame-Options"] = "DENY"
   env.response.headers["X-XSS-Protection"] = "1; mode=block"
+
+  # Skip rate limiting for static assets and endpoints with their own limiters
+  path = env.request.path
+  skip_http_limit = path.starts_with?("/cache/") ||
+                    path == "/favicon.ico" ||
+                    path == "/syntax-theme.css" ||
+                    path == "/highlight"
+
+  unless skip_http_limit
+    client_ip = Pasto.get_client_ip(env)
+    allowed, result = Pasto::RateLimits.allow_http?(client_ip)
+    add_rate_limit_headers(env, result)
+
+    unless allowed
+      retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
+      env.response.headers["Retry-After"] = retry_after.to_s
+      env.response.status_code = 429
+      env.response.content_type = "text/plain"
+      env.response.print "Too many requests. Please slow down. Retry after #{retry_after} seconds."
+      env.response.close
+      next
+    end
+  end
 end
 
 # Logout route - clear session
@@ -121,8 +270,8 @@ post "/profile" do |env|
   if env.params.body.has_key?("name")
     new_name = env.params.body["name"]?.try(&.strip)
     if new_name && !new_name.empty?
-      new_name = new_name.gsub(/<[^>]*>/, "")  # Remove HTML tags
-      new_name = new_name[0..50]  # Limit to 50 chars
+      new_name = new_name.gsub(/<[^>]*>/, "") # Remove HTML tags
+      new_name = new_name[0..50]              # Limit to 50 chars
       current_user.name = new_name
     else
       current_user.name = nil
@@ -162,7 +311,18 @@ end
 # SSH Auth token route - validate token and create session
 get "/auth/:token" do |env|
   token_id = env.params.url["token"]
-  ip_address = env.request.headers["X-Forwarded-For"]? || env.request.headers["X-Real-IP"]? || env.request.remote_address.to_s
+  client_ip = Pasto.get_client_ip(env)
+
+  # Rate limit login attempts
+  allowed, result = Pasto::RateLimits.allow_login?(client_ip)
+  add_rate_limit_headers(env, result)
+
+  unless allowed
+    env.response.status_code = 429
+    retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
+    env.response.headers["Retry-After"] = retry_after.to_s
+    next "Too many login attempts. Please wait #{retry_after} seconds before trying again."
+  end
 
   token = Pasto::AuthToken.find(token_id)
 
@@ -203,9 +363,9 @@ get "/auth/:token" do |env|
   # If no user exists, create one and link the key
   if user.nil?
     user = Pasto::User.new
-    user.save  # Save first to get sepia_id
-    user.add_key(ssh_key)  # This sets owner_id and adds to keys array
-    user.save  # Save again with the key added
+    user.save             # Save first to get sepia_id
+    user.add_key(ssh_key) # This sets owner_id and adds to keys array
+    user.save             # Save again with the key added
     puts "Created new user #{user.sepia_id} for SSH key #{token.fingerprint}"
   else
     # Make sure the key is in the user's keys array (in case of data inconsistency)
@@ -218,13 +378,13 @@ get "/auth/:token" do |env|
   end
 
   # Create session
-  user_session = Pasto::UserSession.new(user.sepia_id, nil, ip_address)
+  user_session = Pasto::UserSession.new(user.sepia_id, nil, client_ip)
   env.session.object("user", user_session)
 
   # Delete the token (one-time use)
   token.delete
 
-  puts "SSH auth successful for user #{user.sepia_id} from #{ip_address}"
+  puts "SSH auth successful for user #{user.sepia_id} from #{client_ip}"
 
   # Redirect to home with success message
   env.redirect "/?login=success"
@@ -295,6 +455,19 @@ end
 
 # API endpoint for live syntax highlighting
 post "/highlight" do |env|
+  # Rate limit check for highlight endpoint
+  client_ip = Pasto.get_client_ip(env)
+  allowed, result = Pasto::RateLimits.allow_highlight?(client_ip)
+  add_rate_limit_headers(env, result)
+
+  unless allowed
+    env.response.status_code = 429
+    retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
+    env.response.headers["Retry-After"] = retry_after.to_s
+    env.response.content_type = "application/json"
+    next {"error" => "Rate limit exceeded. Retry after #{retry_after} seconds."}.to_json
+  end
+
   content = env.params.body["content"]?.to_s
   language = env.params.body["language"]?.to_s
   theme = env.params.body["theme"]?.to_s
@@ -342,17 +515,18 @@ end
 # Handle paste submission
 post "/" do |env|
   # Rate limiting check
-  client_ip = env.request.headers["X-Forwarded-For"]? || env.request.headers["X-Real-IP"]?
-  if client_ip
-    ip_key = client_ip.split(",")[0].strip # Take first IP if multiple
-  else
-    ip_key = env.request.remote_address.to_s
-  end
+  client_ip = Pasto.get_client_ip(env)
+  current_user = Pasto.get_current_user(env)
+  user_id = current_user.try(&.sepia_id)
 
-  unless Pasto::RateLimit.allow?(ip_key)
+  allowed, result = Pasto::RateLimits.allow_paste?(client_ip, user_id)
+  add_rate_limit_headers(env, result)
+
+  unless allowed
     env.response.status_code = 429
-    env.response.headers["Retry-After"] = "60"
-    next "Rate limit exceeded. Please wait before creating another paste."
+    retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
+    env.response.headers["Retry-After"] = retry_after.to_s
+    next "Rate limit exceeded. Please wait #{retry_after} seconds before creating another paste."
   end
 
   content = env.params.body["content"]?.to_s
@@ -384,10 +558,6 @@ post "/" do |env|
     env.response.status_code = 413
     next "Paste too large. Maximum size is #{config.max_paste_size} bytes (got #{content_bytesize} bytes)."
   end
-
-  # Get current user for ownership
-  current_user = Pasto.get_current_user(env)
-  user_id = current_user.try(&.sepia_id)
 
   paste = Pasto::Paste.new(content, language, syntax_theme, user_id: user_id, title: title)
 
@@ -511,17 +681,29 @@ end
 post "/:id/fork" do |env|
   id = env.params.url["id"]
 
-  original_paste = Pasto::Paste.from_file(id)
-  if original_paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
-  end
-
   # Must be logged in to fork
   current_user = Pasto.get_current_user(env)
   unless current_user
     env.response.status_code = 401
     next "You must be logged in to fork a paste"
+  end
+
+  # Rate limit forks the same as paste creation
+  client_ip = Pasto.get_client_ip(env)
+  allowed, result = Pasto::RateLimits.allow_paste?(client_ip, current_user.sepia_id)
+  add_rate_limit_headers(env, result)
+
+  unless allowed
+    env.response.status_code = 429
+    retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
+    env.response.headers["Retry-After"] = retry_after.to_s
+    next "Rate limit exceeded. Please wait #{retry_after} seconds."
+  end
+
+  original_paste = Pasto::Paste.from_file(id)
+  if original_paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
   end
 
   # Create new paste with same content
@@ -599,19 +781,19 @@ get "/:id/history" do |env|
 
   # Get the base ID (strip any generation suffix)
   base_id = if id.includes?(".")
-    parts = id.split(".")
-    if parts.last.matches?(/^\d+$/)
-      parts[0..-2].join(".")
-    else
-      id
-    end
-  else
-    id
-  end
+              parts = id.split(".")
+              if parts.last.matches?(/^\d+$/)
+                parts[0..-2].join(".")
+              else
+                id
+              end
+            else
+              id
+            end
 
   # Get all versions of the paste
   versions = Pasto::Paste.versions(base_id)
-  
+
   if versions.empty?
     env.response.status_code = 404
     next "Paste not found"
@@ -619,7 +801,7 @@ get "/:id/history" do |env|
 
   # Get current user for ownership check
   current_user = Pasto.get_current_user(env)
-  
+
   # Check if user can see history (owner only for now)
   latest = versions.last
   unless current_user && latest.user_id == current_user.sepia_id

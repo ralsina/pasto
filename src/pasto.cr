@@ -43,6 +43,20 @@ Options:
   --ssh-bind=<address>      SSH address to bind to [default: 0.0.0.0].
   --host-key=<file>         SSH host key file [default: ssh_host_rsa_key].
 
+Rate Limiting Options:
+  --rate-paste-limit=<n>              Paste creation limit per IP [default: 10].
+  --rate-paste-window=<s>             Paste rate limit window in seconds [default: 60].
+  --rate-paste-user-limit=<n>         Paste creation limit per user [default: 30].
+  --rate-paste-user-window=<s>        User paste rate limit window in seconds [default: 60].
+  --rate-paste-global-limit=<n>       Global paste creation limit [default: 100].
+  --rate-paste-global-window=<s>      Global paste rate limit window in seconds [default: 60].
+  --rate-highlight-limit=<n>          Highlight API limit per IP [default: 300].
+  --rate-highlight-window=<s>         Highlight rate limit window in seconds [default: 60].
+  --rate-login-limit=<n>              Login attempt limit per IP [default: 5].
+  --rate-login-window=<s>             Login rate limit window in seconds [default: 300].
+  --rate-http-limit=<n>               HTTP request limit per IP [default: 200].
+  --rate-http-window=<s>              HTTP rate limit window in seconds [default: 60].
+
 DOC
 
   class Config
@@ -58,6 +72,20 @@ DOC
     property ssh_port : Int32
     property ssh_bind : String
     property host_key : String
+
+    # Rate limiting settings
+    property rate_paste_limit : Int32
+    property rate_paste_window : Int32
+    property rate_paste_user_limit : Int32
+    property rate_paste_user_window : Int32
+    property rate_paste_global_limit : Int32
+    property rate_paste_global_window : Int32
+    property rate_highlight_limit : Int32
+    property rate_highlight_window : Int32
+    property rate_login_limit : Int32
+    property rate_login_window : Int32
+    property rate_http_limit : Int32
+    property rate_http_window : Int32
 
     def initialize(args)
       docopt_options = Docopt.docopt_config(
@@ -79,6 +107,20 @@ DOC
       @ssh_port = docopt_options["--ssh-port"].to_s.to_i
       @ssh_bind = docopt_options["--ssh-bind"].to_s
       @host_key = docopt_options["--host-key"].to_s
+
+      # Rate limiting settings
+      @rate_paste_limit = docopt_options["--rate-paste-limit"].to_s.to_i
+      @rate_paste_window = docopt_options["--rate-paste-window"].to_s.to_i
+      @rate_paste_user_limit = docopt_options["--rate-paste-user-limit"].to_s.to_i
+      @rate_paste_user_window = docopt_options["--rate-paste-user-window"].to_s.to_i
+      @rate_paste_global_limit = docopt_options["--rate-paste-global-limit"].to_s.to_i
+      @rate_paste_global_window = docopt_options["--rate-paste-global-window"].to_s.to_i
+      @rate_highlight_limit = docopt_options["--rate-highlight-limit"].to_s.to_i
+      @rate_highlight_window = docopt_options["--rate-highlight-window"].to_s.to_i
+      @rate_login_limit = docopt_options["--rate-login-limit"].to_s.to_i
+      @rate_login_window = docopt_options["--rate-login-window"].to_s.to_i
+      @rate_http_limit = docopt_options["--rate-http-limit"].to_s.to_i
+      @rate_http_window = docopt_options["--rate-http-window"].to_s.to_i
 
       # Handle base_url - use provided value or construct default
       base_url_option = docopt_options["--base-url"].to_s
@@ -213,7 +255,7 @@ DOC
 
     # Generate new secret and append to config file
     secret = Random::Secure.hex(64)
-    
+
     if File.exists?(config_file)
       File.open(config_file, "a") do |f|
         f.puts ""
@@ -224,7 +266,7 @@ DOC
     else
       puts "🔑 Generated new session secret (config file not found, using in-memory)"
     end
-    
+
     secret
   end
 
@@ -277,13 +319,16 @@ DOC
       sess_config.secret = session_secret
       sess_config.timeout = 24.hours
       sess_config.engine = Kemal::Session::FileEngine.new({
-        :sessions_dir => "./sessions/"
+        :sessions_dir => "./sessions/",
       })
       sess_config.gc_interval = 30.minutes
     end
 
     # Initialize cache
     init_cache(config.cache_dir)
+
+    # Initialize rate limiters with config values
+    RateLimits.init(config)
 
     # Configure Kemal
     config.add_kemal_config
