@@ -1,5 +1,5 @@
 # Pasto Dockerfile
-# Dynamic build with minimal Alpine runtime
+# Static build with minimal Alpine runtime
 
 # ============================================
 # Stage 1: Build the Crystal application
@@ -12,16 +12,34 @@ RUN apk add --no-cache \
     shards \
     git \
     gc-dev \
+    gc-static \
     pcre2-dev \
+    pcre2-static \
     yaml-dev \
+    yaml-static \
     openssl-dev \
+    openssl-libs-static \
     libxml2-dev \
+    libxml2-static \
     zlib-dev \
+    zlib-static \
     xz-dev \
+    xz-static \
     libevent-dev \
-    libssh-dev
+    libevent-static \
+    cmake \
+    make \
+    g++ \
+    ca-certificates \
+    tzdata
 
 WORKDIR /app
+
+RUN wget https://www.libssh.org/files/0.11/libssh-0.11.3.tar.xz
+RUN tar -xf libssh-0.11.3.tar.xz && cd libssh-0.11.3 && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC_LIB=ON .. && \
+    make && make install && cp src/libssh.a /usr/lib/libssh.a
 
 # Copy dependency files first for better caching
 COPY shard.yml shard.lock shard.override.yml ./
@@ -34,46 +52,29 @@ COPY src/ ./src/
 
 # Build both binaries in release mode
 # -Dinotify: use inotify backend for file watching
-RUN shards build --release -Dinotify
+RUN shards build --release -Dinotify --static --link-flags '-lssh -lssl -lcrypto'
 
 # Compress binaries with UPX for smaller image size
 RUN apk add --no-cache upx && \
     upx --best --lzma /app/bin/pasto /app/bin/pasto-ssh
 
 # ============================================
-# Stage 2: Minimal Alpine runtime
+# Stage 2: Minimal scratch runtime
 # ============================================
-FROM alpine:edge
+FROM scratch
 
 WORKDIR /app
 
-# Install only required runtime libraries
-RUN apk add --no-cache \
-    ca-certificates \
-    tzdata \
-    libgcc \
-    gc \
-    pcre2 \
-    yaml \
-    libevent \
-    libssh \
-    libxml2 \
-    zlib \
-    xz-libs
-
-# Create non-root user
-RUN addgroup -g 1000 pasto && \
-    adduser -D -u 1000 -G pasto pasto
+# Copy CA certificates and timezone data from builder
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 # Copy binaries
 COPY --from=builder /app/bin/pasto /app/bin/pasto
 COPY --from=builder /app/bin/pasto-ssh /app/bin/pasto-ssh
 
-# Create directories for persistent data
-RUN mkdir -p /app/data /app/public/cache /app/sessions && \
-    chown -R pasto:pasto /app
-
-USER pasto
+# Create directories for persistent data (will be created as volumes)
+VOLUME ["/app/data", "/app/public/cache", "/app/sessions"]
 
 # Expose ports
 EXPOSE 3000 2222
@@ -88,9 +89,5 @@ ENV PASTO_PORT=3000 \
     PASTO_SSH_BIND=0.0.0.0 \
     PASTO_ENV=production \
     TZ=UTC
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 ENTRYPOINT ["/app/bin/pasto"]

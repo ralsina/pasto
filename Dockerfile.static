@@ -1,0 +1,34 @@
+FROM alpine:edge AS builder
+
+# Install Crystal and build dependencies
+RUN apk add --no-cache \
+    crystal \
+    shards \
+    git \
+    gc-dev \
+    gc-static \
+    pcre2-dev \
+    pcre2-static \
+    yaml-dev \
+    yaml-static \
+    openssl-dev \
+    openssl-libs-static \
+    libxml2-dev \
+    libxml2-static \
+    zlib-dev \
+    zlib-static \
+    xz-dev \
+    xz-static \
+    libevent-dev \
+    libevent-static \
+    cmake \
+    make \
+    g++
+
+WORKDIR /app
+
+RUN wget https://www.libssh.org/files/0.11/libssh-0.11.3.tar.xz
+RUN tar -xf libssh-0.11.3.tar.xz && cd libssh-0.11.3 && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC_LIB=ON -DCMAKE_INSTALL_PREFIX=/usr .. && \
+    make && make install && cp src/libssh.a /usr/lib/libssh.a
