@@ -35,7 +35,7 @@ shards:
 
   hansa:
     git: https://github.com/ralsina/hansa.git
-    version: 0.1.2
+    version: 0.1.3
 
   inotify:
     git: https://github.com/petoem/inotify.cr.git
@@ -67,7 +67,7 @@ shards:
 
   shirk:
     git: https://github.com/ralsina/shirk.git
-    version: 0.2.0
+    version: 0.2.1
 
   sixteen:
     git: https://github.com/ralsina/sixteen.git

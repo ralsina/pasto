@@ -20,3 +20,7 @@ Thumbs.db
 
 # Environment files
 .env
+
+bin/
+.crystal/
+sessions/
