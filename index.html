@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasto - Modern Pastebin with Live Syntax Highlighting</title>
+  <meta name="description" content="A Crystal-based pastebin application with live syntax highlighting, SSH access, user accounts, and extensive theme support.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Chivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    code, pre {
+      font-family: 'Chivo Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    }
+
+    /* Hero Section */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+      min-height: 80vh;
+      margin-bottom: 4rem;
+      padding: 2rem;
+    }
+
+    .hero-content h1 {
+      font-size: 4rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--pico-primary);
+      line-height: 1.1;
+    }
+
+    .hero-subtitle {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      color: var(--pico-muted-color);
+      line-height: 1.5;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .code-preview {
+      background: var(--pico-code-background-color);
+      border: 1px solid var(--pico-border-color);
+      border-radius: var(--pico-border-radius);
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transform: perspective(1000px) rotateY(-5deg);
+      transition: transform 0.3s ease;
+      max-width: 500px;
+    }
+
+    .code-preview:hover {
+      transform: perspective(1000px) rotateY(0deg);
+    }
+
+    .code-preview pre {
+      margin: 0;
+      color: var(--pico-color);
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Features Section */
+    .features {
+      margin-bottom: 4rem;
+      padding: 0 2rem;
+    }
+
+    .features h2 {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 3rem;
+      color: var(--pico-primary);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card {
+      background: var(--pico-card-background-color, var(--pico-background-color));
+      border: 1px solid var(--pico-border-color);
+      border-radius: var(--pico-border-radius);
+      padding: 2rem;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+      color: var(--pico-primary);
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .feature-card h3 {
+      margin-bottom: 1rem;
+      color: var(--pico-primary);
+    }
+
+    /* SSH Section */
+    .ssh-section {
+      background: var(--pico-secondary-background);
+      border-radius: var(--pico-border-radius);
+      padding: 3rem;
+      margin: 0 2rem 4rem 2rem;
+      text-align: center;
+    }
+
+    .ssh-section h2 {
+      color: var(--pico-primary);
+      margin-bottom: 1rem;
+    }
+
+    .code-example {
+      background: var(--pico-code-background-color);
+      border: 1px solid var(--pico-border-color);
+      border-radius: var(--pico-border-radius);
+      padding: 2rem;
+      margin-top: 2rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .code-example pre {
+      margin: 0;
+      color: var(--pico-color);
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Languages Section */
+    .languages-section {
+      margin-bottom: 4rem;
+      text-align: center;
+      padding: 0 2rem;
+    }
+
+    .languages-section h2 {
+      color: var(--pico-primary);
+      margin-bottom: 1rem;
+    }
+
+    .languages-section p {
+      margin-bottom: 2rem;
+      color: var(--pico-muted-color);
+    }
+
+    .languages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+    }
+
+    .language-category h4 {
+      color: var(--pico-primary);
+      margin-bottom: 1rem;
+    }
+
+    .language-tag {
+      display: inline-block;
+      background: var(--pico-secondary-background);
+      color: var(--pico-color);
+      padding: 0.25rem 0.75rem;
+      margin: 0.25rem;
+      border-radius: var(--pico-border-radius);
+      font-size: 0.85rem;
+      border: 1px solid var(--pico-border-color);
+    }
+
+    /* Quick Start Section */
+    .quickstart {
+      background: var(--pico-secondary-background);
+      border-radius: var(--pico-border-radius);
+      padding: 3rem;
+      margin: 0 2rem 4rem 2rem;
+    }
+
+    .quickstart h2 {
+      color: var(--pico-primary);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .quickstart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+    }
+
+    .quickstart-step {
+      text-align: center;
+    }
+
+    .step-number {
+      background: var(--pico-primary);
+      color: var(--pico-primary-inverse);
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 0 auto 1rem auto;
+    }
+
+    /* CTA Section */
+    .cta {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--pico-secondary-background);
+      border-radius: var(--pico-border-radius);
+      margin: 0 2rem 4rem 2rem;
+    }
+
+    .cta h2 {
+      color: var(--pico-primary);
+      margin-bottom: 1rem;
+    }
+
+    .cta p {
+      margin-bottom: 2rem;
+      color: var(--pico-muted-color);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--pico-muted-color);
+      border-top: 1px solid var(--pico-border-color);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        min-height: auto;
+        padding: 2rem 1rem;
+      }
+
+      .hero-content h1 {
+        font-size: 3rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.2rem;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .code-preview {
+        transform: none;
+        padding: 1.5rem;
+        max-width: 100%;
+      }
+
+      .features,
+      .ssh-section,
+      .languages-section,
+      .quickstart,
+      .cta {
+        margin-left: 1rem;
+        margin-right: 1rem;
+        padding: 2rem 1rem;
+      }
+
+      .features-grid,
+      .languages-grid,
+      .quickstart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Navigation */
+    nav {
+      background: var(--pico-background-color);
+      border-bottom: 1px solid var(--pico-border-color);
+      padding: 1rem 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--pico-primary);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--pico-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      color: var(--pico-primary);
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        padding: 1rem;
+      }
+
+      .nav-links {
+        gap: 1rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="#" class="nav-logo">Pasto</a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#ssh">SSH Usage</a>
+        <a href="#languages">Languages</a>
+        <a href="#quickstart">Quick Start</a>
+        <a href="https://github.com/ralsina/pasto" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Pasto</h1>
+      <p class="hero-subtitle">Modern pastebin with live syntax highlighting and SSH access</p>
+      <div class="hero-actions">
+        <a href="https://github.com/ralsina/pasto#quick-start" class="button primary" role="button">
+          <i data-lucide="download" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+          Get Started
+        </a>
+        <a href="https://github.com/ralsina/pasto" class="button secondary" role="button" target="_blank" rel="noopener">
+          <i data-lucide="github" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+          View on GitHub
+        </a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="code-preview">
+        <pre><code>def hello_world():
+    """A simple Python function"""
+    print("Hello, Pasto! 🎉")
+    return "Live syntax highlighting!"
+
+# Auto-detected language
+# 321+ syntax themes
+# SSH access supported
+# Real-time preview</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <h2>Features</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="zap" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Fast & Lightweight</h3>
+        <p>Built with Crystal for excellent performance and minimal resource usage</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="eye" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Live Preview</h3>
+        <p>Real-time syntax highlighting as you type with automatic language detection</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="palette" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>321+ Themes</h3>
+        <p>Extensive syntax highlighting themes from Tartrazine including all popular favorites</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="terminal" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>SSH Access</h3>
+        <p>Create pastes directly from your terminal with simple SSH commands</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="user" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>User Accounts</h3>
+        <p>Manage your pastes with profiles, edit history, and version control</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="smartphone" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Responsive Design</h3>
+        <p>Works beautifully on desktop, tablet, and mobile devices</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SSH Section -->
+  <section id="ssh" class="ssh-section">
+    <h2>SSH Usage</h2>
+    <p>Create pastes directly from your terminal - perfect for quick sharing from the command line</p>
+    <div class="code-example">
+      <pre><code># Simple usage
+cat myfile.py | ssh -p 2222 pasto.example.com
+
+# Or with echo
+echo "Hello, World!" | ssh -p 2222 pasto.example.com
+
+# Login to link with web account
+ssh -p 2222 pasto.example.com login</code></pre>
+    </div>
+  </section>
+
+  <!-- Quick Start Section -->
+  <section id="quickstart" class="quickstart">
+    <h2>Quick Start</h2>
+    <div class="quickstart-grid">
+      <div class="quickstart-step">
+        <div class="step-number">1</div>
+        <h3>Clone Repository</h3>
+        <p>Get the source code from GitHub</p>
+        <code>git clone https://github.com/ralsina/pasto.git</code>
+      </div>
+
+      <div class="quickstart-step">
+        <div class="step-number">2</div>
+        <h3>Install Dependencies</h3>
+        <p>Install Crystal shards and dependencies</p>
+        <code>cd pasto && shards install</code>
+      </div>
+
+      <div class="quickstart-step">
+        <div class="step-number">3</div>
+        <h3>Run the Server</h3>
+        <p>Start the Pasto web server</p>
+        <code>shards build && ./bin/pasto</code>
+      </div>
+
+      <div class="quickstart-step">
+        <div class="step-number">4</div>
+        <h3>Start Using</h3>
+        <p>Open your browser to localhost:3000</p>
+        <code>open http://localhost:3000</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Language Support -->
+  <section id="languages" class="languages-section">
+    <h2>Language Support</h2>
+    <p>Supports 200+ programming languages with smart auto-detection</p>
+    <div class="languages-grid">
+      <div class="language-category">
+        <h4>Popular</h4>
+        <span class="language-tag">Python</span>
+        <span class="language-tag">JavaScript</span>
+        <span class="language-tag">TypeScript</span>
+        <span class="language-tag">Java</span>
+        <span class="language-tag">C</span>
+        <span class="language-tag">C++</span>
+        <span class="language-tag">Go</span>
+        <span class="language-tag">Rust</span>
+      </div>
+
+      <div class="language-category">
+        <h4>Web</h4>
+        <span class="language-tag">HTML</span>
+        <span class="language-tag">CSS</span>
+        <span class="language-tag">SCSS</span>
+        <span class="language-tag">JSON</span>
+        <span class="language-tag">XML</span>
+        <span class="language-tag">YAML</span>
+        <span class="language-tag">Markdown</span>
+      </div>
+
+      <div class="language-category">
+        <h4>Systems</h4>
+        <span class="language-tag">Bash</span>
+        <span class="language-tag">Shell</span>
+        <span class="language-tag">PowerShell</span>
+        <span class="language-tag">Dockerfile</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <h2>Ready to share your code?</h2>
+    <p>Join thousands of developers using Pasto for quick code sharing</p>
+    <a href="https://github.com/ralsina/pasto" class="button primary" role="button" target="_blank" rel="noopener">
+      <i data-lucide="external-link" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+      Get Started on GitHub
+    </a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2025 Pasto. Created with ❤️ by <a href="https://github.com/ralsina" target="_blank" rel="noopener">Roberto Alsina</a></p>
+    <p>
+      <a href="https://github.com/ralsina/pasto" target="_blank" rel="noopener">GitHub</a> •
+      <a href="https://github.com/ralsina/pasto/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    </p>
+  </footer>
+
+  <script>
+    // Initialize Lucide icons when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      lucide.createIcons();
+
+      // Smooth scrolling for navigation links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
