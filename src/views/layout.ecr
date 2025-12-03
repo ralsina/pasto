@@ -521,9 +521,35 @@
       <!-- Page-specific controls will be injected here -->
     </div>
     <div class="top-bar-right">
+      <a href="/help" title="Help" aria-label="Help" class="help-btn">
+        <i data-lucide="message-circle-question-mark"></i>
+      </a>
       <a href="/profile" title="Profile" aria-label="Profile" class="user-menu-btn">
         <i data-lucide="user" style="width: 16px; height: 16px;"></i>
       </a>
+        <style>
+          .help-btn {
+            background: transparent;
+            border: 2px solid var(--pico-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--pico-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            margin-left: 0.25rem;
+          }
+          .help-btn:hover {
+            background: var(--pico-primary);
+            color: var(--pico-primary-inverse);
+          }
+        </style>
     </div>
   </div>
 

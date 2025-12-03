@@ -1,3 +1,18 @@
+# /help endpoint: render the help markdown using the ECR template
+get "/help" do |env|
+  env.response.content_type = "text/html"
+  current_user = Pasto.get_current_user(env)
+  page_title = "Help & Usage Guide"
+  is_home_page = false
+  content = render "src/views/help.ecr"
+  render "src/views/layout.ecr"
+end
+
+# Serve the help markdown file as /help.md
+get "/help.md" do |env|
+  env.response.content_type = "text/markdown"
+  File.read("HELP.md")
+end
 require "kemal"
 require "http"
 require "file_utils"

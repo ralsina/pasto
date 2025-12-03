@@ -12,13 +12,25 @@
     <%= highlighted_content %>
   </div>
   <% if is_markdown %>
-    <div id="rendered-markdown" style="display:none;"></div>
-    <button class="eye-overlay-btn" id="toggle-md-render" onclick="toggleMarkdownView()" title="Show rendered Markdown">
-      <i data-lucide="eye"></i>
+    <div id="rendered-markdown"></div>
+    <button class="eye-overlay-btn" id="toggle-md-render" onclick="toggleMarkdownView()" title="Show source">
+      <i data-lucide="file-code-2"></i>
     </button>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-      let showingMarkdown = false;
+      let showingMarkdown = true;
+      document.addEventListener('DOMContentLoaded', function() {
+        // Show rendered markdown by default
+        const src = document.getElementById('paste-content');
+        const rendered = document.getElementById('rendered-markdown');
+        rendered.innerHTML = marked.parse(rawContent);
+        src.style.display = 'none';
+        rendered.style.display = '';
+        const btn = document.getElementById('toggle-md-render');
+        btn.innerHTML = '<i data-lucide="file-code-2"></i>';
+        btn.title = 'Show source';
+        if (window.lucide) lucide.createIcons();
+      });
       function toggleMarkdownView() {
         const btn = document.getElementById('toggle-md-render');
         const src = document.getElementById('paste-content');
@@ -29,14 +41,14 @@
           rendered.style.display = '';
           btn.innerHTML = '<i data-lucide="file-code-2"></i>';
           btn.title = 'Show source';
-          lucide.createIcons();
+          if (window.lucide) lucide.createIcons();
           showingMarkdown = true;
         } else {
           rendered.style.display = 'none';
           src.style.display = '';
           btn.innerHTML = '<i data-lucide="eye"></i>';
           btn.title = 'Show rendered Markdown';
-          lucide.createIcons();
+          if (window.lucide) lucide.createIcons();
           showingMarkdown = false;
         }
       }

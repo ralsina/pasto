@@ -1,3 +1,65 @@
+
+<% unless current_user %>
+  <div id="anon-warning" class="anon-warning" style="display:none;">
+    <i data-lucide="info"></i>
+    You are not logged in. Pastes created will not be associated with an account and cannot be edited later.
+    <a href="/profile" style="margin-left:0.5em;">Log in to enable editing</a>
+    <button id="anon-warning-dismiss" title="Dismiss" style="background:none;border:none;color:inherit;cursor:pointer;margin-left:0.5em;font-size:1.1em;vertical-align:middle;">&times;</button>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!localStorage.getItem('pasto_hide_anon_warning')) {
+        document.getElementById('anon-warning').style.display = '';
+      }
+      document.getElementById('anon-warning-dismiss').onclick = function() {
+        document.getElementById('anon-warning').style.display = 'none';
+        localStorage.setItem('pasto_hide_anon_warning', 'true');
+      };
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+  <style>
+    .anon-warning {
+      background: var(--pico-secondary-background, #f5f7fa);
+      color: var(--pico-color, #333);
+      border: 1px solid var(--pico-muted-border-color, #cfd8dc);
+      border-radius: var(--pico-border-radius, 6px);
+      padding: 0.75em 1em;
+      margin: 1em 0 0.5em 0;
+      font-size: 0.97em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    }
+    .anon-warning i[data-lucide] {
+      width: 20px;
+      height: 20px;
+      color: var(--pico-primary, #0074d9);
+      flex-shrink: 0;
+    }
+    .anon-warning button {
+      font-weight: bold;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      margin-left: 0.5em;
+      font-size: 1.1em;
+      line-height: 1;
+      padding: 0 0.25em;
+    }
+    .anon-warning a {
+      color: var(--pico-primary, #0074d9);
+      text-decoration: underline;
+      margin-left: 0.5em;
+    }
+    .anon-warning a:hover {
+      text-decoration: none;
+    }
+  </style>
+<% end %>
+
 <div class="editor-preview-container">
 
   <div class="editor-pane">

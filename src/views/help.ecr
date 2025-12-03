@@ -1,0 +1,25 @@
+<div class="help-markdown" id="help-markdown"></div>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  fetch('/help.md')
+    .then(resp => resp.text())
+    .then(md => {
+      document.getElementById('help-markdown').innerHTML = marked.parse(md);
+    });
+</script>
+<style>
+  .help-markdown {
+    background: var(--pico-secondary-background, #f5f7fa);
+    border-radius: var(--pico-border-radius, 6px);
+    padding: 1.5em 2em;
+    font-size: 1.08em;
+    line-height: 1.7;
+    color: var(--pico-color, #222);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    max-width: 700px;
+    margin: 2rem auto;
+  }
+  .help-markdown h2, .help-markdown h3 {
+    margin-top: 1.5em;
+  }
+</style>
