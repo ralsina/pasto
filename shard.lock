@@ -87,5 +87,5 @@ shards:
 
   tartrazine:
     git: https://github.com/ralsina/tartrazine.git
-    version: 0.14.0
+    version: 0.14.2
 

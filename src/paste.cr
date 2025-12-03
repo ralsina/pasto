@@ -116,6 +116,24 @@ module Pasto
       end
     end
 
+    # Build extension -> language lookup table from Tartrazine
+    @@extension_to_language : Hash(String, String)?
+
+    def self.extension_to_language : Hash(String, String)
+      @@extension_to_language ||= begin
+        mapping = {} of String => String
+        Tartrazine.lexers.each do |lexer_name|
+          Tartrazine.lexer_extensions(lexer_name).each do |ext|
+            # Store with leading dot, lowercase
+            normalized = ext.downcase
+            normalized = ".#{normalized}" unless normalized.starts_with?(".")
+            mapping[normalized] = lexer_name.downcase
+          end
+        end
+        mapping
+      end
+    end
+
     def language_for_extension(ext : String?) : String
       return @language || "text" if ext.nil?
 
@@ -124,70 +142,11 @@ module Pasto
         return ext
       end
 
-      # Map extensions to language names
-      language_mapping = {
-        ".cr"         => "crystal",
-        ".py"         => "python",
-        ".js"         => "javascript",
-        ".ts"         => "typescript",
-        ".rb"         => "ruby",
-        ".php"        => "php",
-        ".java"       => "java",
-        ".cpp"        => "cpp",
-        ".c"          => "c",
-        ".cs"         => "csharp",
-        ".go"         => "go",
-        ".rs"         => "rust",
-        ".sh"         => "bash",
-        ".bash"       => "bash",
-        ".zsh"        => "zsh",
-        ".sql"        => "sql",
-        ".html"       => "html",
-        ".css"        => "css",
-        ".scss"       => "scss",
-        ".sass"       => "sass",
-        ".json"       => "json",
-        ".yaml"       => "yaml",
-        ".yml"        => "yaml",
-        ".xml"        => "xml",
-        ".md"         => "markdown",
-        ".dockerfile" => "dockerfile",
-        ".makefile"   => "makefile",
-        ".rust"       => "rust",
-        ".toml"       => "toml",
-        ".ini"        => "ini",
-        ".vim"        => "vim",
-        ".lua"        => "lua",
-        ".perl"       => "perl",
-        ".r"          => "r",
-        ".scala"      => "scala",
-        ".swift"      => "swift",
-        ".kt"         => "kotlin",
-        ".dart"       => "dart",
-        ".elm"        => "elm",
-        ".hs"         => "haskell",
-        ".ml"         => "ocaml",
-        ".clj"        => "clojure",
-        ".fs"         => "fsharp",
-        ".vb"         => "visualbasic",
-        ".ps1"        => "powershell",
-        ".bat"        => "batch",
-        ".cmd"        => "batch",
-        ".fish"       => "fish",
-        ".ex"         => "elixir",
-        ".exs"        => "elixir",
-        ".erl"        => "erlang",
-        ".astro"      => "astro",
-        ".svelte"     => "svelte",
-        ".vue"        => "vue",
-        ".jsx"        => "jsx",
-        ".tsx"        => "tsx",
-      }
-
-      # Normalize extension (ensure it starts with .)
-      normalized_ext = ext.starts_with?('.') ? ext.downcase : ".#{ext.downcase}"
-
-      language_mapping[normalized_ext]? || @language || "text"
+      # Normalize and lookup in the extension table
+      normalized = ext.downcase
+      normalized = ".#{normalized}" unless normalized.starts_with?(".")
+      
+      self.class.extension_to_language[normalized]? || @language || "text"
     end
 
     def highlight(language_override : String? = nil) : {String, String}
