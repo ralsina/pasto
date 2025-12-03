@@ -959,24 +959,12 @@ get "/syntax-theme.css" do |env|
   end
 end
 
-# Favicon handler - returns a simple paste icon
+# Favicon handler - returns embedded PNG favicon
 get "/favicon.ico" do |env|
-  # Simple SVG paste icon (clipboard/paste symbol)
-  favicon_svg = <<-SVG
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-    <rect width="28" height="32" x="2" fill="#6466f1" rx="2"/>
-    <rect width="24" height="28" x="4" y="2" fill="white" rx="1"/>
-    <rect width="16" height="2" x="8" y="8" fill="#6466f1" rx="1"/>
-    <rect width="12" height="2" x="8" y="12" fill="#6466f1" rx="1"/>
-    <rect width="14" height="2" x="8" y="16" fill="#6466f1" rx="1"/>
-    <rect width="10" height="2" x="8" y="20" fill="#6466f1" rx="1"/>
-    <rect width="8" height="2" x="8" y="24" fill="#6466f1" rx="1"/>
-  </svg>
-  SVG
-
-  # Convert SVG to ICO data (simplified - just serve as SVG with proper content type)
-  env.response.content_type = "image/x-icon"
-  favicon_svg
+  # Serve embedded PNG favicon
+  env.response.content_type = "image/png"
+  env.response.content_length = Pasto::EmbeddedAssets::FAVICON_PNG.size
+  Pasto::EmbeddedAssets::FAVICON_PNG
 end
 
 # Serve cached files directly if they exist

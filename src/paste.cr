@@ -44,15 +44,15 @@ module Pasto
       if @title && !@title.not_nil!.strip.empty?
         return @title.not_nil!
       end
-      
+
       # Generate from first line of content
       first_line = @content.split('\n').first?.try(&.strip) || ""
-      
+
       # Clean up the line (remove common comment prefixes)
       cleaned = first_line
         .gsub(/^(\/\/|#|--|\/\*|\*|;|%|--|<!--|REM\s)/i, "")
         .strip
-      
+
       # Limit to ~50 chars, break at word boundary
       if cleaned.size > 50
         truncated = cleaned[0..50]
@@ -62,7 +62,7 @@ module Pasto
         end
         cleaned = truncated + "..."
       end
-      
+
       cleaned.empty? ? "Untitled paste" : cleaned
     end
 
@@ -145,7 +145,7 @@ module Pasto
       # Normalize and lookup in the extension table
       normalized = ext.downcase
       normalized = ".#{normalized}" unless normalized.starts_with?(".")
-      
+
       self.class.extension_to_language[normalized]? || @language || "text"
     end
 

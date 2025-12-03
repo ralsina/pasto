@@ -53,7 +53,7 @@ module Pasto
     def self.from_sepia(sepia_string : String) : SSHKey
       data = Hash(String, JSON::Any).from_json(sepia_string)
 
-      key = new("")  # Placeholder, sepia_id set by Sepia
+      key = new("") # Placeholder, sepia_id set by Sepia
       key.owner_id = data["owner_id"]?.try(&.as_s?)
       key.created_at = Time.parse_rfc3339(data["created_at"].as_s)
 

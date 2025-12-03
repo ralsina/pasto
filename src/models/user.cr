@@ -8,7 +8,7 @@ module Pasto
     property name : String?
     property keys : Array(SSHKey)
     property created_at : Time
-    
+
     # Theme preferences
     property pico_theme : String?
     property pico_color : String?
@@ -32,7 +32,7 @@ module Pasto
     def add_key(key : SSHKey) : SSHKey
       key.owner_id = @sepia_id
       @keys << key
-      key.save  # Save the key with updated owner_id
+      key.save # Save the key with updated owner_id
       key
     end
 
@@ -51,7 +51,7 @@ module Pasto
     def to_sepia : String
       {
         name:         @name,
-        keys:         @keys.map(&.sepia_id),  # Store only key fingerprints
+        keys:         @keys.map(&.sepia_id), # Store only key fingerprints
         created_at:   @created_at.to_rfc3339,
         pico_theme:   @pico_theme,
         pico_color:   @pico_color,
