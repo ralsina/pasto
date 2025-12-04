@@ -5,22 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="stylesheet" href="/assets/pico.slate.min.css" id="pico-css-link">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css" id="pico-css-link">
   <script src="/assets/bundle.js" defer></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    @media (max-width: 768px) {
-      .top-bar {
-        display: none !important;
-      }
-    }
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pasto</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -822,17 +808,25 @@
       const picoColor = document.getElementById('pico-color').value;
       const syntaxTheme = document.getElementById('syntax-theme').value;
 
-      // Update CSS link
+      // Update CSS link - update href directly
       const cssLink = document.getElementById('pico-css-link');
       let cssFile;
       if (picoColor === 'css') {
-        cssFile = '/assets/pico.css';
-      } else if (picoColor === 'slate') {
-        cssFile = '/assets/pico.slate.min.css';
+        cssFile = 'https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css';
       } else {
-        cssFile = `/assets/pico.${picoColor}.min.css`;
+        cssFile = `https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.${picoColor}.min.css`;
       }
-      cssLink.href = cssFile;
+
+      if (cssLink) {
+        cssLink.href = cssFile;
+      } else {
+        // Fallback: create the link if it doesn't exist
+        const newCssLink = document.createElement('link');
+        newCssLink.id = 'pico-css-link';
+        newCssLink.rel = 'stylesheet';
+        newCssLink.href = cssFile;
+        document.head.appendChild(newCssLink);
+      }
 
       // Update HTML data-theme attribute
       document.documentElement.setAttribute('data-theme', picoTheme);
