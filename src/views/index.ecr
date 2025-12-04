@@ -114,7 +114,6 @@
   }
 </style>
 
-<script src="/assets/bundle.js" defer></script>
 <script>
   // Markdown editor preview toggle logic
   let editorMarkdownShowing = false;
@@ -192,39 +191,10 @@
     flex-direction: column;
   }
 
-  .codejar-editor {
-    flex: 1;
-    min-height: 0;
-    padding: 1rem;
-    font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    overflow: auto;
-    outline: none;
-    background: var(--pico-card-background-color, var(--pico-background-color));
-    color: var(--pico-color);
-    tab-size: 2;
-    -moz-tab-size: 2;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    border: 2px solid var(--pico-primary);
-    border-radius: var(--pico-border-radius);
-  }
-
-  .codejar-editor:focus-within {
-    box-shadow: 0 0 0 3px var(--pico-primary-focus);
-  }
-
   .codejar-editor:empty::before {
     content: 'Paste your code here...';
     color: var(--pico-muted-color);
     pointer-events: none;
-  }
-
-  /* Highlight.js styling adjustments */
-  .codejar-editor.hljs {
-    background: transparent !important;
-    padding: 0 !important;
   }
 </style>
 

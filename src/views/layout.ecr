@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <!-- Async CSS loading to prevent render-blocking -->
-  <link rel="preload" href="/assets/pico.min.css" as="style" onload="loadCSS(this, 'pico-css-link')">
-  <link rel="preload" href="/assets/atom-one-dark.min.css" as="style" onload="loadCSS(this, 'highlight-css-link')">
+  <!-- Async CSS loading with correct themes from server -->
+  <link rel="preload" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" as="style" onload="loadCSS(this, 'pico-css-link')">
+  <link rel="preload" href="/assets/<%= syntax_theme %>.min.css" as="style" onload="loadCSS(this, 'highlight-css-link')">
 
   <!-- Fallback for browsers that don't support preload/JavaScript -->
   <noscript>
-    <link rel="stylesheet" href="/assets/pico.min.css" id="pico-css-link">
-    <link rel="stylesheet" href="/assets/atom-one-dark.min.css" id="highlight-css-link">
+    <link rel="stylesheet" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" id="pico-css-link">
+    <link rel="stylesheet" href="/assets/<%= syntax_theme %>.min.css" id="highlight-css-link">
   </noscript>
 
   <script>
@@ -64,6 +64,37 @@
     /* Loading indicator */
     .css-loading {
       display: none;
+    }
+
+    /* CodeJar editor styles - used in index.ecr and edit.ecr */
+    .codejar-editor {
+      flex: 1;
+      min-height: 0;
+      padding: 1rem;
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      overflow: auto;
+      outline: none;
+      background: var(--pico-card-background-color, var(--pico-background-color));
+      color: var(--pico-color);
+      tab-size: 2;
+      -moz-tab-size: 2;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      border: 2px solid var(--pico-primary);
+      border-radius: var(--pico-border-radius);
+    }
+
+    .codejar-editor:focus-within {
+      box-shadow: 0 0 0 3px var(--pico-primary-focus);
+    }
+
+  
+    /* Highlight.js styling adjustments */
+    .codejar-editor.hljs {
+      background: transparent !important;
+      padding: 0 !important;
     }
   </style>
 
@@ -1089,8 +1120,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadPreferences();
       updateThemes(); // Backend will handle empty theme by using user's default
-      // Initialize Lucide icons for static elements
-      lucide.createIcons();
+      // Lucide icons will be initialized by individual page templates after dynamic content injection
 
       // Lazy load large select options after page load for performance
       setTimeout(lazyLoadSelectOptions, 100);

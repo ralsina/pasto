@@ -37,8 +37,18 @@ module Pasto
   get "/help" do |env|
     env.response.content_type = "text/html"
     current_user = Pasto.get_current_user(env)
+
+    # Get theme preferences with priority: user config > cookie > defaults
+    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+
     page_title = "Help & Usage Guide"
     is_home_page = false
+    pico_theme = saved_pico_theme
+    pico_color = saved_pico_color
+    syntax_theme = saved_syntax_theme
+
     content = render "src/views/help.ecr"
     render "src/views/layout.ecr"
   end
@@ -353,6 +363,9 @@ get "/auth/:token" do |env|
     current_user = nil
     is_home_page = false
     page_title = "Invalid Token"
+    pico_theme = "auto"
+    pico_color = "slate"
+    syntax_theme = "monokai"
 
     content = <<-HTML
       <hgroup>
@@ -430,16 +443,18 @@ get "/profile" do |env|
   # ameba:disable Lint/UselessAssign
   ssh_enabled = config.try(&.ssh_enabled) || false
 
-  # Get saved theme preferences or use defaults
-  # ameba:disable Lint/UselessAssign
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  # Get theme preferences with priority: user config > cookie > defaults
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
   # Set template variables (ECR template will have access to these)
   # ameba:disable Lint/UselessAssign
   page_title = "Profile"
   is_home_page = false
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
 
   content = render "src/views/profile_content.ecr"
   render "src/views/layout.ecr"
@@ -451,10 +466,14 @@ get "/" do |env|
   # Validate session to get current user
   current_user = Pasto.get_current_user(env)
 
-  # Get saved theme preferences or use defaults
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  # Get theme preferences with priority: user config > cookie > defaults
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+
+  # Compute CSS file names for template
+  pico_theme_file = saved_pico_color == "css" ? "pico.min.css" : "pico.#{saved_pico_color}.min.css"
+  syntax_theme_file = "#{saved_syntax_theme}.min.css"
 
   # Check for login/logout messages
   login_message = env.params.query["login"]? == "success"
@@ -463,6 +482,9 @@ get "/" do |env|
   # Set template variables (ECR template will have access to these)
   is_home_page = true
   page_title = "Pasto"
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
 
   content = render "src/views/index.ecr"
   render "src/views/layout.ecr"
@@ -616,14 +638,17 @@ get "/:id/edit" do |env|
     next "You don't have permission to edit this paste"
   end
 
-  # Get saved theme preferences
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  # Get theme preferences with priority: user config > cookie > defaults
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
   # Set template variables
   is_home_page = false
   page_title = "Edit Paste #{paste.sepia_id}"
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
 
   content = render "src/views/edit.ecr"
   render "src/views/layout.ecr"
@@ -824,10 +849,10 @@ get "/:id/history" do |env|
     next "Only the paste owner can view history"
   end
 
-  # Get saved theme preferences
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  # Get theme preferences with priority: user config > cookie > defaults
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
   # Sort by generation (newest first)
   versions = versions.reverse
@@ -835,6 +860,9 @@ get "/:id/history" do |env|
   # Set template variables
   is_home_page = false
   page_title = "History: #{latest.display_title}"
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
 
   content = render "src/views/history.ecr"
   render "src/views/layout.ecr"
@@ -858,10 +886,10 @@ get "/:id/version/:gen" do |env|
   # Get current user
   current_user = Pasto.get_current_user(env)
 
-  # Get saved theme preferences
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  # Get theme preferences with priority: user config > cookie > defaults
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
   # Generate highlighted content
   highlighted_content = paste.highlight(nil)[0]
@@ -877,6 +905,9 @@ get "/:id/version/:gen" do |env|
   page_title = paste.display_title
   is_version_view = true
   base_paste_id = id
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
 
   content = render "src/views/show.ecr"
   render "src/views/layout.ecr"
@@ -959,10 +990,10 @@ get "/:id" do |env|
   # Validate session to get current user
   current_user = Pasto.get_current_user(env)
 
-  # Get saved theme preferences or use defaults
-  saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-  saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  # Get theme preferences with priority: user config > cookie > defaults
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
   # Get language override from URL parameter if present
   url_lang_override = env.params.query["lang"]?
@@ -984,6 +1015,9 @@ get "/:id" do |env|
   base_paste_id = paste.base_id
 
   # Set template variables (ECR template will have access to these)
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
   is_home_page = false
   page_title = "Paste #{paste.sepia_id}"
 
