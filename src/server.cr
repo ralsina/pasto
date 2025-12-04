@@ -1,31 +1,3 @@
-# /help endpoint: render the help markdown using the ECR template
-get "/help" do |env|
-  env.response.content_type = "text/html"
-  current_user = Pasto.get_current_user(env)
-  page_title = "Help & Usage Guide"
-  is_home_page = false
-  content = render "src/views/help.ecr"
-  render "src/views/layout.ecr"
-end
-
-# Serve the help markdown file as /help.md
-get "/help.md" do |env|
-  env.response.content_type = "text/markdown"
-  File.read("HELP.md")
-end
-# Add baked_file_system for asset baking
-require "baked_file_system"
-require "baked_file_handler"
-
-# Baked asset handler for Kemal
-class PastoAssets
-  extend BakedFileSystem
-  bake_folder "src/assets"
-end
-
-# Serve baked assets via /assets/*
-add_handler BakedFileHandler::BakedFileHandler.new(PastoAssets)
-require "./baked_assets.cr"
 require "kemal"
 require "http"
 require "file_utils"
@@ -38,40 +10,40 @@ require "./user_session"
 require "./models/user"
 require "./models/auth_token"
 require "./models/ssh_key"
+require "baked_file_system"
+require "baked_file_handler"
+
+# Baked asset handler for Kemal
+class PastoAssets
+  extend BakedFileSystem
+  bake_folder "baked"
+end
+
+# Serve baked assets via /assets/*
+add_handler BakedFileHandler::BakedFileHandler.new(PastoAssets)
 
 module Pasto
   # Helper to validate session and get current user
   def self.get_current_user(env) : User?
     user_session = env.session.object?("user").as(Pasto::UserSession?)
 
-
     return nil unless user_session
-get "/favicon.ico" do |env|
-  if asset = Assets.get("favicon.png")
-    env.response.content_type = "image/png"
-    env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
-    env.response.content_length = asset.bytesize
-    asset
-  else
-    env.response.status_code = 404
-    "Favicon not found"
-  end
-end
 
     # Get user from database
     User.find(user_session.user_id)
   end
 
-  # Helper to extract client IP from request
-get "/help.md" do |env|
-  if asset = Assets.get("HELP.md")
-    env.response.content_type = "text/markdown"
-    asset
-  else
-    env.response.status_code = 404
-    "Help not found"
+  # /help endpoint: render the help markdown using the ECR template
+  get "/help" do |env|
+    env.response.content_type = "text/html"
+    current_user = Pasto.get_current_user(env)
+    page_title = "Help & Usage Guide"
+    is_home_page = false
+    content = render "src/views/help.ecr"
+    render "src/views/layout.ecr"
   end
-end
+
+  # Helper to extract client IP from request
   def self.get_client_ip(env) : String
     if forwarded = env.request.headers["X-Forwarded-For"]?
       forwarded.split(",")[0].strip
@@ -910,8 +882,44 @@ get "/:id/version/:gen" do |env|
   render "src/views/layout.ecr"
 end
 
-# View paste with specific language override via extension (more specific, comes first)
-# Using a more explicit route pattern that matches files with extensions
+# ...existing code...
+
+# Serve static files from public directory
+public_dir = "#{Dir.current}/public"
+Kemal.config.public_folder = public_dir
+
+# Serve syntax highlighting CSS
+
+# Favicon handler - returns baked PNG favicon
+
+# Serve cached files directly if they exist
+
+# Error handling
+error 404 do |env|
+  env.response.content_type = "text/html"
+  <<-HTML
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Not Found - Pasto</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  </head>
+  <body>
+    <main class="container">
+      <hgroup>
+        <h2>404 - Not Found</h2>
+        <p>The requested paste could not be found.</p>
+      </hgroup>
+      <a href="/">Create a new paste</a>
+    </main>
+  </body>
+  </html>
+  HTML
+end
+
+# View paste with specific language override via extension (catch-all, must be last)
 get "/:id" do |env|
   id = env.params.url["id"]
   request_path = env.request.path
@@ -987,28 +995,18 @@ public_dir = "#{Dir.current}/public"
 Kemal.config.public_folder = public_dir
 
 # Serve syntax highlighting CSS
-get "/syntax-theme.css" do |env|
-  theme_name = env.params.query["theme"]? || "default-dark"
 
-  begin
-    formatter = Tartrazine::Html.new(theme: Tartrazine.theme(theme_name))
-    css = formatter.style_defs
-
-    env.response.content_type = "text/css"
-    css
-  rescue ex
-    env.response.content_type = "text/css"
-    "/* Error loading theme '#{theme_name}': #{ex.message} */"
-  end
-end
-
-# Favicon handler - returns embedded PNG favicon
+# Favicon handler - returns baked PNG favicon
 get "/favicon.ico" do |env|
-  # Serve embedded PNG favicon with caching
-  env.response.content_type = "image/png"
-  env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
-  env.response.content_length = Pasto::EmbeddedAssets::FAVICON_PNG.size
-  Pasto::EmbeddedAssets::FAVICON_PNG
+  if asset = PastoAssets.get("favicon.png")
+    env.response.content_type = "image/png"
+    env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
+    env.response.content_length = asset.size
+    asset
+  else
+    env.response.status_code = 404
+    "Favicon not found"
+  end
 end
 
 # Serve cached files directly if they exist
