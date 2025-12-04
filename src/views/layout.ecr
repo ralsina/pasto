@@ -5,19 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="stylesheet" href="/assets/pico.min.css" id="pico-css-link">
-  <link rel="stylesheet" href="/assets/atom-one-dark.min.css" id="highlight-css-link">
+  <!-- Async CSS loading to prevent render-blocking -->
+  <link rel="preload" href="/assets/pico.min.css" as="style" onload="loadCSS(this, 'pico-css-link')">
+  <link rel="preload" href="/assets/atom-one-dark.min.css" as="style" onload="loadCSS(this, 'highlight-css-link')">
+
+  <!-- Fallback for browsers that don't support preload/JavaScript -->
+  <noscript>
+    <link rel="stylesheet" href="/assets/pico.min.css" id="pico-css-link">
+    <link rel="stylesheet" href="/assets/atom-one-dark.min.css" id="highlight-css-link">
+  </noscript>
+
+  <script>
+    // Async CSS loading function
+    function loadCSS(link, id) {
+      // Create a proper stylesheet link
+      var stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = link.href;
+      stylesheet.id = id;
+
+      // Replace the preload link
+      link.parentNode.replaceChild(stylesheet, link);
+    }
+  </script>
   <script src="/assets/bundle.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* Reset body margins and prevent overflow */
+    /* Critical CSS to prevent FOUC while main CSS loads asynchronously */
     html, body {
       margin: 0;
       padding: 0;
       overflow-x: hidden;
     }
+
+    /* Essential Pico-like styles for immediate rendering */
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.5;
+    }
+
+    /* Basic container and layout */
+    .container {
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Loading indicator */
+    .css-loading {
+      display: none;
+    }
+  </style>
+
+  <style>
+    /* Reset body margins and prevent overflow */
 
     body {
       min-height: 100vh;
