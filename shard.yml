@@ -25,6 +25,8 @@ dependencies:
     github: ralsina/rate_limiter
   shirk:
     github: ralsina/shirk
+  baked_file_handler:
+    github: ralsina/baked_file_handler
 
 development_dependencies:
   ameba:

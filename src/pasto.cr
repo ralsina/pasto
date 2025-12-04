@@ -4,7 +4,6 @@ require "kemal"
 require "./paste"
 require "./server"
 require "./models/user"
-require "./embedded_assets"
 require "kemal-session"
 
 module Pasto
