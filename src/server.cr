@@ -13,6 +13,19 @@ get "/help.md" do |env|
   env.response.content_type = "text/markdown"
   File.read("HELP.md")
 end
+# Add baked_file_system for asset baking
+require "baked_file_system"
+require "baked_file_handler"
+
+# Baked asset handler for Kemal
+class PastoAssets
+  extend BakedFileSystem
+  bake_folder "src/assets"
+end
+
+# Serve baked assets via /assets/*
+add_handler BakedFileHandler::BakedFileHandler.new(PastoAssets)
+require "./baked_assets.cr"
 require "kemal"
 require "http"
 require "file_utils"
@@ -30,20 +43,35 @@ module Pasto
   # Helper to validate session and get current user
   def self.get_current_user(env) : User?
     user_session = env.session.object?("user").as(Pasto::UserSession?)
+
+
     return nil unless user_session
-
-    # Check if session has expired
-    return nil if user_session.expired?
-
-    # Update last accessed time
-    user_session.touch
-    env.session.object("user", user_session)
+get "/favicon.ico" do |env|
+  if asset = Assets.get("favicon.png")
+    env.response.content_type = "image/png"
+    env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
+    env.response.content_length = asset.bytesize
+    asset
+  else
+    env.response.status_code = 404
+    "Favicon not found"
+  end
+end
 
     # Get user from database
     User.find(user_session.user_id)
   end
 
   # Helper to extract client IP from request
+get "/help.md" do |env|
+  if asset = Assets.get("HELP.md")
+    env.response.content_type = "text/markdown"
+    asset
+  else
+    env.response.status_code = 404
+    "Help not found"
+  end
+end
   def self.get_client_ip(env) : String
     if forwarded = env.request.headers["X-Forwarded-For"]?
       forwarded.split(",")[0].strip
