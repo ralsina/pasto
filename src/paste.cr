@@ -106,10 +106,10 @@ module Pasto
       nil
     end
 
-    def save : Bool
+    def save(force_new_generation : Bool = false) : Bool
       @updated_at = Time.utc
       begin
-        Sepia::Storage.save(self)
+        Sepia::Storage.save(self, force_new_generation: force_new_generation)
         true
       rescue ex
         false
