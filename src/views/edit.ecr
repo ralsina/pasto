@@ -238,13 +238,13 @@
     if (topBarRight) {
       topBarRight.insertAdjacentHTML('afterbegin', `
         <input type="text" id="paste-title" value="${initialTitle}" placeholder="Title (optional)" style="width: 200px; padding: 0.25rem 0.5rem; font-size: 0.85rem; margin: 0; height: auto;">
-        <select id="language" onchange="updateLanguage()">
+        <select id="language" onchange="updateLanguage()" aria-label="Select programming language">
           <% Pasto::Paste.available_languages.each do |lang| %>
             <option value="<%= lang == "Auto-detect" ? "" : lang %>" <%= paste.language == lang || (lang != "Auto-detect" && paste.language == lang.downcase) ? "selected" : "" %>><%= lang %></option>
           <% end %>
         </select>
-        <button onclick="updatePaste()" title="Save Changes"><i data-lucide="save"></i></button>
-        <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview"><i data-lucide="eye"></i></button>
+        <button onclick="updatePaste()" title="Save Changes" aria-label="Save paste changes"><i data-lucide="save"></i></button>
+        <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview" aria-label="Toggle preview pane"><i data-lucide="eye"></i></button>
         <a href="/${pasteId}" class="top-bar-btn" title="Cancel"><i data-lucide="x"></i></a>
       `);
     }

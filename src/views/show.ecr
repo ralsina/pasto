@@ -13,7 +13,7 @@
   </div>
   <% if is_markdown %>
     <div id="rendered-markdown"></div>
-    <button class="eye-overlay-btn" id="toggle-md-render" onclick="toggleMarkdownView()" title="Show source">
+    <button class="eye-overlay-btn" id="toggle-md-render" onclick="toggleMarkdownView()" title="Show source" aria-label="Toggle between rendered and source view">
       <i data-lucide="file-code-2"></i>
     </button>
     <script src="/assets/bundle.js" defer></script>
@@ -54,7 +54,7 @@
       }
     </script>
   <% end %>
-  <button class="copy-overlay-btn" onclick="copyToClipboard()" title="Copy to clipboard">
+  <button class="copy-overlay-btn" onclick="copyToClipboard()" title="Copy to clipboard" aria-label="Copy paste content to clipboard">
     <i data-lucide="copy"></i>
   </button>
 </div>
@@ -488,21 +488,21 @@
     if (topBarRight) {
       topBarRight.insertAdjacentHTML('afterbegin', `
         <a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>
-        <button class="top-bar-btn" onclick="downloadPaste()" title="Download"><i data-lucide="download"></i></button>
+        <button class="top-bar-btn" onclick="downloadPaste()" title="Download" aria-label="Download paste as file"><i data-lucide="download"></i></button>
         <% if current_user %>
-        <button class="top-bar-btn" onclick="forkPaste()" title="Fork (create your own copy)"><i data-lucide="git-fork"></i></button>
+        <button class="top-bar-btn" onclick="forkPaste()" title="Fork (create your own copy)" aria-label="Fork paste - create your own copy"><i data-lucide="git-fork"></i></button>
         <% end %>
         <% if current_user && paste.user_id == current_user.sepia_id %>
         <a href="/<%= paste.base_id %>/edit" class="top-bar-btn" title="Edit Paste"><i data-lucide="pencil"></i></a>
         <% if version_count > 1 %>
         <a href="/<%= paste.base_id %>/history" class="top-bar-btn" title="View History (<%= version_count %> versions)"><i data-lucide="history"></i></a>
         <% end %>
-        <button class="top-bar-btn" onclick="deletePaste()" title="Delete Paste" style="color: var(--pico-del-color);"><i data-lucide="trash-2"></i></button>
+        <button class="top-bar-btn" onclick="deletePaste()" title="Delete Paste" aria-label="Delete paste permanently" style="color: var(--pico-del-color);"><i data-lucide="trash-2"></i></button>
         <% end %>
         <% if is_version_view %>
         <a href="/<%= base_paste_id %>" class="top-bar-btn" title="Back to Latest"><i data-lucide="arrow-left"></i></a>
         <% end %>
-        <select id="view-language" onchange="changeLanguage()">
+        <select id="view-language" onchange="changeLanguage()" aria-label="View as different programming language">
           <% Pasto::Paste.available_languages.each do |lang| %>
             <option value="<%= lang == "Auto-detect" ? "" : lang %>" <%= lang == paste.language ? "selected" : "" %>><%= lang %></option>
           <% end %>

@@ -4,7 +4,7 @@
     <i data-lucide="info"></i>
     You are not logged in. Pastes created will not be associated with an account and cannot be edited later.
     <a href="/profile" style="margin-left:0.5em;">Log in to enable editing</a>
-    <button id="anon-warning-dismiss" title="Dismiss" style="background:none;border:none;color:inherit;cursor:pointer;margin-left:0.5em;font-size:1.1em;vertical-align:middle;">&times;</button>
+    <button id="anon-warning-dismiss" title="Dismiss" aria-label="Dismiss anonymous user warning" style="background:none;border:none;color:inherit;cursor:pointer;margin-left:0.5em;font-size:1.1em;vertical-align:middle;">&times;</button>
   </div>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -170,7 +170,7 @@
 </script>
 
   <div class="preview-pane" style="position:relative;">
-    <button class="eye-overlay-btn" id="editor-md-toggle" style="display:none; position:absolute; top:0.75rem; right:0.75rem;" title="Show rendered Markdown" onclick="toggleEditorMarkdownView()">
+    <button class="eye-overlay-btn" id="editor-md-toggle" style="display:none; position:absolute; top:0.75rem; right:0.75rem;" title="Show rendered Markdown" onclick="toggleEditorMarkdownView()" aria-label="Toggle between code and markdown preview">
       <i data-lucide="eye"></i>
     </button>
     <div class="preview-content" id="preview">
@@ -404,7 +404,7 @@
     if (topBarRight) {
       topBarRight.insertAdjacentHTML('afterbegin', `
         <input type="text" id="paste-title" placeholder="Title (optional)" style="width: 200px; padding: 0.25rem 0.5rem; font-size: 0.85rem; margin: 0; height: auto;">
-        <select id="language" onchange="updateLanguage()">
+        <select id="language" onchange="updateLanguage()" aria-label="Select programming language">
           <% Pasto::Paste.available_languages.each do |lang| %>
             <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
           <% end %>

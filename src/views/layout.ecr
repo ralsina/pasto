@@ -31,7 +31,14 @@
   <script src="/assets/bundle.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Async Google Fonts loading -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+  <!-- Fallback for browsers that don't support preload -->
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+  </noscript>
   <style>
     /* Critical CSS to prevent FOUC while main CSS loads asynchronously */
     html, body {
@@ -623,7 +630,7 @@
   <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
   <div class="app-container sidebar-collapsed">
     <!-- Sidebar toggle button -->
-    <button class="sidebar-toggle collapsed" id="sidebar-toggle" onclick="toggleSidebar()">
+    <button class="sidebar-toggle collapsed" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar navigation">
       <span id="toggle-icon"><i data-lucide="menu" style="width: 20px; height: 20px;"></i></span>
     </button>
 
@@ -653,7 +660,7 @@
                 </style>
           <!-- Page controls for mobile -->
           <input type="text" id="paste-title-mobile" placeholder="Title (optional)" class="mobile-only" style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.95rem; margin-bottom: 0.5rem;">
-          <select id="language-mobile" class="mobile-only" style="width: 100%; font-size: 0.95rem; margin-bottom: 0.5rem;">
+          <select id="language-mobile" class="mobile-only" style="width: 100%; font-size: 0.95rem; margin-bottom: 0.5rem;" aria-label="Select programming language">
             <% Pasto::Paste.available_languages.each do |lang| %>
               <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
             <% end %>
