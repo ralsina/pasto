@@ -661,10 +661,12 @@
           <!-- Page controls for mobile -->
           <input type="text" id="paste-title-mobile" placeholder="Title (optional)" class="mobile-only" style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.95rem; margin-bottom: 0.5rem;">
           <select id="language-mobile" class="mobile-only" style="width: 100%; font-size: 0.95rem; margin-bottom: 0.5rem;" aria-label="Select programming language">
-            <% Pasto::Paste.available_languages.each do |lang| %>
-              <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
-            <% end %>
+            <!-- Preload Auto-detect for immediate responsiveness -->
+            <option value="">Auto-detect</option>
           </select>
+          <div id="language-mobile-loading" class="mobile-only" style="color: var(--muted-color); font-size: 0.8em; margin-bottom: 0.5rem;">
+            Loading more languages...
+          </div>
           <button onclick="createPasteMobile()" title="Create Paste" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="plus"></i> Create Paste</button>
           <button id="preview-toggle-mobile" onclick="togglePreviewMobile()" title="Toggle Preview" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="eye"></i> Toggle Preview</button>
         </div>
@@ -775,10 +777,11 @@
         <div class="theme-group">
           <label for="syntax-theme">Syntax Highlighting:</label>
           <select id="syntax-theme" onchange="updateThemes()">
-            <% Tartrazine.themes.each do |theme_name| %>
-              <option value="<%= theme_name %>" <%= theme_name == "default-dark" ? "selected" : "" %>><%= theme_name %></option>
-            <% end %>
+            <!-- Themes will be loaded via API to maintain alphabetical order -->
           </select>
+          <div id="syntax-theme-loading" style="color: var(--muted-color); font-size: 0.8em; margin-top: 0.25rem;">
+            Loading more themes...
+          </div>
         </div>
       </div>
     </aside>
@@ -860,6 +863,9 @@
       const picoColor = document.getElementById('pico-color').value;
       const syntaxTheme = document.getElementById('syntax-theme').value;
 
+      // Save user preferences
+      saveUserPreferences();
+
       // Update CSS link - update href directly
       const cssLink = document.getElementById('pico-css-link');
       let cssFile;
@@ -909,6 +915,111 @@
       }
     }
 
+    // Lazy load large select elements after page load for performance
+    function lazyLoadSelectOptions() {
+      // Load full language list via API
+      fetch('/api/languages')
+        .then(response => response.json())
+        .then(languages => {
+          // Update all language select elements
+          const languageSelects = ['language', 'language-mobile'];
+          languageSelects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            const loadingDiv = document.getElementById(`${selectId}-loading`);
+            if (select && select.options.length < 5) { // Only load if not already loaded
+              const currentValue = select.value;
+
+              // Try to preload user's preferred language from localStorage
+              const userLanguage = localStorage.getItem('pasto_preferred_language');
+              const targetLanguage = userLanguage || currentValue || '';
+
+              // Clear existing options except the first (Auto-detect)
+              while (select.options.length > 1) {
+                select.remove(1);
+              }
+
+              // Add all languages but skip Auto-detect (value="") since we already preloaded it
+              languages.forEach(lang => {
+                // Skip Auto-detect since we already preloaded it
+                if (lang.value === "") return;
+
+                const option = document.createElement('option');
+                option.value = lang.value || '';
+                option.textContent = lang.name;
+                option.selected = (option.value === targetLanguage) || (option.value === currentValue);
+                select.appendChild(option);
+              });
+
+              // Hide loading indicator
+              if (loadingDiv) {
+                loadingDiv.style.display = 'none';
+              }
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Failed to load languages:', error);
+          // Hide loading indicators even on error
+          document.querySelectorAll('[id$="-loading"]').forEach(el => {
+            el.style.display = 'none';
+          });
+        });
+
+      // Load full theme list via API
+      fetch('/api/themes')
+        .then(response => response.json())
+        .then(themes => {
+          const themeSelect = document.getElementById('syntax-theme');
+          const loadingDiv = document.getElementById('syntax-theme-loading');
+          if (themeSelect && themeSelect.options.length < 10) { // Only load if not already loaded
+            const currentValue = themeSelect.value;
+
+            // Add all themes in alphabetical order
+            themes.forEach(theme => {
+              const option = document.createElement('option');
+              option.value = theme;
+              option.textContent = theme;
+              themeSelect.appendChild(option);
+            });
+
+            // Apply user's preferred theme after loading all options
+            applyUserTheme();
+
+            // Update themes only after we have a valid selection
+            updateThemes();
+
+            // Hide loading indicator
+            if (loadingDiv) {
+              loadingDiv.style.display = 'none';
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Failed to load themes:', error);
+          // Hide loading indicator even on error
+          const loadingDiv = document.getElementById('syntax-theme-loading');
+          if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+          }
+        });
+    }
+
+    // Save user preferences when they make selections
+    function saveUserPreferences() {
+      const languageSelect = document.getElementById('language');
+      const themeSelect = document.getElementById('syntax-theme');
+
+      // Save language preference
+      if (languageSelect && languageSelect.value) {
+        localStorage.setItem('pasto_preferred_language', languageSelect.value);
+      }
+
+      // Save theme preference
+      if (themeSelect && themeSelect.value) {
+        localStorage.setItem('pasto_syntax_theme', themeSelect.value);
+      }
+    }
+
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('mobile-overlay');
@@ -950,12 +1061,39 @@
       ];
     }
 
+    // Apply user's preferred theme after API loads
+    function applyUserTheme() {
+      const themeSelect = document.getElementById('syntax-theme');
+      if (!themeSelect) return;
+
+      let targetTheme = 'monokai'; // Default theme
+
+      // Check if user is logged in and has a configured theme
+      if (isLoggedIn && serverPrefs.syntaxTheme) {
+        targetTheme = serverPrefs.syntaxTheme;
+      } else {
+        // Fallback to localStorage preference, then default
+        targetTheme = localStorage.getItem('pasto_syntax_theme') || 'monokai';
+      }
+
+      // Set the theme value if it exists in the options
+      for (let i = 0; i < themeSelect.options.length; i++) {
+        if (themeSelect.options[i].value === targetTheme) {
+          themeSelect.value = targetTheme;
+          break;
+        }
+      }
+    }
+
     // Initialize theme on page load
     document.addEventListener('DOMContentLoaded', function() {
       loadPreferences();
-      updateThemes();
+      updateThemes(); // Backend will handle empty theme by using user's default
       // Initialize Lucide icons for static elements
       lucide.createIcons();
+
+      // Lazy load large select options after page load for performance
+      setTimeout(lazyLoadSelectOptions, 100);
     });
   </script>
 </body>

@@ -997,8 +997,16 @@ Kemal.config.public_folder = public_dir
 
 # Serve syntax highlighting CSS for Tartrazine themes
 get "/syntax-theme.css" do |env|
-  # Get theme from query parameter, cookie, or default
-  theme = env.params.query["theme"]? || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  theme = env.params.query["theme"]?
+
+  # If no theme specified, use user's configured theme or default
+  if theme.nil? || theme.empty?
+    current_user = Pasto.get_current_user(env)
+    theme = current_user.try(&.syntax_theme) || "monokai"
+  end
+
+  # Fallback to cookie if no user and no query parameter
+  theme ||= env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
   begin
     # Get Tartrazine theme CSS using the HTML formatter
     formatter = Tartrazine::Html.new(theme: Tartrazine.theme(theme))
@@ -1037,6 +1045,27 @@ get "/cache/*" do |env|
     env.response.status_code = 404
     "Cached file not found"
   end
+end
+
+# API endpoints for lazy loading select options
+get "/api/languages" do |env|
+  env.response.content_type = "application/json"
+
+  languages = [{"name" => "Auto-detect", "value" => ""}]
+
+  # Get all available lexers from Tartrazine
+  Tartrazine.lexers.sort.each do |lexer|
+    languages << {"name" => lexer, "value" => lexer.downcase}
+  end
+
+  languages.to_json
+end
+
+get "/api/themes" do |env|
+  env.response.content_type = "application/json"
+
+  # Get all available themes from Tartrazine
+  Tartrazine.themes.sort.to_json
 end
 
 # Error handling

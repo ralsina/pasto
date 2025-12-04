@@ -405,10 +405,12 @@
       topBarRight.insertAdjacentHTML('afterbegin', `
         <input type="text" id="paste-title" placeholder="Title (optional)" style="width: 200px; padding: 0.25rem 0.5rem; font-size: 0.85rem; margin: 0; height: auto;">
         <select id="language" onchange="updateLanguage()" aria-label="Select programming language">
-          <% Pasto::Paste.available_languages.each do |lang| %>
-            <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
-          <% end %>
-        </select>
+            <!-- Preload Auto-detect for immediate responsiveness -->
+            <option value="">Auto-detect</option>
+          </select>
+          <div id="language-loading" style="color: var(--muted-color); font-size: 0.8em; margin-top: 0.25rem;">
+            Loading more languages...
+          </div>
         <button onclick="createPaste()" title="Create Paste"><i data-lucide="plus"></i></button>
         <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview"><i data-lucide="eye"></i></button>
       `);
