@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css" id="pico-css-link">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="highlight-css-link">
+  <link rel="stylesheet" href="/assets/pico.min.css" id="pico-css-link">
+  <link rel="stylesheet" href="/assets/atom-one-dark.min.css" id="highlight-css-link">
   <script src="/assets/bundle.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -813,9 +813,9 @@
       const cssLink = document.getElementById('pico-css-link');
       let cssFile;
       if (picoColor === 'css') {
-        cssFile = 'https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css';
+        cssFile = '/assets/pico.min.css';
       } else {
-        cssFile = `https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.${picoColor}.min.css`;
+        cssFile = `/assets/pico.${picoColor}.min.css`;
       }
 
       if (cssLink) {
@@ -836,7 +836,7 @@
       const highlightCssLink = document.getElementById('highlight-css-link');
       if (highlightCssLink) {
         const highlightTheme = (picoTheme === 'dark') ? 'atom-one-dark' : 'atom-one-light';
-        highlightCssLink.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${highlightTheme}.min.css`;
+        highlightCssLink.href = `/assets/${highlightTheme}.min.css`;
       }
 
       // Update syntax theme CSS

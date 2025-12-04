@@ -181,7 +181,7 @@
 </div>
 
 <!-- CodeJar and Highlight.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- highlight.js is now bundled in bundle.js -->
 
 <style>
   .codejar-wrap {
@@ -415,7 +415,7 @@
     }
 
     // Dynamically import CodeJar as ES module
-    const { CodeJar } = await import('https://cdn.jsdelivr.net/npm/codejar@4.2.0/dist/codejar.min.js');
+    const { CodeJar } = await import('/assets/codejar.min.js');
     
     const editorElement = document.getElementById('editor');
     
