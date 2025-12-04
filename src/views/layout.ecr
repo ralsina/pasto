@@ -6,6 +6,7 @@
   <title>Pasto</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css" id="pico-css-link">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="highlight-css-link">
   <script src="/assets/bundle.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -830,6 +831,13 @@
 
       // Update HTML data-theme attribute
       document.documentElement.setAttribute('data-theme', picoTheme);
+
+      // Update highlight.js CSS theme based on pico theme
+      const highlightCssLink = document.getElementById('highlight-css-link');
+      if (highlightCssLink) {
+        const highlightTheme = (picoTheme === 'dark') ? 'atom-one-dark' : 'atom-one-light';
+        highlightCssLink.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${highlightTheme}.min.css`;
+      }
 
       // Update syntax theme CSS
       let syntaxCssLink = document.getElementById('syntax-theme-css');
