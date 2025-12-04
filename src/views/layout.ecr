@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
+  <link rel="stylesheet" href="/assets/pico.slate.min.css" id="pico-css-link">
   <script src="/assets/bundle.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -711,21 +711,26 @@
         <div class="theme-group">
           <label for="pico-color">Color Scheme:</label>
           <select id="pico-color" onchange="updateThemes()">
-            <option value="slate" selected>Slate</option>
-            <option value="blue">Blue</option>
-            <option value="purple">Purple</option>
-            <option value="pink">Pink</option>
+            <option value="css">Azure</option>
             <option value="red">Red</option>
-            <option value="orange">Orange</option>
-            <option value="yellow">Yellow</option>
-            <option value="green">Green</option>
-            <option value="teal">Teal</option>
-            <option value="cyan">Cyan</option>
-            <option value="grey">Grey</option>
+            <option value="pink">Pink</option>
+            <option value="fuchsia">Fuchsia</option>
+            <option value="purple">Purple</option>
+            <option value="violet">Violet</option>
             <option value="indigo">Indigo</option>
+            <option value="blue">Blue</option>
+            <option value="cyan">Cyan</option>
+            <option value="jade">Jade</option>
+            <option value="green">Green</option>
+            <option value="lime">Lime</option>
+            <option value="yellow">Yellow</option>
+            <option value="amber">Amber</option>
+            <option value="pumpkin">Pumpkin</option>
+            <option value="orange">Orange</option>
+            <option value="sand">Sand</option>
+            <option value="grey">Grey</option>
             <option value="zinc">Zinc</option>
-            <option value="neutral">Neutral</option>
-            <option value="stone">Stone</option>
+            <option value="slate" selected>Slate</option>
           </select>
                   </div>
 
@@ -805,7 +810,8 @@
       const syntaxTheme = getPreference('syntaxTheme', 'default-dark');
       
       document.getElementById('pico-theme').value = picoTheme;
-      document.getElementById('pico-color').value = picoColor;
+      // Default to Azure (css) if no color is set or value is blank
+      document.getElementById('pico-color').value = picoColor && picoColor !== '' ? picoColor : 'css';
       document.getElementById('syntax-theme').value = syntaxTheme;
       
       return { picoTheme, picoColor, syntaxTheme };
@@ -817,8 +823,16 @@
       const syntaxTheme = document.getElementById('syntax-theme').value;
 
       // Update CSS link
-      const cssLink = document.querySelector('link[href*="picocss"]');
-      cssLink.href = `https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.${picoColor}.min.css`;
+      const cssLink = document.getElementById('pico-css-link');
+      let cssFile;
+      if (picoColor === 'css') {
+        cssFile = '/assets/pico.css';
+      } else if (picoColor === 'slate') {
+        cssFile = '/assets/pico.slate.min.css';
+      } else {
+        cssFile = `/assets/pico.${picoColor}.min.css`;
+      }
+      cssLink.href = cssFile;
 
       // Update HTML data-theme attribute
       document.documentElement.setAttribute('data-theme', picoTheme);
