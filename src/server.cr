@@ -994,7 +994,23 @@ end
 public_dir = "#{Dir.current}/public"
 Kemal.config.public_folder = public_dir
 
-# Serve syntax highlighting CSS
+# Serve syntax highlighting CSS for Tartrazine themes
+get "/syntax-theme.css" do |env|
+  # Get theme from query parameter, cookie, or default
+  theme = env.params.query["theme"]? || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
+  begin
+    # Get Tartrazine theme CSS using the HTML formatter
+    formatter = Tartrazine::Html.new(theme: Tartrazine.theme(theme))
+    css = formatter.style_defs
+    env.response.content_type = "text/css"
+    env.response.headers["Cache-Control"] = "public, max-age=31536000" # 1 year
+    css
+  rescue ex
+    env.response.status_code = 404
+    env.response.content_type = "text/plain"
+    "Theme not found: #{theme}"
+  end
+end
 
 # Favicon handler - returns baked PNG favicon
 get "/favicon.ico" do |env|
