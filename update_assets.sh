@@ -108,6 +108,38 @@ if ! curl -fsSL "$CODEJAR_URL" -o "$CODEJAR_DEST"; then
 	echo "CodeJar will be loaded from CDN as fallback"
 fi
 
+# Create brotli compressed versions of all assets for better performance
+echo "Creating brotli compressed versions of assets..."
+ASSETS_DIR="src/baked/assets"
+
+# Function to create brotli compressed version
+compress_to_brotli() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        echo "Compressing $(basename "$file")..."
+        if command -v brotli >/dev/null 2>&1; then
+            brotli --keep "$file" && \
+            local original_size=$(wc -c < "$file") && \
+            local compressed_size=$(wc -c < "${file}.br") && \
+            local compression_ratio=$(echo "scale=1; $compressed_size * 100 / $original_size" | bc -l 2>/dev/null || echo "N/A") && \
+            echo "  ${original_size} bytes -> ${compressed_size} bytes (${compression_ratio}% of original)"
+        else
+            echo "Warning: brotli command not found, skipping compression"
+        fi
+    fi
+}
+
+# Compress JavaScript files
+compress_to_brotli "$ASSETS_DIR/bundle.js"
+compress_to_brotli "$ASSETS_DIR/codejar.min.js"
+
+# Compress CSS files
+for css in "$ASSETS_DIR"/*.css; do
+    compress_to_brotli "$css"
+done
+
+echo "Brotli compression completed for all assets"
+
 # Clean up temp files
 rm -rf "$TMPDIR"
 
