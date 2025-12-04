@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="auto">
+<html lang="en" data-theme="<%= resolved_pico_theme || pico_theme %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +7,12 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <!-- Async CSS loading with correct themes from server -->
   <link rel="preload" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" as="style" onload="loadCSS(this, 'pico-css-link')">
-  <link rel="preload" href="/assets/<%= syntax_theme %>.min.css" as="style" onload="loadCSS(this, 'highlight-css-link')">
+  <link rel="preload" href="/syntax-theme.css?theme=<%= syntax_theme %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
 
   <!-- Fallback for browsers that don't support preload/JavaScript -->
   <noscript>
     <link rel="stylesheet" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" id="pico-css-link">
-    <link rel="stylesheet" href="/assets/<%= syntax_theme %>.min.css" id="highlight-css-link">
+    <link rel="stylesheet" href="/syntax-theme.css?theme=<%= syntax_theme %>" id="highlight-css-link">
   </noscript>
 
   <script>
@@ -695,10 +695,7 @@
             <!-- Preload Auto-detect for immediate responsiveness -->
             <option value="">Auto-detect</option>
           </select>
-          <div id="language-mobile-loading" class="mobile-only" style="color: var(--muted-color); font-size: 0.8em; margin-bottom: 0.5rem;">
-            Loading more languages...
-          </div>
-          <button onclick="createPasteMobile()" title="Create Paste" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="plus"></i> Create Paste</button>
+                    <button onclick="createPasteMobile()" title="Create Paste" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="plus"></i> Create Paste</button>
           <button id="preview-toggle-mobile" onclick="togglePreviewMobile()" title="Toggle Preview" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="eye"></i> Toggle Preview</button>
         </div>
               <script>
@@ -810,10 +807,7 @@
           <select id="syntax-theme" onchange="updateThemes()">
             <!-- Themes will be loaded via API to maintain alphabetical order -->
           </select>
-          <div id="syntax-theme-loading" style="color: var(--muted-color); font-size: 0.8em; margin-top: 0.25rem;">
-            Loading more themes...
-          </div>
-        </div>
+                  </div>
       </div>
     </aside>
 
@@ -956,7 +950,6 @@
           const languageSelects = ['language', 'language-mobile'];
           languageSelects.forEach(selectId => {
             const select = document.getElementById(selectId);
-            const loadingDiv = document.getElementById(`${selectId}-loading`);
             if (select && select.options.length < 5) { // Only load if not already loaded
               const currentValue = select.value;
 
@@ -981,11 +974,7 @@
                 select.appendChild(option);
               });
 
-              // Hide loading indicator
-              if (loadingDiv) {
-                loadingDiv.style.display = 'none';
-              }
-            }
+                          }
           });
         })
         .catch(error => {
@@ -1001,7 +990,6 @@
         .then(response => response.json())
         .then(themes => {
           const themeSelect = document.getElementById('syntax-theme');
-          const loadingDiv = document.getElementById('syntax-theme-loading');
           if (themeSelect && themeSelect.options.length < 10) { // Only load if not already loaded
             const currentValue = themeSelect.value;
 
@@ -1019,20 +1007,11 @@
             // Update themes only after we have a valid selection
             updateThemes();
 
-            // Hide loading indicator
-            if (loadingDiv) {
-              loadingDiv.style.display = 'none';
-            }
-          }
+                      }
         })
         .catch(error => {
           console.error('Failed to load themes:', error);
-          // Hide loading indicator even on error
-          const loadingDiv = document.getElementById('syntax-theme-loading');
-          if (loadingDiv) {
-            loadingDiv.style.display = 'none';
-          }
-        });
+                  });
     }
 
     // Save user preferences when they make selections

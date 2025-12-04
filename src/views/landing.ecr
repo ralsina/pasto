@@ -203,6 +203,8 @@ ssh -p 2222 pasto.example.com login</code></pre>
   padding: 2rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   transform: perspective(1000px) rotateY(-5deg);
+  backface-visibility: hidden;
+  will-change: transform;
   transition: transform 0.3s ease;
 }
 

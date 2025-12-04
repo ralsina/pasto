@@ -48,6 +48,7 @@ module Pasto
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
     content = render "src/views/help.ecr"
     render "src/views/layout.ecr"
@@ -366,6 +367,7 @@ get "/auth/:token" do |env|
     pico_theme = "auto"
     pico_color = "slate"
     syntax_theme = "monokai"
+    resolved_pico_theme = "dark"
 
     content = <<-HTML
       <hgroup>
@@ -448,6 +450,9 @@ get "/profile" do |env|
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
   saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
+  # Resolve "auto" theme to prevent flashing - default to dark for server-side
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+
   # Set template variables (ECR template will have access to these)
   # ameba:disable Lint/UselessAssign
   page_title = "Profile"
@@ -471,6 +476,12 @@ get "/" do |env|
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
   saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
+  # Resolve "auto" theme to prevent flashing - default to dark for server-side
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+
+  # Resolve "auto" theme to prevent flashing - default to dark for server-side
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+
   # Compute CSS file names for template
   pico_theme_file = saved_pico_color == "css" ? "pico.min.css" : "pico.#{saved_pico_color}.min.css"
   syntax_theme_file = "#{saved_syntax_theme}.min.css"
@@ -482,9 +493,10 @@ get "/" do |env|
   # Set template variables (ECR template will have access to these)
   is_home_page = true
   page_title = "Pasto"
-  pico_theme = saved_pico_theme
+  pico_theme = saved_pico_theme  # Keep original for JavaScript
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
+  # resolved_pico_theme already set above
 
   content = render "src/views/index.ecr"
   render "src/views/layout.ecr"
@@ -642,6 +654,9 @@ get "/:id/edit" do |env|
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
   saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+
+  # Resolve "auto" theme to prevent flashing - default to dark for server-side
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
   # Set template variables
   is_home_page = false
@@ -854,6 +869,9 @@ get "/:id/history" do |env|
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
   saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
+  # Resolve "auto" theme to prevent flashing - default to dark for server-side
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+
   # Sort by generation (newest first)
   versions = versions.reverse
 
@@ -890,6 +908,9 @@ get "/:id/version/:gen" do |env|
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
   saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+
+  # Resolve "auto" theme to prevent flashing - default to dark for server-side
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
   # Generate highlighted content
   highlighted_content = paste.highlight(nil)[0]
@@ -994,6 +1015,9 @@ get "/:id" do |env|
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
   saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+
+  # Resolve "auto" theme to prevent flashing - default to dark for server-side
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
   # Get language override from URL parameter if present
   url_lang_override = env.params.query["lang"]?
