@@ -116,7 +116,7 @@ ASSETS_DIR="src/baked/assets"
 compress_to_brotli() {
     local file="$1"
     if [ -f "$file" ]; then
-        echo "Compressing $(basename "$file")..."
+        echo "Compressing $(basename "$file") with brotli..."
         if command -v brotli >/dev/null 2>&1; then
             brotli --keep "$file" && \
             local original_size=$(wc -c < "$file") && \
@@ -124,21 +124,69 @@ compress_to_brotli() {
             local compression_ratio=$(echo "scale=1; $compressed_size * 100 / $original_size" | bc -l 2>/dev/null || echo "N/A") && \
             echo "  ${original_size} bytes -> ${compressed_size} bytes (${compression_ratio}% of original)"
         else
-            echo "Warning: brotli command not found, skipping compression"
+            echo "Warning: brotli command not found, skipping brotli compression"
         fi
     fi
 }
 
+# Function to create gzip compressed version
+compress_to_gzip() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        echo "Compressing $(basename "$file") with gzip..."
+        gzip -c "$file" > "${file}.gz" && \
+        local original_size=$(wc -c < "$file") && \
+        local compressed_size=$(wc -c < "${file}.gz") && \
+        local compression_ratio=$(echo "scale=1; $compressed_size * 100 / $original_size" | bc -l 2>/dev/null || echo "N/A") && \
+        echo "  ${original_size} bytes -> ${compressed_size} bytes (${compression_ratio}% of original)"
+    fi
+}
+
+# Function to compress with both formats
+compress_asset() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        echo "Compressing $(basename "$file")..."
+        local original_size=$(wc -c < "$file")
+        local brotli_size=0
+        local gzip_size=0
+
+        # Compress with brotli
+        if command -v brotli >/dev/null 2>&1; then
+            if brotli -f "$file" -o "${file}.br"; then
+                brotli_size=$(wc -c < "${file}.br")
+                local brotli_ratio=$(echo "scale=1; $brotli_size * 100 / $original_size" | bc -l 2>/dev/null || echo "N/A")
+                echo "  brotli: ${original_size} bytes -> ${brotli_size} bytes (${brotli_ratio}% of original)"
+            else
+                echo "  brotli: compression failed"
+            fi
+        else
+            echo "  brotli: command not found, skipping"
+        fi
+
+        # Compress with gzip
+        if gzip -c "$file" > "${file}.gz"; then
+            gzip_size=$(wc -c < "${file}.gz")
+            local gzip_ratio=$(echo "scale=1; $gzip_size * 100 / $original_size" | bc -l 2>/dev/null || echo "N/A")
+            echo "  gzip:  ${original_size} bytes -> ${gzip_size} bytes (${gzip_ratio}% of original)"
+        else
+            echo "  gzip: compression failed"
+        fi
+
+        echo "  ---"
+    fi
+}
+
 # Compress JavaScript files
-compress_to_brotli "$ASSETS_DIR/bundle.js"
-compress_to_brotli "$ASSETS_DIR/codejar.min.js"
+compress_asset "$ASSETS_DIR/bundle.js"
+compress_asset "$ASSETS_DIR/codejar.min.js"
 
 # Compress CSS files
 for css in "$ASSETS_DIR"/*.css; do
-    compress_to_brotli "$css"
+    compress_asset "$css"
 done
 
-echo "Brotli compression completed for all assets"
+echo "Asset compression completed (brotli + gzip) for all assets"
 
 # Clean up temp files
 rm -rf "$TMPDIR"
