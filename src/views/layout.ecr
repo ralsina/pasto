@@ -1,7 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="en" data-theme="auto">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasto</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    @media (max-width: 768px) {
+      .top-bar {
+        display: none !important;
+      }
+    }
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
@@ -104,16 +117,16 @@
       color: var(--pico-primary);
       border: 2px solid var(--pico-primary);
       border-radius: 50%;
-      width: 2rem;
-      height: 2rem;
-      min-width: 2rem;
-      min-height: 2rem;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      min-height: 40px;
       flex-shrink: 0;
       padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
+      font-size: 1.25rem;
       cursor: pointer;
       transition: all 0.2s ease;
       text-decoration: none;
@@ -197,6 +210,7 @@
       z-index: 100;
       overflow: hidden;
       white-space: nowrap;
+      background: var(--pico-background-color);
     }
 
     .sidebar.collapsed {
@@ -331,6 +345,16 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+    }
+    /* Hide page-injected controls in top bar on mobile */
+    @media (max-width: 768px) {
+      #paste-title,
+      #language,
+      [onclick="createPaste()"],
+      #preview-toggle {
+        display: none !important;
+      }
+    }
     }
 
     .editor-pane textarea {
@@ -480,8 +504,11 @@
         right: auto;
         z-index: 1001;
         border-radius: 0 0.5rem 0.5rem 0;
+        transition: left 0.3s ease;
       }
-
+      .sidebar:not(.collapsed) ~ .sidebar-toggle {
+        left: 280px;
+      }
       .sidebar.collapsed .sidebar-toggle {
         left: 0;
       }
@@ -491,7 +518,7 @@
       }
 
       .main-content {
-        padding: 4rem 1rem 1rem;
+        padding: 1rem 0.25rem 1rem 0.25rem;
         min-width: 0;
         width: 100vw;
         box-sizing: border-box;
@@ -524,35 +551,40 @@
       <!-- Page-specific controls will be injected here -->
     </div>
     <div class="top-bar-right">
-      <a href="/help" title="Help" aria-label="Help" class="help-btn">
+      <a href="/help" title="Help" aria-label="Help" class="help-btn mobile-hide">
         <i data-lucide="message-circle-question-mark"></i>
       </a>
-      <a href="/profile" title="Profile" aria-label="Profile" class="user-menu-btn">
+      <a href="/profile" title="Profile" aria-label="Profile" class="user-menu-btn mobile-hide">
         <i data-lucide="user" style="width: 16px; height: 16px;"></i>
       </a>
-        <style>
-          .help-btn {
-            background: transparent;
-            border: 2px solid var(--pico-primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            min-width: 40px;
-            min-height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--pico-primary);
-            font-size: 1.25rem;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            margin-left: 0.25rem;
+      <style>
+        .help-btn {
+          background: transparent;
+          border: 2px solid var(--pico-primary);
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          min-width: 40px;
+          min-height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--pico-primary);
+          font-size: 1.25rem;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+          margin-left: 0.25rem;
+        }
+        .help-btn:hover {
+          background: var(--pico-primary);
+          color: var(--pico-primary-inverse);
+        }
+        @media (max-width: 768px) {
+          .mobile-hide {
+            display: none !important;
           }
-          .help-btn:hover {
-            background: var(--pico-primary);
-            color: var(--pico-primary-inverse);
-          }
-        </style>
+        }
+      </style>
     </div>
   </div>
 
@@ -565,8 +597,99 @@
 
     <!-- Sidebar -->
     <aside class="sidebar collapsed" id="sidebar">
-
       <div class="sidebar-section">
+        <h2 style="margin-bottom:1rem;"><a href="https://github.com/ralsina/pasto" target="_blank" rel="noopener noreferrer">Pasto</a></h2>
+        <div class="mobile-controls">
+          <div class="mobile-icon-row">
+            <a href="/help" title="Help" aria-label="Help" class="help-btn mobile-only">
+              <i data-lucide="message-circle-question-mark"></i>
+            </a>
+            <a href="/profile" title="Profile" aria-label="Profile" class="user-menu-btn mobile-only">
+              <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+            </a>
+          </div>
+                <style>
+                  @media (max-width: 768px) {
+                    .mobile-icon-row {
+                      display: flex;
+                      flex-direction: row;
+                      gap: 1rem;
+                      margin-bottom: 1rem;
+                      justify-content: flex-start;
+                    }
+                  }
+                </style>
+          <!-- Page controls for mobile -->
+          <input type="text" id="paste-title-mobile" placeholder="Title (optional)" class="mobile-only" style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.95rem; margin-bottom: 0.5rem;">
+          <select id="language-mobile" class="mobile-only" style="width: 100%; font-size: 0.95rem; margin-bottom: 0.5rem;">
+            <% Pasto::Paste.available_languages.each do |lang| %>
+              <option value="<%= lang == "Auto-detect" ? "" : lang %>"><%= lang %></option>
+            <% end %>
+          </select>
+          <button onclick="createPasteMobile()" title="Create Paste" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="plus"></i> Create Paste</button>
+          <button id="preview-toggle-mobile" onclick="togglePreviewMobile()" title="Toggle Preview" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="eye"></i> Toggle Preview</button>
+        </div>
+              <script>
+              // Mobile controls logic
+              function createPasteMobile() {
+                const content = jar ? jar.toString() : '';
+                const language = document.getElementById('language-mobile').value;
+                const title = document.getElementById('paste-title-mobile').value;
+                if (!content.trim()) {
+                  alert('Please enter some content');
+                  return;
+                }
+                const formData = new FormData();
+                formData.append('content', content);
+                formData.append('language', language);
+                formData.append('title', title);
+                fetch('/', {
+                  method: 'POST',
+                  body: formData
+                })
+                .then(response => {
+                  if (response.redirected) {
+                    window.location.href = response.url;
+                  } else {
+                    return response.text().then(text => { throw new Error(text); });
+                  }
+                })
+                .catch(error => {
+                  console.error('Error creating paste:', error);
+                  alert('Error creating paste: ' + error.message);
+                });
+              }
+              function togglePreviewMobile() {
+                const container = document.querySelector('.editor-preview-container');
+                const button = document.getElementById('preview-toggle-mobile');
+                const isHidden = container.classList.toggle('preview-hidden');
+                if (isHidden) {
+                  button.innerHTML = '<i data-lucide="eye-off"></i> Show Preview';
+                  button.title = 'Show Preview';
+                } else {
+                  button.innerHTML = '<i data-lucide="eye"></i> Hide Preview';
+                  button.title = 'Hide Preview';
+                  updatePreview();
+                }
+                lucide.createIcons();
+                localStorage.setItem('previewHidden', isHidden);
+              }
+              </script>
+              <style>
+                @media (max-width: 768px) {
+                  .mobile-only {
+                    display: flex !important;
+                    align-items: center;
+                    gap: 0.5rem;
+                    margin-bottom: 1rem;
+                  }
+                }
+                @media (min-width: 769px) {
+                  .mobile-only {
+                    display: none !important;
+                  }
+                }
+              </style>
         <h2><a href="https://github.com/ralsina/pasto" target="_blank" rel="noopener noreferrer">Pasto</a></h2>
       </div>
 
@@ -729,6 +852,19 @@
       toggleButton.classList.toggle('collapsed');
       overlay.classList.toggle('show');
       appContainer.classList.toggle('sidebar-collapsed');
+
+      // Mobile: move toggle button to right edge when sidebar is open
+      if (window.innerWidth <= 768) {
+        setTimeout(function() {
+          if (!sidebar.classList.contains('collapsed')) {
+            toggleButton.style.left = '280px';
+          } else {
+            toggleButton.style.left = '0rem';
+          }
+        }, 10);
+      } else {
+        toggleButton.style.left = '';
+      }
 
       if (sidebar.classList.contains('collapsed')) {
         toggleIcon.textContent = '☰';
