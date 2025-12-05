@@ -39,21 +39,17 @@ module Pasto
     end
 
     def save : Bool
-      begin
-        Sepia::Storage.save(self)
-        true
-      rescue ex
-        false
-      end
+      Sepia::Storage.save(self)
+      true
+    rescue ex
+      false
     end
 
     def delete : Bool
-      begin
-        Sepia::Storage.delete(self)
-        true
-      rescue ex
-        false
-      end
+      Sepia::Storage.delete(self)
+      true
+    rescue ex
+      false
     end
 
     def self.find(id : String) : AuthToken?

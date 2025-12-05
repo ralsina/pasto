@@ -79,12 +79,10 @@ module Pasto
     end
 
     def save : Bool
-      begin
-        Sepia::Storage.save(self)
-        true
-      rescue ex
-        false
-      end
+      Sepia::Storage.save(self)
+      true
+    rescue ex
+      false
     end
 
     def self.find(id : String) : User?

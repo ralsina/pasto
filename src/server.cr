@@ -319,7 +319,7 @@ post "/profile" do |env|
     puts "User #{current_user.sepia_id} updated"
     if is_ajax
       env.response.content_type = "application/json"
-      next {"status" => "ok"}.to_json
+      {"status" => "ok"}.to_json
     else
       env.redirect "/profile?updated=true"
     end
@@ -327,7 +327,7 @@ post "/profile" do |env|
     if is_ajax
       env.response.status_code = 500
       env.response.content_type = "application/json"
-      next {"status" => "error"}.to_json
+      {"status" => "error"}.to_json
     else
       env.redirect "/profile?error=save_failed"
     end
@@ -493,7 +493,7 @@ get "/" do |env|
   # Set template variables (ECR template will have access to these)
   is_home_page = true
   page_title = "Pasto"
-  pico_theme = saved_pico_theme  # Keep original for JavaScript
+  pico_theme = saved_pico_theme # Keep original for JavaScript
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
   # resolved_pico_theme already set above
