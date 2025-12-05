@@ -1183,31 +1183,6 @@ get "/syntax-theme.css" do |env|
   end
 end
 
-# Favicon handler - returns baked ICO favicon
-get "/favicon.ico" do |env|
-  begin
-    # Try to get the favicon from our baked assets first
-    if asset = PastoAssets.get("favicon.ico")
-      env.response.content_type = "image/x-icon"                       # Standard MIME type for .ico files
-      env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
-      env.response.content_length = asset.size
-      asset
-    elsif asset = PastoAssets.get("favicon.png")                       # Fallback to PNG if ICO not available
-      env.response.content_type = "image/x-icon"                       # Still serve as ICO MIME type
-      env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
-      env.response.content_length = asset.size
-      asset
-    else
-      env.response.status_code = 404
-      "Favicon not found"
-    end
-  rescue BakedFileSystem::NoSuchFileError
-    # Handle case where favicon doesn't exist in baked assets
-    env.response.status_code = 404
-    "Favicon not found"
-  end
-end
-
 # Serve cached files directly if they exist
 get "/cache/*" do |env|
   cache_path = env.params.url["path"]
