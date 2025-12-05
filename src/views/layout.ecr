@@ -40,14 +40,17 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Pasto">
   <% end %>
+
   <!-- Async CSS loading with correct themes from server -->
   <link rel="preload" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" as="style" onload="loadCSS(this, 'pico-css-link')">
   <link rel="preload" href="/syntax-theme.css?theme=<%= syntax_theme %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
+  <link rel="preload" href="/assets/<%= pico_theme == "dark" ? "atom-one-dark.min.css" : "atom-one-light.min.css" %>" as="style" onload="loadCSS(this, 'codejar-theme-link')">
 
   <!-- Fallback for browsers that don't support preload/JavaScript -->
   <noscript>
     <link rel="stylesheet" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" id="pico-css-link">
     <link rel="stylesheet" href="/syntax-theme.css?theme=<%= syntax_theme %>" id="highlight-css-link">
+    <link rel="stylesheet" href="/assets/<%= pico_theme == "dark" ? "atom-one-dark.min.css" : "atom-one-light.min.css" %>" id="codejar-theme-link">
   </noscript>
 
   <script>
@@ -74,6 +77,7 @@
   <noscript>
     <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
   </noscript>
+
   <style>
     /* Critical CSS to prevent FOUC while main CSS loads asynchronously */
     html, body {
@@ -86,754 +90,341 @@
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       line-height: 1.5;
-    }
-
-    /* Basic container and layout */
-    .container {
-      width: 100%;
-      max-width: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Loading indicator */
-    .css-loading {
-      display: none;
-    }
-
-    /* CodeJar editor styles - used in index.ecr and edit.ecr */
-    .codejar-editor {
-      flex: 1;
-      min-height: 0;
-      padding: 1rem;
-      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 0.9rem;
-      line-height: 1.5;
-      overflow: auto;
-      outline: none;
-      background: var(--pico-card-background-color, var(--pico-background-color));
-      color: var(--pico-color);
-      tab-size: 2;
-      -moz-tab-size: 2;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      border: 2px solid var(--pico-primary);
-      border-radius: var(--pico-border-radius);
-    }
-
-    .codejar-editor:focus-within {
-      box-shadow: 0 0 0 3px var(--pico-primary-focus);
-    }
-
-  
-    /* Highlight.js styling adjustments */
-    .codejar-editor.hljs {
-      background: transparent !important;
-      padding: 0 !important;
-    }
-  </style>
-
-  <style>
-    /* Reset body margins and prevent overflow */
-
-    body {
       min-height: 100vh;
-      max-height: 100vh;
-      overflow-y: hidden;
     }
 
-    /* Top bar styles */
-    .top-bar {
-      position: fixed;
-      top: 0;
-      left: 300px;
-      right: 0;
-      height: 3rem;
-      background: var(--pico-background-color);
-      border-bottom: 1px solid var(--pico-border-color);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 1rem;
-      z-index: 1001;
-      transition: left 0.3s ease;
-    }
-
-    .sidebar-collapsed .top-bar {
-      left: 0;
-    }
-
-    .top-bar-left {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .top-bar-right {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .top-bar select {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.85rem;
-      margin: 0;
-      height: auto;
-    }
-
-    .top-bar button, .top-bar .top-bar-btn {
-      background: transparent;
-      border: 2px solid var(--pico-primary);
-      border-radius: 4px;
-      padding: 0;
-      cursor: pointer;
-      font-size: 1.25rem;
-      transition: background 0.2s, color 0.2s;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
-      min-height: 40px;
-      color: var(--pico-primary);
-    }
-
-    .top-bar button:hover, .top-bar .top-bar-btn:hover {
-      background: var(--pico-primary);
-      color: var(--pico-primary-inverse);
-    }
-
-    .top-bar button svg, .top-bar .top-bar-btn svg,
-    .top-bar button i, .top-bar .top-bar-btn i {
-      color: inherit;
-      width: 24px !important;
-      height: 24px !important;
-      min-width: 24px !important;
-      min-height: 24px !important;
-      max-width: 24px !important;
-      max-height: 24px !important;
-    }
-
-    .user-menu-btn {
-      background: transparent;
-      color: var(--pico-primary);
-      border: 2px solid var(--pico-primary);
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
-      min-height: 40px;
-      flex-shrink: 0;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-decoration: none;
-    }
-
-    .user-menu-btn:hover {
-      background: var(--pico-primary);
-      color: var(--pico-primary-inverse);
-      transform: scale(1.05);
-    }
-
-    .app-container {
-      padding-top: 0;
-    }
-
-    /* Mobile adjustments */
-    @media (max-width: 768px) {
-      .top-bar {
-        display: none; /* Hide top bar completely on mobile */
-      }
-
-      /* Adjust main content spacing when top bar is hidden */
-      .app-container {
-        padding-top: 0;
-      }
-
-      .sidebar-section {
-        margin-top: 0;
-      }
-
-      .main-content {
-        padding-top: 1rem; /* Remove top bar spacing, use normal padding */
-      }
-    }
-  </style>
-  <style>
-    /* Chivo fonts */
-    body {
-      font-family: 'Chivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-
-    .paste-textarea, .preview-content code, .preview-content pre {
-      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-    }
-
-    code, pre {
-      font-family: 'Chivo Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    }
-
-    /* Main layout */
-    .paste-form {
+    /* Clean Responsive Layout */
+    .app-layout {
       display: flex;
       min-height: 100vh;
-      margin: 0;
-      padding: 0;
     }
 
-    .paste-form .sidebar {
+    .sidebar {
       width: 300px;
       flex-shrink: 0;
-    }
-
-    .paste-form .main-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .app-container {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      height: 100vh;
-      margin: 0;
-      overflow: hidden;
-    }
-
-    .app-container.sidebar-collapsed {
-      grid-template-columns: 0px 1fr;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      border-right: 1px solid var(--pico-primary-border);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      transition: all 0.3s ease;
-      position: relative;
-      z-index: 100;
-      overflow: hidden;
-      white-space: nowrap;
+      border-right: 3px solid var(--pico-primary);
       background: var(--pico-background-color);
-    }
-
-    .sidebar.collapsed {
-      width: 0;
-      padding: 0;
-      overflow: hidden;
-      border: none;
-      visibility: hidden;
-    }
-
-    .sidebar:not(.collapsed) {
-      visibility: visible;
-    }
-
-    .sidebar-toggle {
-      position: fixed;
-      left: 300px;
-      top: 1.5rem;
-      background: var(--pico-primary);
-      color: var(--pico-primary-inverse);
-      border: 1px solid var(--pico-primary-border);
-      border-radius: 0 0.5rem 0.5rem 0;
-      padding: 0.5rem;
-      cursor: pointer;
-      z-index: 1001;
-      width: 2rem;
-      height: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      font-weight: bold;
-      transition: left 0.3s ease;
-    }
-
-    .sidebar-toggle.collapsed {
-      left: 0;
-    }
-
-    .sidebar-toggle:hover {
-      background: var(--pico-primary-hover);
-      border-color: var(--pico-primary-hover-border);
-    }
-
-    .sidebar-toggle:focus {
-      outline: 2px solid var(--pico-primary-focus);
-      outline-offset: -2px;
-    }
-
-    .sidebar-section {
-      margin-bottom: 2rem;
-    }
-
-    .sidebar-section h2 {
-      color: var(--pico-primary);
-      margin-bottom: 0;
-    }
-
-    .sidebar-section h3 {
-      margin-bottom: 1rem;
-      font-size: 1.1rem;
-      color: var(--pico-primary);
-    }
-
-    .theme-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .theme-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-    }
-
-    .theme-group select {
-      width: 100%;
-      font-size: 0.9rem;
-    }
-
-    
-    /* Main content area */
-    .main-content {
-      padding: 1rem 2rem 1.5rem 2rem;
-      padding-top: 4rem;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      box-sizing: border-box;
+      transition: margin-left 0.3s ease;
       overflow-y: auto;
     }
 
-    /* Only constrain overflow on home page (editor) */
-    .main-content.editor-page {
+    .sidebar.collapsed {
+      margin-left: -300px;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
       overflow: hidden;
     }
 
+    .controls {
+      padding: 1rem 1rem 0 1rem;
+      border-bottom: 1px solid var(--pico-border-color);
+      background: var(--pico-background-color);
+      flex-shrink: 0;
+      min-height: 60px;
+    }
+
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    /* Sidebar toggle button */
+    .sidebar-toggle {
+      position: fixed;
+      top: 1rem;
+      left: 0.5rem;
+      z-index: 1000;
+      background: var(--pico-primary, #0074d9);
+      color: white;
+      border: none;
+      outline: none;
+      border-radius: 4px;
+      padding: 0.5rem;
+      cursor: pointer;
+      font-size: 1.2rem;
+      width: 3rem;
+      height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: left 0.3s ease, border-radius 0.3s ease;
+    }
+
+    .sidebar-toggle:focus,
+    .sidebar-toggle:focus-visible,
+    .sidebar-toggle:focus-within {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .sidebar:not(.collapsed) .sidebar-toggle {
+      left: 298.5px;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* Controls styling */
+    .controls-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      justify-content: flex-end;
+      margin-left: auto;
+      padding-left: 3rem; /* Space for sidebar toggle */
+    }
+
+    .controls-input {
+      flex: 0 0 auto;
+      width: 200px !important;
+      padding: 0.5rem;
+      border: 1px solid var(--pico-border-color);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      height: 3rem !important;
+      box-sizing: border-box;
+      line-height: 1;
+      vertical-align: middle;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    .controls-select {
+      padding: 0.5rem;
+      border: 1px solid var(--pico-border-color);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      width: 200px;
+      height: 3rem;
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    .controls-button {
+      padding: 0.5rem;
+      border: 1px solid var(--pico-primary, #0074d9);
+      background: var(--pico-primary, #0074d9);
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      height: 3rem;
+      width: 3rem;
+      box-sizing: border-box;
+      text-decoration: none;
+    }
+
+    .controls-button:hover {
+      background: var(--pico-primary-hover, #0056b3);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .app-layout {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--pico-border-color);
+      }
+
+      .sidebar.collapsed {
+        margin-left: 0;
+        display: none;
+      }
+
+      .sidebar-toggle {
+        position: static;
+        margin: 0.5rem;
+        align-self: flex-start;
+      }
+
+      .main-content {
+        order: -1; /* Put main content first on mobile */
+      }
+
+      .controls-group {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .controls-input,
+      .controls-select {
+        width: 100%;
+        min-width: unset;
+      }
+    }
+
+    /* Editor/Preview specific styles */
     .editor-preview-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
+      height: calc(100vh - 200px); /* Account for controls and padding */
+      min-height: 400px;
     }
 
     .editor-preview-container.preview-hidden {
       grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
     }
 
     .editor-preview-container.preview-hidden .preview-pane {
       display: none;
     }
 
-    .editor-pane, .preview-pane {
+    .editor-pane {
+      border: 2px solid var(--pico-primary);
+      border-radius: 4px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      background-color: var(--pico-background-color);
-      border: 1px solid var(--pico-border-color);
-      border-radius: var(--pico-border-radius);
-      overflow: hidden;
-      min-width: 0;
     }
 
-    .pane-header {
-            padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--pico-border-color);
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--pico-color);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    /* Hide page-injected controls in top bar on mobile */
-    @media (max-width: 768px) {
-      #paste-title,
-      #language,
-      [onclick="createPaste()"],
-      #preview-toggle {
-        display: none !important;
-      }
-    }
-    }
-
-    .editor-pane textarea {
+    .editor-wrapper {
       flex: 1;
-      min-height: 0;
-      padding: 1rem;
+      margin: 1rem;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .preview-pane {
+      border: 2px solid var(--pico-primary);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+  
+    .codejar-editor {
+      flex: 1;
+      padding: 0;
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: var(--pico-font-size) !important;
+      line-height: 1.5;
+      overflow: auto;
+      outline: none;
       border: none;
       resize: none;
-      font-size: 0.9rem;
-      line-height: 1.5;
-      margin: 0;
+      tab-size: 2;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .codejar-editor:empty::before {
+      content: 'Paste your code here...';
+      color: var(--pico-muted-color, #6b7280);
     }
 
     .preview-content {
       flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      padding: 0 !important;
+      padding: 0;
+      margin: 0;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
     }
 
     .preview-content pre {
+      flex: 1;
       margin: 0;
+      padding: 0;
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: var(--pico-font-size);
+      line-height: 1.5;
       white-space: pre-wrap;
       word-wrap: break-word;
-      font-size: 0.9rem;
-      line-height: 1.5;
+      background: transparent;
+      border: none;
+      outline: none;
     }
 
     .preview-content code {
-      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-    }
-
-    /* Override syntax highlighting font-weight to normal */
-    .preview-content .b,
-    .preview-content .b code {
-      font-weight: 400 !important;
-    }
-
-    .editor-pane textarea:focus {
-      outline: none;
-      box-shadow: inset 0 0 0 2px var(--pico-primary);
-    }
-
-    /* Paste view specific */
-    .paste-header {
-      margin-bottom: 0.5rem;
-    }
-
-    .paste-header h2 {
-      margin-bottom: 0.5rem;
-    }
-
-    .paste-meta {
-      margin-bottom: 1.5rem;
-      color: var(--pico-muted-color);
-    }
-
-    .paste-content {
-      background-color: var(--pico-background-color);
-      border: 1px solid var(--pico-border-color);
-      border-radius: var(--pico-border-radius);
+      display: block;
       padding: 1rem;
-      overflow: auto;
-      flex: 1;
+      font-weight: 400;
     }
 
-    .paste-content pre {
-      margin: 0;
-      white-space: pre-wrap;
-      word-wrap: break-word;
+    /* Show/Hide states */
+    .hidden {
+      display: none !important;
     }
 
-    .nav-buttons {
-      margin-bottom: 2rem;
+    /* Make all headings use Chivo fonts */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
     }
 
-    .nav-buttons a {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      text-decoration: none;
-      color: var(--pico-color);
-            padding: 0.75rem 1rem;
-      border-radius: var(--pico-border-radius);
-      border: 1px solid var(--pico-border-color);
-    }
-
-    .nav-buttons a:hover {
-      color: var(--pico-primary);
-      text-decoration: none;
-      background-color: var(--pico-secondary-background);
-    }
-
-    
-    /* Mobile overlay */
-    .mobile-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 99;
-    }
-
-    /* Mobile responsive */
-    @media (max-width: 1024px) {
+    /* Mobile adjustments for editor */
+    @media (max-width: 768px) {
       .editor-preview-container {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr 1fr;
+        height: auto;
+        min-height: 300px;
       }
 
       .editor-preview-container.preview-hidden {
-        grid-template-columns: 1fr;
         grid-template-rows: 1fr;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .paste-form, .app-container {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        width: 280px;
-        transform: translateX(-100%);
-        z-index: 1000;
-      }
-
-      .sidebar:not(.collapsed) {
-        transform: translateX(0);
-      }
-
-      .sidebar.collapsed {
-        transform: translateX(-100%);
-      }
-
-      .sidebar-toggle {
-        position: fixed;
-        top: 0.5rem;
-        left: 1rem;
-        right: auto;
-        z-index: 1001;
-        border-radius: 0 0.5rem 0.5rem 0;
-        transition: left 0.3s ease;
-      }
-      .sidebar:not(.collapsed) ~ .sidebar-toggle {
-        left: 280px;
-      }
-      .sidebar.collapsed .sidebar-toggle {
-        left: 0;
-      }
-
-      .mobile-overlay.show {
-        display: block;
-      }
-
-      /* Make sidebar toggle translucent on mobile to avoid covering content */
-      .sidebar-toggle {
-        background: color-mix(in srgb, var(--pico-card-background-color, var(--pico-background-color)), rgba(255, 255, 255, 0.1)) !important;
-        backdrop-filter: blur(4px);
-        border-color: color-mix(in srgb, var(--pico-primary-border, var(--pico-muted-border-color)), rgba(255, 255, 255, 0.2)) !important;
-        color: var(--pico-primary) !important;
-      }
-
-      .sidebar-toggle:hover {
-        background: color-mix(in srgb, var(--pico-card-background-color, var(--pico-background-color)), rgba(255, 255, 255, 0.2)) !important;
-        border-color: color-mix(in srgb, var(--pico-primary-border, var(--pico-muted-border-color)), rgba(255, 255, 255, 0.3)) !important;
-      }
-
-      .main-content {
-        padding: 1rem 0.25rem 1rem 0.25rem;
-        min-width: 0;
-        width: 100vw;
-        box-sizing: border-box;
-      }
-
-      .editor-preview-container {
-        grid-template-rows: 1fr 1fr;
-      }
-
-      .editor-pane, .preview-pane {
-        min-height: 250px;
-      }
-
-      .controls-top {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-      }
-
-      .controls-top .language-select {
-        min-width: auto;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Top Bar with Controls -->
-  <div class="top-bar" id="top-bar">
-    <div class="top-bar-left">
-      <!-- Page-specific controls will be injected here -->
-    </div>
-    <div class="top-bar-right">
-      <a href="/help" title="Help" aria-label="Help" class="help-btn mobile-hide">
-        <i data-lucide="message-circle-question-mark"></i>
-      </a>
-      <a href="/profile" title="Profile" aria-label="Profile" class="user-menu-btn mobile-hide">
-        <i data-lucide="user" style="width: 16px; height: 16px;"></i>
-      </a>
-      <style>
-        .help-btn {
-          background: transparent;
-          border: 2px solid var(--pico-primary);
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          min-width: 40px;
-          min-height: 40px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--pico-primary);
-          font-size: 1.25rem;
-          cursor: pointer;
-          transition: background 0.2s, color 0.2s;
-          margin-left: 0.25rem;
-        }
-        .help-btn:hover {
-          background: var(--pico-primary);
-          color: var(--pico-primary-inverse);
-        }
-        @media (max-width: 768px) {
-          .mobile-hide {
-            display: none !important;
-          }
-        }
-      </style>
-    </div>
-  </div>
-
-  <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
-  <div class="app-container sidebar-collapsed">
-    <!-- Sidebar toggle button -->
-    <button class="sidebar-toggle collapsed" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar navigation">
-      <span id="toggle-icon"><i data-lucide="menu" style="width: 20px; height: 20px;"></i></span>
-    </button>
-
+  <div class="app-layout">
     <!-- Sidebar -->
     <aside class="sidebar collapsed" id="sidebar">
-      <div class="sidebar-section">
-        <h2 style="margin-bottom:1rem;"><a href="https://github.com/ralsina/pasto" target="_blank" rel="noopener noreferrer">Pasto</a></h2>
-        <div class="mobile-controls">
-          <div class="mobile-icon-row">
-            <a href="/help" title="Help" aria-label="Help" class="help-btn mobile-only">
-              <i data-lucide="message-circle-question-mark"></i>
-            </a>
-            <a href="/profile" title="Profile" aria-label="Profile" class="user-menu-btn mobile-only">
-              <i data-lucide="user" style="width: 16px; height: 16px;"></i>
-            </a>
-          </div>
-                <style>
-                  @media (max-width: 768px) {
-                    .mobile-icon-row {
-                      display: flex;
-                      flex-direction: row;
-                      gap: 1rem;
-                      margin-bottom: 1rem;
-                      justify-content: flex-start;
-                    }
-                  }
-                </style>
-          <!-- Page controls for mobile -->
-          <input type="text" id="paste-title-mobile" placeholder="Title (optional)" class="mobile-only" style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.95rem; margin-bottom: 0.5rem;">
-          <select id="language-mobile" class="mobile-only" style="width: 100%; font-size: 0.95rem; margin-bottom: 0.5rem;" aria-label="Select programming language">
-            <!-- Preload Auto-detect for immediate responsiveness -->
-            <option value="">Auto-detect</option>
-          </select>
-                    <button onclick="createPasteMobile()" title="Create Paste" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="plus"></i> Create Paste</button>
-          <button id="preview-toggle-mobile" onclick="togglePreviewMobile()" title="Toggle Preview" class="mobile-only" style="width: 100%; margin-bottom: 0.5rem;"><i data-lucide="eye"></i> Toggle Preview</button>
-        </div>
-              <script>
-              // Mobile controls logic
-              function createPasteMobile() {
-                const content = jar ? jar.toString() : '';
-                const language = document.getElementById('language-mobile').value;
-                const title = document.getElementById('paste-title-mobile').value;
-                if (!content.trim()) {
-                  alert('Please enter some content');
-                  return;
-                }
-                const formData = new FormData();
-                formData.append('content', content);
-                formData.append('language', language);
-                formData.append('title', title);
-                fetch('/', {
-                  method: 'POST',
-                  body: formData
-                })
-                .then(response => {
-                  if (response.redirected) {
-                    window.location.href = response.url;
-                  } else {
-                    return response.text().then(text => { throw new Error(text); });
-                  }
-                })
-                .catch(error => {
-                  console.error('Error creating paste:', error);
-                  alert('Error creating paste: ' + error.message);
-                });
-              }
-              function togglePreviewMobile() {
-                const container = document.querySelector('.editor-preview-container');
-                const button = document.getElementById('preview-toggle-mobile');
-                const isHidden = container.classList.toggle('preview-hidden');
-                if (isHidden) {
-                  button.innerHTML = '<i data-lucide="eye-off"></i> Show Preview';
-                  button.title = 'Show Preview';
-                } else {
-                  button.innerHTML = '<i data-lucide="eye"></i> Hide Preview';
-                  button.title = 'Hide Preview';
-                  updatePreview();
-                }
-                lucide.createIcons();
-                localStorage.setItem('previewHidden', isHidden);
-              }
-              </script>
-              <style>
-                @media (max-width: 768px) {
-                  .mobile-only {
-                    display: flex !important;
-                    align-items: center;
-                    gap: 0.5rem;
-                    margin-bottom: 1rem;
-                  }
-                }
-                @media (min-width: 769px) {
-                  .mobile-only {
-                    display: none !important;
-                  }
-                }
-              </style>
-        <!-- Removed duplicate Pasto header -->
+      <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <span id="toggle-icon">☰</span>
+      </button>
+
+      <div style="padding: 1rem;">
+        <h2 style="margin: 0 0 1rem 0; color: var(--pico-primary, #0074d9);">
+          <a href="https://github.com/ralsina/pasto" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">Pasto</a>
+        </h2>
       </div>
 
-      <div class="sidebar-section">
-        <h3>Theme Preferences</h3>
+      <!-- Controls will be injected here for mobile -->
+      <div class="mobile-controls" id="mobile-controls" style="padding: 0 1rem 1rem 1rem;">
+      </div>
 
-        <div class="theme-group">
-          <label for="pico-theme">UI Theme:</label>
-          <select id="pico-theme" onchange="updateThemes()">
+      <div class="sidebar-section" style="padding: 0 1rem 1rem 1rem;">
+        <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: var(--pico-primary, #0074d9);">Theme Preferences</h3>
+
+        <div class="theme-group" style="margin-bottom: 1rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">UI Theme:</label>
+          <select id="pico-theme" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;">
             <option value="auto" selected>Auto (System)</option>
             <option value="light">Light</option>
             <option value="dark">Dark</option>
           </select>
-          <div class="theme-preview">
-          </div>
         </div>
 
-        <div class="theme-group">
-          <label for="pico-color">Color Scheme:</label>
-          <select id="pico-color" onchange="updateThemes()">
+        <div class="theme-group" style="margin-bottom: 1rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">Color Scheme:</label>
+          <select id="pico-color" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;">
             <option value="css">Azure</option>
             <option value="red">Red</option>
             <option value="pink">Pink</option>
@@ -855,320 +446,154 @@
             <option value="zinc">Zinc</option>
             <option value="slate" selected>Slate</option>
           </select>
-                  </div>
+        </div>
 
-        <div class="theme-group">
-          <label for="syntax-theme">Syntax Highlighting:</label>
-          <select id="syntax-theme" onchange="updateThemes()">
-            <!-- Themes will be loaded via API to maintain alphabetical order -->
+        <div class="theme-group" style="margin-bottom: 1rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">Syntax Highlighting:</label>
+          <select id="syntax-theme" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;">
+            <!-- Themes will be loaded via API -->
           </select>
-                  </div>
+        </div>
       </div>
     </aside>
 
-    <!-- Main content -->
-    <main class="main-content<%= is_home_page ? " editor-page" : "" %>">
-      <%= content %>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Controls -->
+      <div class="controls" id="main-controls">
+        <div class="controls-group" id="controls-group">
+          <!-- Page-specific controls will be injected here -->
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        <%= content %>
+      </div>
     </main>
   </div>
 
   <script>
-    // Check if user is logged in (server passes this info)
-    const isLoggedIn = <%= current_user ? "true" : "false" %>;
-    
-    // Server-provided preferences (from user profile if logged in)
-    const serverPrefs = {
-      picoTheme: <%= current_user.try(&.pico_theme) ? "\"#{current_user.try(&.pico_theme)}\"" : "null" %>,
-      picoColor: <%= current_user.try(&.pico_color) ? "\"#{current_user.try(&.pico_color)}\"" : "null" %>,
-      syntaxTheme: <%= current_user.try(&.syntax_theme) ? "\"#{current_user.try(&.syntax_theme)}\"" : "null" %>
-    };
+    // Sidebar toggle function
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggle-icon');
+      const mainControls = document.getElementById('main-controls');
+      const mobileControls = document.getElementById('mobile-controls');
 
-    function getPreference(key, defaultValue) {
-      // Priority: server (if logged in) > localStorage > cookie > default
-      if (isLoggedIn && serverPrefs[key]) {
-        return serverPrefs[key];
+      sidebar.classList.toggle('collapsed');
+
+      // Move controls between sidebar and main content based on screen size
+      const isMobile = window.innerWidth <= 768;
+      const isCollapsed = sidebar.classList.contains('collapsed');
+
+      if (isMobile) {
+        // On mobile, controls are in sidebar when expanded, main when collapsed
+        if (isCollapsed) {
+          mobileControls.innerHTML = '';
+          mainControls.style.display = 'block';
+        } else {
+          mobileControls.innerHTML = mainControls.innerHTML;
+          mainControls.style.display = 'none';
+        }
       }
-      
-      const stored = localStorage.getItem('pasto_' + key);
-      if (stored) return stored;
-      
-      // Try cookie as fallback
-      const cookie = document.cookie.split('; ').find(row => row.startsWith('pasto_' + key + '='));
-      if (cookie) return cookie.split('=')[1];
-      
-      return defaultValue;
+
+      // Update toggle icon
+      toggleIcon.textContent = isCollapsed ? '☰' : '✕';
+
+      // Save preference
+      localStorage.setItem('sidebarCollapsed', isCollapsed);
     }
 
-    function savePreferences(picoTheme, picoColor, syntaxTheme) {
-      // Always save to localStorage
-      localStorage.setItem('pasto_picoTheme', picoTheme);
-      localStorage.setItem('pasto_picoColor', picoColor);
-      localStorage.setItem('pasto_syntaxTheme', syntaxTheme);
-      
-      // Also save to cookies for server-side reading
-      document.cookie = `pasto_pico_theme=${picoTheme}; path=/; max-age=31536000`;
-      document.cookie = `pasto_pico_color=${picoColor}; path=/; max-age=31536000`;
-      document.cookie = `pasto_syntax_theme=${syntaxTheme}; path=/; max-age=31536000`;
-      
-      // If logged in, save to server (async, fire and forget)
-      if (isLoggedIn) {
-        const formData = new FormData();
-        formData.append('pico_theme', picoTheme);
-        formData.append('pico_color', picoColor);
-        formData.append('syntax_theme', syntaxTheme);
-        
-        fetch('/profile', {
-          method: 'POST',
-          headers: { 'X-Requested-With': 'XMLHttpRequest' },
-          body: formData
-        }).catch(err => console.log('Failed to save preferences to server:', err));
+    // Initialize sidebar state
+    document.addEventListener('DOMContentLoaded', function() {
+      const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') !== 'false'; // Default to collapsed
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggle-icon');
+
+      if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        toggleIcon.textContent = '☰';
+      } else {
+        sidebar.classList.remove('collapsed');
+        toggleIcon.textContent = '✕';
       }
-    }
 
-    function loadPreferences() {
-      const picoTheme = getPreference('picoTheme', 'auto');
-      const picoColor = getPreference('picoColor', 'slate');
-      const syntaxTheme = getPreference('syntaxTheme', 'default-dark');
-      
-      document.getElementById('pico-theme').value = picoTheme;
-      // Default to Azure (css) if no color is set or value is blank
-      document.getElementById('pico-color').value = picoColor && picoColor !== '' ? picoColor : 'css';
-      document.getElementById('syntax-theme').value = syntaxTheme;
-      
-      return { picoTheme, picoColor, syntaxTheme };
-    }
+      // DISABLED: Responsive layout logic
+      // function handleResize() { ... }
+      // handleResize();
+      // window.addEventListener('resize', handleResize);
 
+      // Initialize Lucide icons if available
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+
+    // Theme update functions
     function updateThemes() {
       const picoTheme = document.getElementById('pico-theme').value;
       const picoColor = document.getElementById('pico-color').value;
       const syntaxTheme = document.getElementById('syntax-theme').value;
 
-      // Save user preferences
-      saveUserPreferences();
-
-      // Update CSS link - update href directly
-      const cssLink = document.getElementById('pico-css-link');
-      let cssFile;
-      if (picoColor === 'css') {
-        cssFile = '/assets/pico.min.css';
-      } else {
-        cssFile = `/assets/pico.${picoColor}.min.css`;
+      // Update Pico CSS
+      const picoLink = document.getElementById('pico-css-link');
+      if (picoLink) {
+        picoLink.href = `/assets/${picoColor === 'css' ? 'pico.min.css' : 'pico.' + picoColor + '.min.css'}`;
       }
 
-      if (cssLink) {
-        cssLink.href = cssFile;
-      } else {
-        // Fallback: create the link if it doesn't exist
-        const newCssLink = document.createElement('link');
-        newCssLink.id = 'pico-css-link';
-        newCssLink.rel = 'stylesheet';
-        newCssLink.href = cssFile;
-        document.head.appendChild(newCssLink);
+      // Update syntax theme
+      const syntaxLink = document.getElementById('highlight-css-link');
+      if (syntaxLink) {
+        syntaxLink.href = `/syntax-theme.css?theme=${syntaxTheme}`;
       }
 
-      // Update HTML data-theme attribute
-      document.documentElement.setAttribute('data-theme', picoTheme);
+      // Update CodeJar theme
+      const codejarLink = document.getElementById('codejar-theme-link');
+      const resolvedTheme = picoTheme === 'auto' ?
+        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') :
+        picoTheme;
 
-      // Update highlight.js CSS theme based on pico theme
-      const highlightCssLink = document.getElementById('highlight-css-link');
-      if (highlightCssLink) {
-        const highlightTheme = (picoTheme === 'dark') ? 'atom-one-dark' : 'atom-one-light';
-        highlightCssLink.href = `/assets/${highlightTheme}.min.css`;
+      if (codejarLink) {
+        codejarLink.href = `/assets/${resolvedTheme === 'dark' ? 'atom-one-dark.min.css' : 'atom-one-light.min.css'}`;
       }
-
-      // Update syntax theme CSS
-      let syntaxCssLink = document.getElementById('syntax-theme-css');
-      if (!syntaxCssLink) {
-        syntaxCssLink = document.createElement('link');
-        syntaxCssLink.id = 'syntax-theme-css';
-        syntaxCssLink.rel = 'stylesheet';
-        document.head.appendChild(syntaxCssLink);
-      }
-      syntaxCssLink.href = `/syntax-theme.css?theme=${syntaxTheme}`;
 
       // Save preferences
-      savePreferences(picoTheme, picoColor, syntaxTheme);
+      localStorage.setItem('picoTheme', picoTheme);
+      localStorage.setItem('picoColor', picoColor);
+      localStorage.setItem('syntaxTheme', syntaxTheme);
 
-      // Update preview if it exists
-      if (typeof updatePreview === 'function') {
-        updatePreview();
-      }
+      // Update data-theme attribute
+      document.documentElement.setAttribute('data-theme', resolvedTheme);
     }
 
-    // Lazy load large select elements after page load for performance
-    function lazyLoadSelectOptions() {
-      // Load full language list via API
-      fetch('/api/languages')
-        .then(response => response.json())
-        .then(languages => {
-          // Update all language select elements
-          const languageSelects = ['language', 'language-mobile'];
-          languageSelects.forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (select && select.options.length < 5) { // Only load if not already loaded
-              const currentValue = select.value;
+    // Load saved theme preferences
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedPicoTheme = localStorage.getItem('picoTheme') || 'auto';
+      const savedPicoColor = localStorage.getItem('picoColor') || 'slate';
+      const savedSyntaxTheme = localStorage.getItem('syntaxTheme') || 'monokai';
 
-              // Try to preload user's preferred language from localStorage
-              const userLanguage = localStorage.getItem('pasto_preferred_language');
-              const targetLanguage = userLanguage || currentValue || '';
+      document.getElementById('pico-theme').value = savedPicoTheme;
+      document.getElementById('pico-color').value = savedPicoColor;
+      document.getElementById('syntax-theme').value = savedSyntaxTheme;
 
-              // Clear existing options except the first (Auto-detect)
-              while (select.options.length > 1) {
-                select.remove(1);
-              }
+      updateThemes();
 
-              // Add all languages but skip Auto-detect (value="") since we already preloaded it
-              languages.forEach(lang => {
-                // Skip Auto-detect since we already preloaded it
-                if (lang.value === "") return;
-
-                const option = document.createElement('option');
-                option.value = lang.value || '';
-                option.textContent = lang.name;
-                option.selected = (option.value === targetLanguage) || (option.value === currentValue);
-                select.appendChild(option);
-              });
-
-                          }
-          });
-        })
-        .catch(error => {
-          console.error('Failed to load languages:', error);
-          // Hide loading indicators even on error
-          document.querySelectorAll('[id$="-loading"]').forEach(el => {
-            el.style.display = 'none';
-          });
-        });
-
-      // Load full theme list via API
+      // Load syntax themes via API
       fetch('/api/themes')
         .then(response => response.json())
         .then(themes => {
-          const themeSelect = document.getElementById('syntax-theme');
-          if (themeSelect && themeSelect.options.length < 10) { // Only load if not already loaded
-            const currentValue = themeSelect.value;
-
-            // Add all themes in alphabetical order
-            themes.forEach(theme => {
-              const option = document.createElement('option');
-              option.value = theme;
-              option.textContent = theme;
-              themeSelect.appendChild(option);
-            });
-
-            // Apply user's preferred theme after loading all options
-            applyUserTheme();
-
-            // Update themes only after we have a valid selection
-            updateThemes();
-
-                      }
-        })
-        .catch(error => {
-          console.error('Failed to load themes:', error);
-                  });
-    }
-
-    // Save user preferences when they make selections
-    function saveUserPreferences() {
-      const languageSelect = document.getElementById('language');
-      const themeSelect = document.getElementById('syntax-theme');
-
-      // Save language preference
-      if (languageSelect && languageSelect.value) {
-        localStorage.setItem('pasto_preferred_language', languageSelect.value);
-      }
-
-      // Save theme preference
-      if (themeSelect && themeSelect.value) {
-        localStorage.setItem('pasto_syntax_theme', themeSelect.value);
-      }
-    }
-
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('mobile-overlay');
-      const toggleButton = document.getElementById('sidebar-toggle');
-      const toggleIcon = document.getElementById('toggle-icon');
-      const appContainer = document.querySelector('.app-container');
-
-      sidebar.classList.toggle('collapsed');
-      toggleButton.classList.toggle('collapsed');
-      overlay.classList.toggle('show');
-      appContainer.classList.toggle('sidebar-collapsed');
-
-      // Mobile: move toggle button to right edge when sidebar is open
-      if (window.innerWidth <= 768) {
-        setTimeout(function() {
-          if (!sidebar.classList.contains('collapsed')) {
-            toggleButton.style.left = '280px';
-          } else {
-            toggleButton.style.left = '0rem';
-          }
-        }, 10);
-      } else {
-        toggleButton.style.left = '';
-      }
-
-      if (sidebar.classList.contains('collapsed')) {
-        toggleIcon.textContent = '☰';
-      } else {
-        toggleIcon.textContent = '✕';
-      }
-    }
-
-    function generateLanguageOptions() {
-      return [
-        'Auto-detect', 'C', 'C++', 'C#', 'Go', 'Rust', 'Python', 'Python 2', 'Ruby', 'PHP', 'Perl',
-        'JavaScript', 'TypeScript', 'ActionScript', 'Java', 'Kotlin', 'Scala', 'HTML', 'CSS', 'SCSS',
-        'Sass', 'SQL', 'MySQL', 'PostgreSQL', 'Transact-SQL', 'Bash', 'Shell', 'PowerShell',
-        'JSON', 'YAML', 'XML', 'CSV', 'Markdown', 'Dockerfile', 'Plain Text'
-      ];
-    }
-
-    // Apply user's preferred theme after API loads
-    function applyUserTheme() {
-      const themeSelect = document.getElementById('syntax-theme');
-      if (!themeSelect) return;
-
-      let targetTheme = 'monokai'; // Default theme
-
-      // Check if user is logged in and has a configured theme
-      if (isLoggedIn && serverPrefs.syntaxTheme) {
-        targetTheme = serverPrefs.syntaxTheme;
-      } else {
-        // Fallback to localStorage preference, then default
-        targetTheme = localStorage.getItem('pasto_syntax_theme') || 'monokai';
-      }
-
-      // Set the theme value if it exists in the options
-      for (let i = 0; i < themeSelect.options.length; i++) {
-        if (themeSelect.options[i].value === targetTheme) {
-          themeSelect.value = targetTheme;
-          break;
-        }
-      }
-    }
-
-    // Initialize theme on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      loadPreferences();
-      updateThemes(); // Backend will handle empty theme by using user's default
-      // Lucide icons will be initialized by individual page templates after dynamic content injection
-
-      // Lazy load large select options after page load for performance
-      setTimeout(lazyLoadSelectOptions, 100);
-
-      // Register service worker for PWA functionality
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registration successful');
-          })
-          .catch(error => {
-            console.log('ServiceWorker registration failed:', error);
+          const syntaxSelect = document.getElementById('syntax-theme');
+          syntaxSelect.innerHTML = '';
+          themes.forEach(theme => {
+            const option = document.createElement('option');
+            option.value = theme;
+            option.textContent = theme;
+            option.selected = theme === savedSyntaxTheme;
+            syntaxSelect.appendChild(option);
           });
-      }
+        })
+        .catch(error => console.error('Error loading themes:', error));
     });
   </script>
 </body>

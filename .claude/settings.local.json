@@ -55,7 +55,13 @@
       "Bash(./update_assets.sh:*)",
       "Bash(chmod:*)",
       "Bash(.gitignore)",
-      "Bash(./release.sh:*)"
+      "Bash(./release.sh:*)",
+      "Bash(./bin/ameba:*)",
+      "Bash(convert:*)",
+      "mcp__playwright__browser_network_requests",
+      "Bash(wget:*)",
+      "Bash(PASTO_PORT=3010 ./bin/pasto:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

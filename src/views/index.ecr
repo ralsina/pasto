@@ -1,6 +1,5 @@
-
 <% unless current_user %>
-  <div id="anon-warning" class="anon-warning" style="display:none;">
+  <div id="anon-warning" class="anon-warning" style="display:none; margin: 1rem;">
     <i data-lucide="info"></i>
     You are not logged in. Pastes created will not be associated with an account and cannot be edited later.
     <a href="/profile" style="margin-left:0.5em;">Log in to enable editing</a>
@@ -20,26 +19,16 @@
   </script>
   <style>
     .anon-warning {
-      background: #e8f4f8;
-      color: #1a3b4d;
-      border: 1px solid #bee1e6;
-      border-radius: var(--pico-border-radius, 6px);
+      background: var(--pico-secondary-background);
+      color: var(--pico-color);
+      border: 1px solid var(--pico-border-color);
+      border-radius: 6px;
       padding: 0.75em 1em;
-      margin: 1em 0 0.5em 0;
       font-size: 0.97em;
       display: flex;
       align-items: center;
       gap: 0.5em;
       box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-    }
-
-    /* Dark mode support for anon warning */
-    @media (prefers-color-scheme: dark) {
-      .anon-warning {
-        background: #1e3a47;
-        color: #e8f4f8;
-        border-color: #2d5a6f;
-      }
     }
     .anon-warning i[data-lucide] {
       width: 20px;
@@ -69,143 +58,19 @@
   </style>
 <% end %>
 
-<div class="editor-preview-container">
-
+<div class="editor-preview-container" id="editor-preview-container">
   <div class="editor-pane">
-    <div class="codejar-wrap">
+    <div class="editor-wrapper">
       <div class="codejar-editor" id="editor"></div>
     </div>
   </div>
-<style>
-  .eye-overlay-btn {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    background: var(--pico-secondary-background);
-    border: 1px solid var(--pico-muted-border-color);
-    border-radius: var(--pico-border-radius);
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-    padding: 0;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s, background-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-  }
-  .eye-overlay-btn:hover {
-    opacity: 1;
-    background: var(--pico-secondary-hover-background);
-  }
-  .eye-overlay-btn i, .eye-overlay-btn svg {
-    width: 24px;
-    height: 24px;
-    color: var(--pico-primary);
-  }
-  .editor-md-preview {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--pico-card-background-color, var(--pico-background-color));
-    color: var(--pico-color);
-    padding: 1rem;
-    overflow: auto;
-    border: 2px solid var(--pico-primary);
-    border-radius: var(--pico-border-radius);
-    font-size: 0.95rem;
-    z-index: 1;
-  }
-</style>
 
-<script>
-  // Markdown editor preview toggle logic
-  let editorMarkdownShowing = false;
-  function isEditorMarkdown() {
-    const lang = (document.getElementById('language')?.value || '').toLowerCase();
-    const title = (document.getElementById('paste-title')?.value || '').toLowerCase();
-    // Try to get detected language from the preview (if present)
-      const detected = (window.detectedLanguage || '').toLowerCase();
-      return lang === 'markdown' || title.endsWith('.md') || detected === 'markdown';
-  }
-
-  function updateEditorMarkdownButton() {
-    const btn = document.getElementById('editor-md-toggle');
-    if (isEditorMarkdown()) {
-      btn.style.display = '';
-    } else {
-      btn.style.display = 'none';
-      if (editorMarkdownShowing) toggleEditorMarkdownView(true); // force source view
-    }
-  }
-
-  function toggleEditorMarkdownView(forceSource) {
-    const btn = document.getElementById('editor-md-toggle');
-    const editor = document.getElementById('editor');
-    const mdPreview = document.getElementById('editor-md-preview');
-    const previewContent = document.getElementById('preview');
-    if (!editorMarkdownShowing && !forceSource) {
-      // Show rendered markdown in preview pane
-      mdPreview.innerHTML = marked.parse(jar ? jar.toString() : '');
-      previewContent.style.display = 'none';
-      mdPreview.style.display = '';
-      btn.innerHTML = '<i data-lucide="file-code-2"></i>';
-      btn.title = 'Show source';
-      lucide.createIcons();
-      editorMarkdownShowing = true;
-    } else {
-      // Show source
-      mdPreview.style.display = 'none';
-      previewContent.style.display = '';
-      btn.innerHTML = '<i data-lucide="eye"></i>';
-      btn.title = 'Show rendered Markdown';
-      lucide.createIcons();
-      editorMarkdownShowing = false;
-    }
-  }
-
-  function updateEditorMarkdownPreviewLive() {
-    if (editorMarkdownShowing) {
-      const preview = document.getElementById('editor-md-preview');
-      preview.innerHTML = marked.parse(jar ? jar.toString() : '');
-    }
-  }
-</script>
-
-  <div class="preview-pane" style="position:relative;">
-    <button class="eye-overlay-btn" id="editor-md-toggle" style="display:none; position:absolute; top:0.75rem; right:0.75rem;" title="Show rendered Markdown" onclick="toggleEditorMarkdownView()" aria-label="Toggle between code and markdown preview">
-      <i data-lucide="eye"></i>
-    </button>
+  <div class="preview-pane">
     <div class="preview-content" id="preview">
       <pre><code>Start typing to see preview...</code></pre>
     </div>
-    <div id="editor-md-preview" class="editor-md-preview" style="display:none;"></div>
   </div>
 </div>
-
-<!-- CodeJar and Highlight.js -->
-<!-- highlight.js is now bundled in bundle.js -->
-
-<style>
-  .codejar-wrap {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .codejar-editor:empty::before {
-    content: 'Paste your code here...';
-    color: var(--pico-muted-color);
-    pointer-events: none;
-  }
-</style>
 
 <script>
   let jar;
@@ -235,23 +100,34 @@
   function highlight(editor) {
     const code = editor.textContent;
     if (!code) return;
-    
+
     const lang = currentLanguage || '';
     const mappedLang = mapLanguage(lang);
-    
+
     try {
       if (mappedLang !== 'plaintext' && hljs.getLanguage(mappedLang)) {
-        editor.innerHTML = hljs.highlight(code, { language: mappedLang, ignoreIllegals: true }).value;
+        const result = hljs.highlight(code, { language: mappedLang, ignoreIllegals: true });
+        editor.innerHTML = result.value;
+        // Apply CodeJar theme class
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        editor.className = isDark ? 'atom-one-dark' : 'atom-one-light';
       } else if (!lang || lang === '' || mappedLang === 'plaintext') {
         // Auto-detect mode or plaintext
         const result = hljs.highlightAuto(code);
         editor.innerHTML = result.value;
+        // Apply CodeJar theme class
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        editor.className = isDark ? 'atom-one-dark' : 'atom-one-light';
       } else {
         // Unknown language, try auto-detection
         const result = hljs.highlightAuto(code);
         editor.innerHTML = result.value;
+        // Apply CodeJar theme class
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        editor.className = isDark ? 'atom-one-dark' : 'atom-one-light';
       }
     } catch (e) {
+      console.error('Highlight error:', e);
       // Fallback to plain text
       editor.textContent = code;
     }
@@ -272,31 +148,50 @@
   }
 
   function togglePreview() {
-    const container = document.querySelector('.editor-preview-container');
-    const button = document.getElementById('preview-toggle');
+    const container = document.getElementById('editor-preview-container');
+    const controlsIcon = document.querySelector('#controls-preview-button i[data-lucide]');
+
     const isHidden = container.classList.toggle('preview-hidden');
-    
-    if (isHidden) {
-      button.innerHTML = '<i data-lucide="eye-off"></i>';
-      button.title = 'Show Preview';
-    } else {
-      button.innerHTML = '<i data-lucide="eye"></i>';
-      button.title = 'Hide Preview';
+
+    // Update controls button icon (show regular eye when hidden, crossed eye when visible)
+    if (controlsIcon) {
+      if (isHidden) {
+        controlsIcon.setAttribute('data-lucide', 'eye');
+      } else {
+        controlsIcon.setAttribute('data-lucide', 'eye-off');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    if (!isHidden) {
       updatePreview(); // Refresh preview when shown
     }
-    lucide.createIcons();
-    
+
     // Save preference
     localStorage.setItem('previewHidden', isHidden);
   }
 
   function updatePreview() {
     const content = jar ? jar.toString() : '';
-    const language = document.getElementById('language').value;
-    const syntaxTheme = document.getElementById('syntax-theme').value;
+    const languageSelect = document.getElementById('language');
+    // Get syntax theme from sidebar selector
+    const syntaxThemeSelect = document.querySelector('#syntax-theme') || document.getElementById('syntax-theme');
+
+    // Check if language selector exists
+    if (!languageSelect) {
+      console.warn('Language selector not available');
+      return;
+    }
+
+    // Use fallback theme if syntax theme selector is not available
+    const syntaxTheme = syntaxThemeSelect ? syntaxThemeSelect.value : 'monokai';
+    const language = languageSelect.value;
 
     if (!content.trim()) {
-      document.getElementById('preview').innerHTML = '<pre><code>Start typing to see preview...</code></pre>';
+      const previewElement = document.getElementById('preview');
+      if (previewElement) {
+        previewElement.innerHTML = '<pre><code>Start typing to see preview...</code></pre>';
+      }
       return;
     }
 
@@ -311,13 +206,12 @@
     })
     .then(response => response.json())
     .then(data => {
-      document.getElementById('preview').innerHTML = data.html;
-      window.detectedLanguage = (data.detected_language || '').toLowerCase();
-      console.log('Detected language:', window.detectedLanguage);
-      updateEditorMarkdownButton();
+      const previewElement = document.getElementById('preview');
+      if (previewElement) {
+        previewElement.innerHTML = data.html;
+      }
 
       // Update language selector text to show detected language if auto-detection is active
-      const languageSelect = document.getElementById('language');
       const isAutoDetect = (languageSelect.value === 'Auto-detect' || languageSelect.value === '');
 
       if (isAutoDetect) {
@@ -338,14 +232,23 @@
     })
     .catch(error => {
       console.error('Error updating preview:', error);
-      document.getElementById('preview').innerHTML = '<pre><code>Error updating preview</code></pre>';
+      const previewElement = document.getElementById('preview');
+      if (previewElement) {
+        previewElement.innerHTML = '<pre><code>Error updating preview</code></pre>';
+      }
     });
   }
 
   function createPaste() {
     const content = jar ? jar.toString() : '';
-    const language = document.getElementById('language').value;
-    const title = document.getElementById('paste-title').value;
+    const languageSelect = document.getElementById('language');
+
+    if (!languageSelect) {
+      alert('Language selector not available');
+      return;
+    }
+
+    const language = languageSelect.value;
 
     if (!content.trim()) {
       alert('Please enter some content');
@@ -355,7 +258,6 @@
     const formData = new FormData();
     formData.append('content', content);
     formData.append('language', language);
-    formData.append('title', title);
 
     fetch('/', {
       method: 'POST',
@@ -376,27 +278,36 @@
     });
   }
 
-  // Initialize CodeJar on page load
+  // Initialize CodeJar and inject controls
   document.addEventListener('DOMContentLoaded', async function() {
-    // Inject controls into top bar
-    const topBarRight = document.querySelector('.top-bar-right');
-    if (topBarRight) {
-      topBarRight.insertAdjacentHTML('afterbegin', `
-        <input type="text" id="paste-title" placeholder="Title (optional)" style="width: 200px; padding: 0.25rem 0.5rem; font-size: 0.85rem; margin: 0; height: auto;">
-        <select id="language" onchange="updateLanguage()" aria-label="Select programming language">
-            <!-- Preload Auto-detect for immediate responsiveness -->
-            <option value="">Auto-detect</option>
-          </select>
-                  <button onclick="createPaste()" title="Create Paste"><i data-lucide="plus"></i></button>
-        <button id="preview-toggle" onclick="togglePreview()" title="Toggle Preview"><i data-lucide="eye"></i></button>
-      `);
+    // Inject controls into the controls-group
+    const controlsGroup = document.getElementById('controls-group');
+    if (controlsGroup) {
+      controlsGroup.innerHTML = `
+        <input type="text" id="paste-title" placeholder="Title (optional)" class="controls-input">
+        <select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language">
+          <option value="">Auto-detect</option>
+        </select>
+        <button onclick="createPaste()" class="controls-button" title="Create Paste" aria-label="Create Paste">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+        </button>
+        <button onclick="togglePreview()" class="controls-button" title="Toggle Preview" id="controls-preview-button" aria-label="Toggle Preview">
+          <i data-lucide="eye-off" style="width: 16px; height: 16px;"></i>
+        </button>
+        <a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="help-circle" style="width: 16px; height: 16px;"></i>
+        </a>
+        <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+        </a>
+      `;
     }
 
     // Dynamically import CodeJar as ES module
     const { CodeJar } = await import('/assets/codejar.min.js');
-    
+
     const editorElement = document.getElementById('editor');
-    
+
     jar = CodeJar(editorElement, highlight, {
       tab: '  ',
       indentOn: /[{[(]$/,
@@ -408,28 +319,58 @@
       history: true
     });
 
+    // Force Chivo Mono font application
+    editorElement.style.fontFamily = "'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace";
+
+    // Set keyboard focus on the editor
+    editorElement.focus();
+
     // Update preview on content change
     jar.onUpdate(() => {
       debouncedUpdatePreview();
-      updateEditorMarkdownPreviewLive();
     });
-  // Update markdown toggle button on language/title change
-  document.getElementById('language').addEventListener('change', updateEditorMarkdownButton);
-  document.getElementById('paste-title').addEventListener('input', updateEditorMarkdownButton);
-  updateEditorMarkdownButton();
 
     // Restore preview visibility preference
     const previewHidden = localStorage.getItem('previewHidden') === 'true';
     if (previewHidden) {
-      document.querySelector('.editor-preview-container').classList.add('preview-hidden');
-      document.getElementById('preview-toggle').innerHTML = '<i data-lucide="eye-off"></i>';
-      document.getElementById('preview-toggle').title = 'Show Preview';
+      document.getElementById('editor-preview-container').classList.add('preview-hidden');
+
+      // Update controls button if it exists (show regular eye when hidden)
+      const controlsIcon = document.querySelector('#controls-preview-button i[data-lucide]');
+      if (controlsIcon) {
+        controlsIcon.setAttribute('data-lucide', 'eye');
+        if (window.lucide) window.lucide.createIcons();
+      }
     }
 
     // Initialize Lucide icons
-    lucide.createIcons();
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
 
-    // Initialize
+    // Initialize language options via API
+    fetch('/api/languages')
+      .then(response => response.json())
+      .then(languages => {
+        const languageSelect = document.getElementById('language');
+        if (!languageSelect) {
+          console.error('Language selector not found when trying to load languages');
+          return;
+        }
+        languageSelect.innerHTML = '';
+        languages.forEach(lang => {
+          const option = document.createElement('option');
+          // Handle if lang is an object with name property or a string
+          const langName = typeof lang === 'object' ? lang.name || lang.value || JSON.stringify(lang) : lang;
+          const langValue = typeof lang === 'object' ? lang.value || lang.name || JSON.stringify(lang) : lang;
+          option.value = langValue;
+          option.textContent = langName;
+          languageSelect.appendChild(option);
+        });
+      })
+      .catch(error => console.error('Error loading languages:', error));
+
+    // Initialize preview
     updatePreview();
   });
 </script>
