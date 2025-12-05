@@ -241,38 +241,94 @@
         flex-direction: column;
       }
 
-      .sidebar {
+      body .app-layout .sidebar {
         width: 100%;
         height: auto;
         position: static;
         border-right: none;
         border-bottom: 1px solid var(--pico-border-color);
+        margin-left: 0 !important;
+        transform: translateX(0) !important; /* Override desktop negative margin for all sidebar states */
       }
 
-      .sidebar.collapsed {
-        margin-left: 0;
-        display: none;
+      body .app-layout .sidebar.collapsed {
+        display: block; /* Keep sidebar visible for toggle button */
+        height: auto;
+        min-height: 3rem; /* Just enough for toggle button */
+        margin-left: 0 !important;
+        transform: translateX(0) !important; /* Explicit override for collapsed state */
+      }
+
+      .sidebar.collapsed .sidebar-content {
+        display: none; /* Hide sidebar content when collapsed */
       }
 
       .sidebar-toggle {
-        position: static;
+        position: relative;
         margin: 0.5rem;
         align-self: flex-start;
+        display: block; /* Always show toggle button */
+        left: auto !important;
+        top: auto !important;
+        border-top-left-radius: 4px !important;
+        border-top-right-radius: 4px !important;
+        border-bottom-left-radius: 4px !important;
+        border-bottom-right-radius: 4px !important;
       }
 
       .main-content {
-        order: -1; /* Put main content first on mobile */
+        margin-left: 0;
+        padding-top: 0;
       }
 
       .controls-group {
         flex-direction: column;
         width: 100%;
+        gap: 0.5rem;
       }
 
       .controls-input,
       .controls-select {
         width: 100%;
         min-width: unset;
+      }
+
+      /* Mobile controls layout优化 - better arrangement */
+      .mobile-controls .controls-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0;
+      }
+
+      .mobile-controls .controls-row {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+        align-items: stretch;
+        flex-wrap: wrap;
+      }
+
+      .mobile-controls .controls-row > * {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .mobile-controls .controls-input {
+        width: 100%;
+        min-width: 120px;
+      }
+
+      .mobile-controls .controls-select {
+        width: 100%;
+        min-width: 140px;
+      }
+
+      .mobile-controls .controls-button {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 44px; /* Touch-friendly minimum size */
+        padding: 0.5rem 0.75rem;
       }
     }
 
@@ -381,13 +437,24 @@
     @media (max-width: 768px) {
       .editor-preview-container {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
+        grid-template-rows: 1fr auto; /* Editor takes main space, preview takes what it needs */
         height: auto;
-        min-height: 300px;
+        min-height: 400px;
+        max-height: 70vh; /* Don't take too much screen space on mobile */
       }
 
       .editor-preview-container.preview-hidden {
-        grid-template-rows: 1fr;
+        grid-template-rows: 1fr; /* Only editor when preview hidden */
+      }
+
+      .editor-pane {
+        min-height: 300px; /* Ensure editor has usable space on mobile */
+      }
+
+      .preview-pane {
+        min-height: 200px; /* Ensure preview has usable space when visible */
+        max-height: 50vh; /* Limit preview height on mobile */
+        overflow-y: auto; /* Allow scrolling for long previews */
       }
     }
 
@@ -439,7 +506,8 @@
         <span id="toggle-icon">☰</span>
       </button>
 
-      <div style="padding: 1rem; position: relative;">
+      <div class="sidebar-content">
+        <div style="padding: 1rem; position: relative;">
         <!-- Combined SVG with text and grass -->
         <svg viewBox="0 0 300 50" preserveAspectRatio="none" style="width: 100%; height: 50px; display: block;">
           <!-- Pasto text -->
@@ -501,6 +569,7 @@
           </select>
         </div>
       </div>
+      </div>
     </aside>
 
     <!-- Main Content -->
@@ -520,31 +589,97 @@
   </div>
 
   <script>
-    // Sidebar toggle function
-    function toggleSidebar() {
+    // Function to handle mobile controls placement
+    function handleMobileControls() {
       const sidebar = document.getElementById('sidebar');
-      const toggleIcon = document.getElementById('toggle-icon');
       const mainControls = document.getElementById('main-controls');
       const mobileControls = document.getElementById('mobile-controls');
-
-      sidebar.classList.toggle('collapsed');
-
-      // Move controls between sidebar and main content based on screen size
       const isMobile = window.innerWidth <= 768;
       const isCollapsed = sidebar.classList.contains('collapsed');
 
       if (isMobile) {
-        // On mobile, controls are in sidebar when expanded, main when collapsed
+        // Fix mobile sidebar positioning - override desktop margin-left
+        sidebar.style.marginLeft = '0';
+        sidebar.style.transform = 'translateX(0)';
+
+        // On mobile, show controls in sidebar when expanded, hide main controls entirely
         if (isCollapsed) {
           mobileControls.innerHTML = '';
-          mainControls.style.display = 'block';
+          mainControls.style.display = 'none';
         } else {
-          mobileControls.innerHTML = mainControls.innerHTML;
+          // Always recreate mobile controls layout for sidebar expansion
+          const controlsGroup = mainControls.querySelector('.controls-group');
+          if (controlsGroup) {
+            const controlsHTML = Array.from(controlsGroup.children);
+
+            // Organize into logical rows for mobile - the controls are direct elements
+            const titleInput = controlsHTML.find(el => el.matches('input[type="text"]'));
+            const languageSelect = controlsHTML.find(el => el.matches('select'));
+            const buttons = controlsHTML.filter(el =>
+              el.matches('button') ||
+              el.querySelector('button') ||
+              (el.matches('a') && (
+                el.getAttribute('title') === 'Help' ||
+                el.getAttribute('title') === 'Profile / Login' ||
+                el.getAttribute('aria-label') === 'Help' ||
+                el.getAttribute('aria-label') === 'Profile / Login'
+              ))
+            );
+
+            let mobileHTML = '<div class="controls-group">';
+
+            // Row 1: Title input (if exists)
+            if (titleInput) {
+              const mobileTitleInput = titleInput.cloneNode(true);
+              mobileTitleInput.id = ''; // Remove ID to prevent duplicates
+              mobileHTML += '<div class="controls-row">' + mobileTitleInput.outerHTML + '</div>';
+            }
+
+            // Row 2: Language select (if exists)
+            if (languageSelect) {
+              const mobileLanguageSelect = languageSelect.cloneNode(true);
+              mobileLanguageSelect.id = ''; // Remove ID to prevent duplicates
+              mobileHTML += '<div class="controls-row">' + mobileLanguageSelect.outerHTML + '</div>';
+            }
+
+            // Row 3: Action buttons (arranged horizontally)
+            if (buttons.length > 0) {
+              mobileHTML += '<div class="controls-row">';
+              buttons.forEach(button => {
+                const mobileButton = button.cloneNode(true);
+                mobileButton.id = ''; // Remove ID to prevent duplicates
+                mobileHTML += mobileButton.outerHTML;
+              });
+              mobileHTML += '</div>';
+            }
+
+            mobileHTML += '</div>';
+            mobileControls.innerHTML = mobileHTML;
+          }
           mainControls.style.display = 'none';
         }
+      } else {
+        // On desktop, always show controls in main area
+        mobileControls.innerHTML = '';
+        mainControls.style.display = 'block';
+        // Reset desktop styles
+        sidebar.style.marginLeft = '';
+        sidebar.style.transform = '';
       }
+    }
+
+    // Sidebar toggle function
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggle-icon');
+
+      sidebar.classList.toggle('collapsed');
+
+      // Handle controls placement based on new sidebar state
+      handleMobileControls();
 
       // Update toggle icon
+      const isCollapsed = sidebar.classList.contains('collapsed');
       toggleIcon.textContent = isCollapsed ? '☰' : '✕';
 
       // Save preference
@@ -598,10 +733,13 @@
       // Generate grass on page load
       generateGrass();
 
-      // DISABLED: Responsive layout logic
-      // function handleResize() { ... }
-      // handleResize();
-      // window.addEventListener('resize', handleResize);
+      // Handle mobile controls on page load
+      handleMobileControls();
+
+      // Add resize listener to handle mobile/desktop transitions
+      window.addEventListener('resize', function() {
+        handleMobileControls();
+      });
 
       // Initialize Lucide icons if available
       if (window.lucide) {
