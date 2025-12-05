@@ -215,13 +215,20 @@
     /* Mobile adjustments */
     @media (max-width: 768px) {
       .top-bar {
-        left: 0;
-        padding: 0 0.5rem;
+        display: none; /* Hide top bar completely on mobile */
       }
 
-      .top-bar select {
-        max-width: 120px;
-        font-size: 0.8rem;
+      /* Adjust main content spacing when top bar is hidden */
+      .app-container {
+        padding-top: 0;
+      }
+
+      .sidebar-section {
+        margin-top: 0;
+      }
+
+      .main-content {
+        padding-top: 1rem; /* Remove top bar spacing, use normal padding */
       }
     }
   </style>
@@ -569,7 +576,7 @@
 
       .sidebar-toggle {
         position: fixed;
-        top: 1rem;
+        top: 0.5rem;
         left: 1rem;
         right: auto;
         z-index: 1001;
@@ -585,6 +592,19 @@
 
       .mobile-overlay.show {
         display: block;
+      }
+
+      /* Make sidebar toggle translucent on mobile to avoid covering content */
+      .sidebar-toggle {
+        background: color-mix(in srgb, var(--pico-card-background-color, var(--pico-background-color)), rgba(255, 255, 255, 0.1)) !important;
+        backdrop-filter: blur(4px);
+        border-color: color-mix(in srgb, var(--pico-primary-border, var(--pico-muted-border-color)), rgba(255, 255, 255, 0.2)) !important;
+        color: var(--pico-primary) !important;
+      }
+
+      .sidebar-toggle:hover {
+        background: color-mix(in srgb, var(--pico-card-background-color, var(--pico-background-color)), rgba(255, 255, 255, 0.2)) !important;
+        border-color: color-mix(in srgb, var(--pico-primary-border, var(--pico-muted-border-color)), rgba(255, 255, 255, 0.3)) !important;
       }
 
       .main-content {
