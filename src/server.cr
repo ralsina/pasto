@@ -43,7 +43,6 @@ module Pasto
     saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
     saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
     saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
-
     # ameba:disable Lint/UselessAssign
     page_title = "Help & Usage Guide"
     is_home_page = false
@@ -474,6 +473,7 @@ get "/profile" do |env|
   pico_theme = saved_pico_theme
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
+  # ameba:disable Lint/UselessAssign
 
   # Social media metadata (generic for profile pages)
   meta_title = "Pasto - User Profile"
@@ -511,6 +511,7 @@ get "/" do |env|
   logout_message = env.params.query["logout"]? == "success"
 
   # Set template variables (ECR template will have access to these)
+  # ameba:disable Lint/UselessAssign
   is_home_page = true
   page_title = "Pasto"
   pico_theme = saved_pico_theme # Keep original for JavaScript
@@ -685,6 +686,7 @@ get "/:id/edit" do |env|
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
   # Set template variables
+  # ameba:disable Lint/UselessAssign
   is_home_page = false
   page_title = "Edit Paste #{paste.sepia_id}"
   pico_theme = saved_pico_theme
@@ -908,6 +910,7 @@ get "/:id/history" do |env|
   versions = versions.reverse
 
   # Set template variables
+  # ameba:disable Lint/UselessAssign
   is_home_page = false
   page_title = "History: #{latest.display_title}"
   pico_theme = saved_pico_theme
@@ -960,6 +963,7 @@ get "/:id/version/:gen" do |env|
   end
 
   # Set template variables
+  # ameba:disable Lint/UselessAssign
   is_home_page = false
   page_title = paste.display_title
   is_version_view = true

@@ -14,9 +14,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Pasto">
 
+  <!-- Basic Meta Description for all pages -->
+  <meta name="description" content="<%= meta_description %>">
+
   <!-- Social Media Meta Tags -->
   <% if !is_home_page && page_title && page_title != "Pasto" && page_title.includes?("Paste") %>
-    <% # Social media tags only for paste pages %>
+    <% # Enhanced social media tags only for paste pages %>
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<%= meta_title %>">
     <meta name="twitter:description" content="<%= meta_description %>">
@@ -29,6 +32,12 @@
     <meta property="og:image" content="<%= meta_image %>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pasto">
+  <% else %>
+    <% # Basic social media tags for non-paste pages %>
+    <meta property="og:title" content="<%= meta_title %>">
+    <meta property="og:description" content="<%= meta_description %>">
+    <meta property="og:type" content="website">
     <meta property="og:site_name" content="Pasto">
   <% end %>
   <!-- Async CSS loading with correct themes from server -->

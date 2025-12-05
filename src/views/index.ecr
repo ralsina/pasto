@@ -20,9 +20,9 @@
   </script>
   <style>
     .anon-warning {
-      background: var(--pico-secondary-background, #f5f7fa);
-      color: var(--pico-color, #333);
-      border: 1px solid var(--pico-muted-border-color, #cfd8dc);
+      background: #e8f4f8;
+      color: #1a3b4d;
+      border: 1px solid #bee1e6;
       border-radius: var(--pico-border-radius, 6px);
       padding: 0.75em 1em;
       margin: 1em 0 0.5em 0;
@@ -31,6 +31,15 @@
       align-items: center;
       gap: 0.5em;
       box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    }
+
+    /* Dark mode support for anon warning */
+    @media (prefers-color-scheme: dark) {
+      .anon-warning {
+        background: #1e3a47;
+        color: #e8f4f8;
+        border-color: #2d5a6f;
+      }
     }
     .anon-warning i[data-lucide] {
       width: 20px;
