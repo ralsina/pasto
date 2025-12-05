@@ -1183,10 +1183,15 @@ get "/syntax-theme.css" do |env|
   end
 end
 
-# Favicon handler - returns baked PNG favicon
+# Favicon handler - returns baked ICO favicon
 get "/favicon.ico" do |env|
-  if asset = PastoAssets.get("favicon.png")
-    env.response.content_type = "image/png"
+  if asset = PastoAssets.get("favicon.ico")
+    env.response.content_type = "image/x-icon"  # Standard MIME type for .ico files
+    env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
+    env.response.content_length = asset.size
+    asset
+  elsif asset = PastoAssets.get("favicon.png")  # Fallback to PNG if ICO not available
+    env.response.content_type = "image/x-icon"  # Still serve as ICO MIME type
     env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
     env.response.content_length = asset.size
     asset
