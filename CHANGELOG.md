@@ -2,6 +2,13 @@
 
 ### 🚀 Features
 
+- Implement lazy loading for large select elements
+- Eliminate CSS flashing by preloading correct themes
+- Complete performance optimization and UI improvements
+## [0.2.0] - 2025-12-04
+
+### 🚀 Features
+
 - Switch to baked_file_handler for favicon and help text
 - Make syntax highlighting match UI theme
 - Achieve 100% offline capability by eliminating all CDN dependencies
@@ -39,6 +46,7 @@
 
 - Update asset bundling and scripts (lucide, marked, concat, error handling)
 - Update deps
+- *(release)* V0.2.0
 ## [0.1.1] - 2025-12-04
 
 ### 🐛 Bug Fixes

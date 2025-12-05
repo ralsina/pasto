@@ -51,7 +51,11 @@
       "mcp__web-reader__webReader",
       "Bash(git checkout:*)",
       "Bash(./bin/pasto-ssh:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(./update_assets.sh:*)",
+      "Bash(chmod:*)",
+      "Bash(.gitignore)",
+      "Bash(./release.sh:*)"
     ],
     "deny": [],
     "ask": []
