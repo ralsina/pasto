@@ -2,6 +2,7 @@ require "docopt-config"
 require "sepia"
 require "kemal"
 require "./paste"
+require "./preview_generator"
 require "./server"
 require "./models/user"
 require "kemal-session"
@@ -284,10 +285,10 @@ DOC
     secret = Random::Secure.hex(64)
 
     if File.exists?(config_file)
-      File.open(config_file, "a") do |f|
-        f.puts ""
-        f.puts "# Session secret (auto-generated, do not share)"
-        f.puts "session_secret: \"#{secret}\""
+      File.open(config_file, "a") do |file|
+        file.puts ""
+        file.puts "# Session secret (auto-generated, do not share)"
+        file.puts "session_secret: \"#{secret}\""
       end
       puts "🔑 Generated new session secret (saved to #{config_file})"
     else

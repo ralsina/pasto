@@ -309,7 +309,7 @@ DOC
       preview = preview[0, 40] + "..." if preview.size > 40
 
       # Show language if detected
-      lang = paste.language.try { |l| " [#{l}]" } || ""
+      lang = paste.language.try { |language| " [#{language}]" } || ""
 
       ctx.write("#{base_url}/#{paste.sepia_id}\n")
       ctx.write("  Created: #{created}#{lang}\n")

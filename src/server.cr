@@ -6,6 +6,7 @@ require "tartrazine"
 require "ecr"
 require "kemal-session"
 require "./paste"
+require "./preview_generator"
 require "./user_session"
 require "./models/user"
 require "./models/auth_token"
@@ -43,12 +44,19 @@ module Pasto
     saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
     saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
 
+    # ameba:disable Lint/UselessAssign
     page_title = "Help & Usage Guide"
     is_home_page = false
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+
+    # Social media metadata (generic for non-paste pages)
+    meta_title = "Pasto - Help & Usage Guide"
+    meta_description = "Learn how to use Pasto, a modern pastebin with live syntax highlighting and SSH access"
+    meta_url = ""
+    meta_image = ""
 
     content = render "src/views/help.ecr"
     render "src/views/layout.ecr"
@@ -369,6 +377,12 @@ get "/auth/:token" do |env|
     syntax_theme = "monokai"
     resolved_pico_theme = "dark"
 
+    # Social media metadata (generic for error pages)
+    meta_title = "Pasto - Authentication Error"
+    meta_description = "Modern pastebin with live syntax highlighting and SSH access"
+    meta_url = ""
+    meta_image = ""
+
     content = <<-HTML
       <hgroup>
         <h2>Invalid or Expired Token</h2>
@@ -461,6 +475,12 @@ get "/profile" do |env|
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
 
+  # Social media metadata (generic for profile pages)
+  meta_title = "Pasto - User Profile"
+  meta_description = "Modern pastebin with live syntax highlighting and SSH access"
+  meta_url = ""
+  meta_image = ""
+
   content = render "src/views/profile_content.ecr"
   render "src/views/layout.ecr"
 end
@@ -497,6 +517,12 @@ get "/" do |env|
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
   # resolved_pico_theme already set above
+
+  # Social media metadata (for home page)
+  meta_title = "Pasto - Modern Pastebin with Live Syntax Highlighting"
+  meta_description = "Create and share code snippets with live syntax highlighting, SSH access, and user accounts"
+  meta_url = ""
+  meta_image = ""
 
   content = render "src/views/index.ecr"
   render "src/views/layout.ecr"
@@ -665,6 +691,12 @@ get "/:id/edit" do |env|
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
 
+  # Social media metadata (generic for edit pages)
+  meta_title = "Pasto - Edit Paste"
+  meta_description = "Modern pastebin with live syntax highlighting and SSH access"
+  meta_url = ""
+  meta_image = ""
+
   content = render "src/views/edit.ecr"
   render "src/views/layout.ecr"
 end
@@ -808,7 +840,7 @@ post "/:id/delete" do |env|
   # Remove paste from user's SSH key pastes array
   if !current_user.keys.empty?
     current_user.keys.each do |ssh_key|
-      ssh_key.pastes.reject! { |p| p.sepia_id == paste.sepia_id || p.base_id == paste.base_id }
+      ssh_key.pastes.reject! { |paste_item| paste_item.sepia_id == paste.sepia_id || paste_item.base_id == paste.base_id }
       ssh_key.save
     end
   end
@@ -882,6 +914,12 @@ get "/:id/history" do |env|
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
 
+  # Social media metadata (generic for history pages)
+  meta_title = "Pasto - Paste History"
+  meta_description = "Modern pastebin with live syntax highlighting and SSH access"
+  meta_url = ""
+  meta_image = ""
+
   content = render "src/views/history.ecr"
   render "src/views/layout.ecr"
 end
@@ -930,6 +968,13 @@ get "/:id/version/:gen" do |env|
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
 
+  # Generate social media metadata for version view
+  meta_title = "#{paste.display_title} (v#{paste.generation})"
+  meta_description = generate_meta_description(paste.content)
+  host = env.request.headers["Host"]? || "localhost:3000"
+  meta_url = "http://#{host}#{env.request.path}"
+  meta_image = "http://#{host}/preview/#{paste.sepia_id}.png"
+
   content = render "src/views/show.ecr"
   render "src/views/layout.ecr"
 end
@@ -972,7 +1017,54 @@ error 404 do |env|
   HTML
 end
 
-# View paste with specific language override via extension (catch-all, must be last)
+# Preview image route for social media cards (must come before catch-all routes)
+get "/preview/:id" do |env|
+  # Assume the id parameter includes the .png extension
+  id_with_ext = env.params.url["id"]
+  id = id_with_ext.gsub(/\.png$/, "")
+
+  if id.nil? || id.empty?
+    env.response.status_code = 400
+    next "Invalid preview request"
+  end
+
+  client_ip = Pasto.get_client_ip(env)
+
+  # Rate limiting for preview generation (use existing highlight limiter)
+  allowed, _ = Pasto::RateLimits.allow_highlight?(client_ip)
+  unless allowed
+    env.response.status_code = 429
+    next "Rate limit exceeded for preview generation"
+  end
+
+  paste = Pasto::Paste.from_file(id)
+  if paste.nil?
+    # Generate and serve 404 placeholder
+    placeholder_path = generate_placeholder_file("Paste not found")
+    env.response.status_code = 404
+    env.response.headers["Cache-Control"] = "public, max-age=300" # 5 minutes for errors
+    next send_file env, placeholder_path
+  end
+
+  cache_path = PreviewGenerator.get_cache_path(id)
+
+  # Generate cached image if it doesn't exist
+  unless File.exists?(cache_path) && File.info(cache_path).modification_time > paste.updated_at
+    begin
+      PreviewGenerator.save_preview_image(paste, cache_path)
+    rescue ex
+      # Generate and serve error placeholder
+      placeholder_path = generate_placeholder_file("Error generating preview")
+      env.response.headers["Cache-Control"] = "public, max-age=300" # 5 minutes for errors
+      next send_file env, placeholder_path
+    end
+  end
+
+  # Serve the cached image using Kemal's optimized send_file helper
+  env.response.headers["Cache-Control"] = "public, max-age=3600" # 1 hour
+  send_file env, cache_path
+end
+
 get "/:id" do |env|
   id = env.params.url["id"]
   request_path = env.request.path
@@ -1039,11 +1131,19 @@ get "/:id" do |env|
   base_paste_id = paste.base_id
 
   # Set template variables (ECR template will have access to these)
+  # ameba:disable Lint/UselessAssign
   pico_theme = saved_pico_theme
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
   is_home_page = false
   page_title = "Paste #{paste.sepia_id}"
+
+  # Generate social media metadata with preview images
+  meta_title = paste.display_title.size > 60 ? paste.display_title[0..57] + "..." : paste.display_title
+  meta_description = generate_meta_description(paste.content)
+  host = env.request.headers["Host"]? || "localhost:3000"
+  meta_url = "http://#{host}#{env.request.path}"
+  meta_image = "http://#{host}/preview/#{paste.sepia_id}.png"
 
   content = render "src/views/show.ecr"
   render "src/views/layout.ecr"
@@ -1157,4 +1257,46 @@ module Pasto
     Cache.cache_dir = cache_dir
     Dir.mkdir_p(cache_dir)
   end
+end
+
+# Helper function to generate and save placeholder preview images
+def self.generate_placeholder_file(message : String) : String
+  # Create cache directory for placeholders
+  placeholder_dir = "./public/cache/placeholders"
+  Dir.mkdir_p(placeholder_dir) unless Dir.exists?(placeholder_dir)
+
+  # Generate filename based on message hash
+  message_hash = message.gsub(/[^a-zA-Z0-9]/, "_").downcase
+  filename = File.join(placeholder_dir, "#{message_hash}.png")
+
+  # Generate if doesn't exist
+  unless File.exists?(filename)
+    # Generate simple placeholder using Tartrazine with a message
+    placeholder_content = "// Error: #{message}\n"
+
+    png_bytes = Tartrazine.to_png(placeholder_content, "text", "default-dark", line_numbers: false)
+    File.write(filename, png_bytes)
+  end
+
+  filename
+end
+
+# Helper function to generate meta descriptions from paste content
+def self.generate_meta_description(content : String) : String
+  lines = content.lines
+  description_lines = lines.reject(&.strip.empty?).first(3)
+
+  description = description_lines.join(" ").strip
+
+  # Clean up the description
+  description = description.gsub(/\s+/, " ")      # Normalize whitespace
+  description = description.gsub(/^[#\s]+/, "")   # Remove comment symbols
+  description = description.gsub(/[{}[\]()]/, "") # Remove brackets
+
+  # Limit to 200 characters and add ellipsis if truncated
+  if description.size > 200
+    description = description[0..197] + "..."
+  end
+
+  description.empty? ? "A code snippet shared on Pasto" : description
 end

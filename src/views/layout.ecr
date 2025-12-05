@@ -9,9 +9,28 @@
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#5d5dff">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Pasto">
+
+  <!-- Social Media Meta Tags -->
+  <% if !is_home_page && page_title && page_title != "Pasto" && page_title.includes?("Paste") %>
+    <% # Social media tags only for paste pages %>
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= meta_title %>">
+    <meta name="twitter:description" content="<%= meta_description %>">
+    <meta name="twitter:image" content="<%= meta_image %>">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<%= meta_title %>">
+    <meta property="og:description" content="<%= meta_description %>">
+    <meta property="og:url" content="<%= meta_url %>">
+    <meta property="og:image" content="<%= meta_image %>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pasto">
+  <% end %>
   <!-- Async CSS loading with correct themes from server -->
   <link rel="preload" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" as="style" onload="loadCSS(this, 'pico-css-link')">
   <link rel="preload" href="/syntax-theme.css?theme=<%= syntax_theme %>" as="style" onload="loadCSS(this, 'highlight-css-link')">

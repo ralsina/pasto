@@ -45,7 +45,7 @@ module Pasto
     def to_sepia : String
       {
         owner_id:   @owner_id,
-        pastes:     @pastes.map { |p| {id: p.sepia_id, content: p.content, language: p.language, theme: p.theme, title: p.title, filename: p.filename, created_at: p.created_at.to_rfc3339, updated_at: p.updated_at.to_rfc3339} },
+        pastes:     @pastes.map { |paste_item| {id: paste_item.sepia_id, content: paste_item.content, language: paste_item.language, theme: paste_item.theme, title: paste_item.title, filename: paste_item.filename, created_at: paste_item.created_at.to_rfc3339, updated_at: paste_item.updated_at.to_rfc3339} },
         created_at: @created_at.to_rfc3339,
       }.to_json
     end
@@ -58,17 +58,17 @@ module Pasto
       key.created_at = Time.parse_rfc3339(data["created_at"].as_s)
 
       if pastes_data = data["pastes"]?.try(&.as_a?)
-        key.pastes = pastes_data.map do |p|
+        key.pastes = pastes_data.map do |paste_data|
           paste = Paste.new(
-            content: p["content"].as_s,
-            language: p["language"]?.try(&.as_s?),
-            theme: p["theme"]?.try(&.as_s?) || "default-dark",
-            title: p["title"]?.try(&.as_s?),
-            filename: p["filename"]?.try(&.as_s?)
+            content: paste_data["content"].as_s,
+            language: paste_data["language"]?.try(&.as_s?),
+            theme: paste_data["theme"]?.try(&.as_s?) || "default-dark",
+            title: paste_data["title"]?.try(&.as_s?),
+            filename: paste_data["filename"]?.try(&.as_s?)
           )
-          paste.sepia_id = p["id"].as_s
-          paste.created_at = Time.parse_rfc3339(p["created_at"].as_s)
-          paste.updated_at = Time.parse_rfc3339(p["updated_at"].as_s)
+          paste.sepia_id = paste_data["id"].as_s
+          paste.created_at = Time.parse_rfc3339(paste_data["created_at"].as_s)
+          paste.updated_at = Time.parse_rfc3339(paste_data["updated_at"].as_s)
           paste
         end
       end
