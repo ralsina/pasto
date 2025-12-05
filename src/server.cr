@@ -1185,17 +1185,24 @@ end
 
 # Favicon handler - returns baked ICO favicon
 get "/favicon.ico" do |env|
-  if asset = PastoAssets.get("favicon.ico")
-    env.response.content_type = "image/x-icon"  # Standard MIME type for .ico files
-    env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
-    env.response.content_length = asset.size
-    asset
-  elsif asset = PastoAssets.get("favicon.png")  # Fallback to PNG if ICO not available
-    env.response.content_type = "image/x-icon"  # Still serve as ICO MIME type
-    env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
-    env.response.content_length = asset.size
-    asset
-  else
+  begin
+    # Try to get the favicon from our baked assets first
+    if asset = PastoAssets.get("favicon.ico")
+      env.response.content_type = "image/x-icon"                       # Standard MIME type for .ico files
+      env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
+      env.response.content_length = asset.size
+      asset
+    elsif asset = PastoAssets.get("favicon.png")                       # Fallback to PNG if ICO not available
+      env.response.content_type = "image/x-icon"                       # Still serve as ICO MIME type
+      env.response.headers["Cache-Control"] = "public, max-age=604800" # 7 days
+      env.response.content_length = asset.size
+      asset
+    else
+      env.response.status_code = 404
+      "Favicon not found"
+    end
+  rescue BakedFileSystem::NoSuchFileError
+    # Handle case where favicon doesn't exist in baked assets
     env.response.status_code = 404
     "Favicon not found"
   end
@@ -1280,13 +1287,36 @@ def self.generate_placeholder_file(message : String) : String
 
   # Generate if doesn't exist
   unless File.exists?(filename)
-    # Generate simple placeholder using Tartrazine with a message
+    # Generate simple placeholder using Tartrazine with a message and baked spleen font
     placeholder_content = "// Error: #{message}\n"
 
-    png_bytes = Tartrazine.to_png(placeholder_content, "text", "default-dark", line_numbers: false)
-    File.write(filename, png_bytes)
-  end
+    # Extract baked spleen font to temporary file
+    temp_dir = File.join(Dir.tempdir, "pasto_fonts")
+    Dir.mkdir_p(temp_dir) unless Dir.exists?(temp_dir)
+    temp_font_path = File.join(temp_dir, "spleen-32x64.pcf")
 
+    unless File.exists?(temp_font_path)
+      font_data = PastoAssets.get("fonts/spleen-32x64.pcf")
+      File.write(temp_font_path, font_data)
+    end
+
+    # Create PNG formatter manually to set font size for spleen-32x64.pcf
+    formatter = Tartrazine::Png.new(
+      theme: Tartrazine.theme("default-dark"),
+      line_numbers: false,
+      font_path: temp_font_path,
+      font_width: 32, # Match the spleen-32x64 font width
+      font_height: 64 # Match the spleen-32x64 font height
+    )
+
+    buf = IO::Memory.new
+    formatter.format(placeholder_content, Tartrazine.lexer(name: "text"), buf)
+    png_bytes = buf.to_s
+    File.write(filename, png_bytes)
+
+    # Clean up temporary font file
+    File.delete(temp_font_path) if temp_font_path && File.exists?(temp_font_path)
+  end
   filename
 end
 
