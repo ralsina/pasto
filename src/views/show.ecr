@@ -812,6 +812,7 @@
         <a href="/<%= paste.base_id %>/edit" class="controls-button" title="Edit Paste" aria-label="Edit Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="pencil" style="width: 20px; height: 20px;"></i>
         </a>
+        <% end %>
         <% if version_count > 1 %>
         <a href="/<%= paste.base_id %>/history" class="controls-button" title="View History (<%= version_count %> versions)" aria-label="View History" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="history" style="width: 20px; height: 20px;"></i>
@@ -820,7 +821,6 @@
         <button onclick="deletePaste()" class="controls-button" title="Delete Paste" aria-label="Delete paste permanently" style="color: var(--pico-del-color);">
           <i data-lucide="trash-2" style="width: 20px; height: 20px;"></i>
         </button>
-        <% end %>
         <% if is_version_view %>
         <a href="/<%= base_paste_id %>" class="controls-button" title="Back to Latest" aria-label="Back to Latest" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>

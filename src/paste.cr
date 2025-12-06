@@ -801,6 +801,25 @@ module Pasto
       HTML
     end
 
+    # Override user_id getter to check SSH key ownership when user_id is nil
+    # If ownership is found via SSH key, updates the paste's user_id for future requests
+    def user_id : String?
+      # Return cached user_id if already set
+      return @user_id if @user_id
+
+      # Check SSH key ownership if no direct user_id
+      if ssh_fingerprint = @ssh_fingerprint
+        ssh_key = SSHKey.find(ssh_fingerprint)
+        if ssh_key && ssh_key.owner_id
+          # Update this paste with the correct user_id for future requests
+          @user_id = ssh_key.owner_id
+          save
+        end
+      end
+
+      @user_id
+    end
+
     private def generate_id : String
       # Generate a short random ID
       Random::Secure.urlsafe_base64(6).gsub(/[-_]/, "").chars.first(8).join
