@@ -81,6 +81,10 @@ shards:
     git: https://github.com/ralsina/sixteen.git
     version: 0.5.4
 
+  sodium:
+    git: https://github.com/didactic-drunk/sodium.cr.git
+    version: 1.2.3
+
   stumpy_core:
     git: https://github.com/stumpycr/stumpy_core.git
     version: 1.9.1

@@ -27,7 +27,7 @@ dependencies:
     github: ralsina/shirk
   baked_file_handler:
     github: ralsina/baked_file_handler
-  
+        
 development_dependencies:
   ameba:
     github: crystal-ameba/ameba

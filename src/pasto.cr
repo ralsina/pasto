@@ -69,7 +69,7 @@ DOC
     property theme : String
     property max_paste_size : Int32
     property base_url : String
-    property ssh_enabled : Bool
+    property? ssh_enabled : Bool
     property ssh_port : Int32
     property ssh_bind : String
     property host_key : String
@@ -150,8 +150,9 @@ DOC
   # SSH server process management
   @@ssh_process : Process?
 
+  # ameba:disable Metrics/CyclomaticComplexity
   def self.start_ssh_server(config : Config)
-    return unless config.ssh_enabled
+    return unless config.ssh_enabled?
 
     # Find the pasto-ssh binary
     ssh_binary = find_ssh_binary
@@ -383,7 +384,7 @@ DOC
     puts "🌐 Starting Pasto on #{config.bind}:#{config.port}"
     puts "📁 Storage: #{config.storage_dir}"
     puts "🎨 Theme: #{config.theme}"
-    if config.ssh_enabled
+    if config.ssh_enabled?
       puts "🔐 SSH: #{config.ssh_bind}:#{config.ssh_port}"
     end
     Kemal.run

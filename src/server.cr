@@ -43,7 +43,6 @@ module Pasto
     saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
     saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
     saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
-    # ameba:disable Lint/UselessAssign
     page_title = "Help & Usage Guide"
     is_home_page = false
     pico_theme = saved_pico_theme
@@ -364,7 +363,6 @@ get "/auth/:token" do |env|
     token.try(&.delete)
 
     env.response.status_code = 404
-    # ameba:disable Lint/UselessAssign
     saved_pico_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
     saved_pico_color = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
     saved_syntax_theme = env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default-dark"
@@ -436,12 +434,10 @@ end
 # User profile page
 get "/profile" do |env|
   # Validate session to get current user
-  # ameba:disable Lint/UselessAssign
   current_user = Pasto.get_current_user(env)
 
   # Get SSH connection info from config
   config = Pasto.config
-  # ameba:disable Lint/UselessAssign
   ssh_host = config.try(&.bind) || "localhost"
   # Use base_url host if bind is 0.0.0.0
   if ssh_host == "0.0.0.0" && config
@@ -453,10 +449,8 @@ get "/profile" do |env|
       ssh_host = "localhost"
     end
   end
-  # ameba:disable Lint/UselessAssign
   ssh_port = config.try(&.ssh_port) || 2222
-  # ameba:disable Lint/UselessAssign
-  ssh_enabled = config.try(&.ssh_enabled) || false
+  ssh_enabled = config.try(&.ssh_enabled?) || false
 
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
@@ -467,13 +461,11 @@ get "/profile" do |env|
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
   # Set template variables (ECR template will have access to these)
-  # ameba:disable Lint/UselessAssign
   page_title = "Profile"
   is_home_page = false
   pico_theme = saved_pico_theme
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme
-  # ameba:disable Lint/UselessAssign
 
   # Social media metadata (generic for profile pages)
   meta_title = "Pasto - User Profile"
@@ -487,7 +479,6 @@ end
 
 # Main page - paste creation form
 get "/" do |env|
-  # ameba:disable Lint/UselessAssign
   # Validate session to get current user
   current_user = Pasto.get_current_user(env)
 
@@ -511,7 +502,6 @@ get "/" do |env|
   logout_message = env.params.query["logout"]? == "success"
 
   # Set template variables (ECR template will have access to these)
-  # ameba:disable Lint/UselessAssign
   is_home_page = true
   page_title = "Pasto"
   pico_theme = saved_pico_theme # Keep original for JavaScript
@@ -721,7 +711,6 @@ get "/:id/edit" do |env|
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
   # Set template variables
-  # ameba:disable Lint/UselessAssign
   is_home_page = false
   page_title = "Edit Paste #{paste.sepia_id}"
   pico_theme = saved_pico_theme
@@ -945,7 +934,6 @@ get "/:id/history" do |env|
   versions = versions.reverse
 
   # Set template variables
-  # ameba:disable Lint/UselessAssign
   is_home_page = false
   page_title = "History: #{latest.display_title}"
   pico_theme = saved_pico_theme
@@ -998,7 +986,6 @@ get "/:id/version/:gen" do |env|
   end
 
   # Set template variables
-  # ameba:disable Lint/UselessAssign
   is_home_page = false
   page_title = paste.display_title
   is_version_view = true
@@ -1138,7 +1125,6 @@ get "/:id" do |env|
     next "Paste not found"
   end
 
-  # ameba:disable Lint/UselessAssign
   # Validate session to get current user
   current_user = Pasto.get_current_user(env)
 
@@ -1170,7 +1156,6 @@ get "/:id" do |env|
   base_paste_id = paste.base_id
 
   # Set template variables (ECR template will have access to these)
-  # ameba:disable Lint/UselessAssign
   pico_theme = saved_pico_theme
   pico_color = saved_pico_color
   syntax_theme = saved_syntax_theme

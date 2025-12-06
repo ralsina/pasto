@@ -134,7 +134,7 @@
   const pasteLanguage = <%= (paste.language || "text").to_json %>;
 
   // Store encryption information
-  const isEncrypted = <%= paste.responds_to?(:is_encrypted) && paste.is_encrypted ? "true" : "false" %>;
+  const isEncrypted = <%= paste.responds_to?(:is_encrypted?) && paste.is_encrypted? ? "true" : "false" %>;
   const encryptedContent = <%= paste.responds_to?(:encrypted_content) && paste.encrypted_content ? paste.encrypted_content.to_json : "null" %>;
   const encryptionIv = <%= paste.responds_to?(:encryption_iv) && paste.encryption_iv ? paste.encryption_iv.to_json : "null" %>;
   
@@ -481,7 +481,7 @@
   // Show password dialog for encrypted content
   function showPasswordDialog() {
     const pasteContent = document.getElementById('paste-content');
-    const isPasswordBased = <%= paste.password_based ? "true" : "false" %>;
+    const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
 
     // Check Web Crypto API availability first
     if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle !== 'object') {
@@ -619,7 +619,7 @@
       let decryptedContent;
 
       // Check if this is password-based encryption
-      const isPasswordBased = <%= paste.password_based ? "true" : "false" %>;
+      const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
 
       if (isPasswordBased) {
         // Get encryption salt and iterations from the paste data
@@ -719,7 +719,7 @@
     const pasteSepiaId = currentPath.substring(1); // Remove leading '/'
 
     // Check if this is password-based encryption
-    const isPasswordBased = <%= paste.password_based ? "true" : "false" %>;
+    const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
 
     let encryptionKey;
     if (isPasswordBased) {

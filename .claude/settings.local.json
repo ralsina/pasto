@@ -61,7 +61,8 @@
       "mcp__playwright__browser_network_requests",
       "Bash(wget:*)",
       "Bash(PASTO_PORT=3010 ./bin/pasto:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(node debug_decryption:*)"
     ],
     "deny": [],
     "ask": []

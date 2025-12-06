@@ -22,16 +22,16 @@ module Pasto
 
     # Encryption fields
     property encrypted_content : String?
-    property is_encrypted : Bool = false
+    property? is_encrypted : Bool = false
     property encryption_iv : String?
     property encryption_tag : String?
     property encryption_salt : String?
     property encryption_iterations : Int32 = 100000
-    property password_based : Bool = false
+    property? password_based : Bool = false
 
     # Security features
     property expires_at : Time?
-    property burn_after_reading : Bool = false
+    property? burn_after_reading : Bool = false
     property view_count : Int32 = 0
 
     def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil, @title : String? = nil, @filename : String? = nil)
@@ -822,7 +822,7 @@ module Pasto
 
     # Decrypt encrypted content using AES-256-GCM
     def decrypt_content(encryption_key : String) : String
-      return @content unless @is_encrypted && @encrypted_content && @encryption_iv
+      return @content unless is_encrypted? && @encrypted_content && @encryption_iv
 
       begin
         # Decode the base64 encrypted content

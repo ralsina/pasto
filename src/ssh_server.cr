@@ -186,28 +186,14 @@ Options:
 
 DOC
 
-  # Handle paste command
-  private def self.handle_paste(ctx, fingerprint : String, base_url : String, args : String) : Int32
-    # Check paste rate limit
-    unless allow_paste?(fingerprint)
-      ctx.write_stderr("Rate limit exceeded. Please wait before creating another paste.\n")
-      return 1
-    end
-
-    content = ctx.stdin
-
-    puts "SSH: received #{content.bytesize} bytes of content"
-
-    if content.strip.empty?
-      ctx.write_stderr("No content provided. Usage: echo 'text' | ssh host\n")
-      return 1
-    end
-
-    # Parse options with docopt
-    language : String? = nil
-    filename : String? = nil
-    title : String? = nil
+  # ameba:disable Metrics/CyclomaticComplexity
+  private def self.parse_paste_args(args : String, ctx) : {String?, String?, String?, Bool, Bool, String?}
+    language = nil
+    filename = nil
+    title = nil
     encrypted = false
+    pre_encrypted = false
+    iv = nil
 
     unless args.empty?
       begin
@@ -237,8 +223,35 @@ DOC
       rescue ex : Docopt::DocoptException
         ctx.write_stderr("Invalid options: #{ex.message}\n")
         ctx.write_stderr(PASTE_DOC)
-        return 1
+        raise ex
       end
+    end
+
+    {language, filename, title, encrypted, pre_encrypted, iv}
+  end
+
+  # ameba:disable Metrics/CyclomaticComplexity
+  private def self.handle_paste(ctx, fingerprint : String, base_url : String, args : String) : Int32
+    # Check paste rate limit
+    unless allow_paste?(fingerprint)
+      ctx.write_stderr("Rate limit exceeded. Please wait before creating another paste.\n")
+      return 1
+    end
+
+    content = ctx.stdin
+
+    puts "SSH: received #{content.bytesize} bytes of content"
+
+    if content.strip.empty?
+      ctx.write_stderr("No content provided. Usage: echo 'text' | ssh host\n")
+      return 1
+    end
+
+    # Parse options with docopt
+    begin
+      language, filename, title, encrypted, pre_encrypted, iv = parse_paste_args(args, ctx)
+    rescue ex : Docopt::DocoptException
+      return 1
     end
 
     # Load or create SSHKey, create paste through it
@@ -280,7 +293,7 @@ DOC
              "  const encrypted = Buffer.concat([cipher.update(data, 'utf8'), cipher.final()]); " +
              "  const authTag = cipher.getAuthTag(); " +
              "  console.log(Buffer.concat([encrypted, authTag]).toString('base64')); " +
-             "});"
+             "});",
             ],
             input: IO::Memory.new(content),
             output: encrypted_output,
@@ -288,7 +301,7 @@ DOC
           )
 
           unless result.success?
-            puts "SSH: Node.js stderr: #{error_output.to_s}"
+            puts "SSH: Node.js stderr: #{error_output}"
             raise "Node.js encryption failed with exit code: #{result.exit_code}"
           end
 
