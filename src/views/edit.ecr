@@ -1,16 +1,4 @@
-<div class="editor-preview-container preview-hidden" id="editor-preview-container">
-  <div class="editor-pane">
-    <div class="editor-wrapper">
-      <div class="codejar-editor" id="editor"></div>
-    </div>
-  </div>
-
-  <div class="preview-pane">
-    <div class="preview-content" id="preview">
-      <pre><code>Loading...</code></pre>
-    </div>
-  </div>
-</div>
+<%= render "src/views/_editor_container.ecr" %>
 
 
 <script>
@@ -21,167 +9,65 @@
   const initialContent = <%= paste.content.to_json %>;
   const initialTitle = <%= (paste.title || "").to_json %>;
 
-  // Map common language names to highlight.js names
-  function mapLanguage(lang) {
-    if (!lang) return 'plaintext';
-    const langLower = lang.toLowerCase();
-    const mapping = {
-      'c++': 'cpp',
-      'c#': 'csharp',
-      'objective-c': 'objectivec',
-      'shell': 'bash',
-      'dockerfile': 'docker',
-      'console': 'bash',
-      'text': 'plaintext',
-      'plain text': 'plaintext',
-      'crystal': 'ruby',  // Crystal is similar to Ruby
-      'auto-detect': 'plaintext'
-    };
-    return mapping[langLower] || langLower;
-  }
-
-  // Highlight function for CodeJar
-  function highlight(editor) {
-    const code = editor.textContent;
-    if (!code) return;
-    
-    const lang = currentLanguage || '';
-    const mappedLang = mapLanguage(lang);
-    
-    try {
-      if (mappedLang !== 'plaintext' && hljs.getLanguage(mappedLang)) {
-        editor.innerHTML = hljs.highlight(code, { language: mappedLang, ignoreIllegals: true }).value;
-      } else if (!lang || lang === '' || mappedLang === 'plaintext') {
-        // Auto-detect mode or plaintext
-        const result = hljs.highlightAuto(code);
-        editor.innerHTML = result.value;
-      } else {
-        // Unknown language, try auto-detection
-        const result = hljs.highlightAuto(code);
-        editor.innerHTML = result.value;
-      }
-    } catch (e) {
-      // Fallback to plain text
-      editor.textContent = code;
-    }
-  }
-
-  function debouncedUpdatePreview() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(updatePreview, 300);
-  }
-
+  // Use shared functions from external module
   function updateLanguage() {
     currentLanguage = document.getElementById('language').value;
     if (jar) {
-      // Re-highlight with new language
+      // Re-highlight with new language using shared function
       jar.updateCode(jar.toString());
     }
     updatePreview();
   }
 
   function togglePreview() {
-    const container = document.getElementById('editor-preview-container');
-    const previewButton = document.getElementById('preview-text');
-    const controlsButton = document.getElementById('controls-preview-text');
-    const controlsIcon = document.querySelector('#controls-preview-button i[data-lucide]');
-
-    const isHidden = container.classList.toggle('preview-hidden');
-
-    if (isHidden) {
-      // Update preview pane header button
-      previewButton.textContent = 'Show';
-      previewButton.title = 'Show Preview';
-
-      // Update controls button
-      if (controlsButton) controlsButton.textContent = 'Show Preview';
-      if (controlsIcon) {
-        controlsIcon.setAttribute('data-lucide', 'eye-off');
-        if (window.lucide) lucide.createIcons();
-      }
-    } else {
-      // Update preview pane header button
-      previewButton.textContent = 'Hide';
-      previewButton.title = 'Hide Preview';
-
-      // Update controls button
-      if (controlsButton) controlsButton.textContent = 'Preview';
-      if (controlsIcon) {
-        controlsIcon.setAttribute('data-lucide', 'eye');
-        if (window.lucide) lucide.createIcons();
-      }
-
-      updatePreview(); // Refresh preview when shown
+    // Use shared togglePreview function
+    if (typeof window.togglePreview === 'function') {
+      window.togglePreview(jar,
+        () => document.getElementById('language').value,
+        () => document.getElementById('syntax-theme')?.value || 'monokai'
+      );
     }
 
-    // Save preference
-    localStorage.setItem('previewHidden', isHidden);
+    // Update edit-specific UI elements
+    const previewButton = document.getElementById('preview-text');
+    const controlsButton = document.getElementById('controls-preview-text');
+    const container = document.getElementById('editor-preview-container');
+    const isHidden = container.classList.contains('preview-hidden');
+
+    if (previewButton) {
+      previewButton.textContent = isHidden ? 'Show' : 'Hide';
+      previewButton.title = isHidden ? 'Show Preview' : 'Hide Preview';
+    }
+
+    if (controlsButton) {
+      controlsButton.textContent = isHidden ? 'Show Preview' : 'Preview';
+    }
   }
 
   function updatePreview() {
-    const content = jar ? jar.toString() : '';
-    const languageSelect = document.getElementById('language');
-    const syntaxThemeSelect = document.getElementById('syntax-theme');
+    // Use shared updatePreview function
+    if (typeof window.updatePreview === 'function') {
+      window.updatePreview(jar,
+        () => document.getElementById('language').value,
+        () => document.getElementById('syntax-theme')?.value || 'monokai'
+      );
 
-    // Check if elements exist before accessing their values
-    if (!languageSelect || !syntaxThemeSelect) {
-      console.warn('Language or syntax theme selectors not available');
-      return;
-    }
-
-    const language = languageSelect.value;
-    const syntaxTheme = syntaxThemeSelect.value;
-
-    if (!content.trim()) {
-      const previewElement = document.getElementById('preview');
-      if (previewElement) {
-        previewElement.innerHTML = '<pre><code>Start typing to see preview...</code></pre>';
-      }
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('language', language);
-    formData.append('theme', syntaxTheme);
-
-    fetch('/highlight', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      const previewElement = document.getElementById('preview');
-      if (previewElement) {
-        previewElement.innerHTML = data.html;
-      }
-
-      // Update language selector text to show detected language if auto-detection is active
-      const isAutoDetect = (languageSelect.value === 'Auto-detect' || languageSelect.value === '');
-
-      if (isAutoDetect) {
+      // Update currentLanguage if auto-detect is active and language was detected
+      const languageSelect = document.getElementById('language');
+      const isAutoDetect = (languageSelect?.value === 'Auto-detect' || languageSelect?.value === '');
+      if (isAutoDetect && languageSelect?.options) {
         const autoDetectOption = Array.from(languageSelect.options).find(
           option => option.value === 'Auto-detect' || option.value === ''
         );
-
-        if (autoDetectOption) {
-          if (data.detected_language) {
-            autoDetectOption.textContent = `Auto-detect (${data.detected_language})`;
-            // Update editor highlighting with detected language
-            currentLanguage = data.detected_language;
-          } else {
-            autoDetectOption.textContent = 'Auto-detect';
+        if (autoDetectOption && autoDetectOption.textContent.includes('(')) {
+          // Extract detected language from text like "Auto-detect (javascript)"
+          const match = autoDetectOption.textContent.match(/\(([^)]+)\)/);
+          if (match) {
+            currentLanguage = match[1];
           }
         }
       }
-    })
-    .catch(error => {
-      console.error('Error updating preview:', error);
-      const previewElement = document.getElementById('preview');
-      if (previewElement) {
-        previewElement.innerHTML = '<pre><code>Error updating preview</code></pre>';
-      }
-    });
+    }
   }
 
   function updatePaste() {
@@ -267,10 +153,15 @@
 
     // Dynamically import CodeJar as ES module
     const { CodeJar } = await import('/assets/codejar.min.js');
-    
+
     const editorElement = document.getElementById('editor');
-    
-    jar = CodeJar(editorElement, highlight, {
+
+    // Use shared highlight function
+    jar = CodeJar(editorElement, (editor) => {
+      if (typeof window.highlight === 'function') {
+        window.highlight(editor, currentLanguage);
+      }
+    }, {
       tab: '  ',
       indentOn: /[{[(]$/,
       moveToNewLine: /^[}\])]$/,
@@ -290,25 +181,47 @@
     // Set initial content
     jar.updateCode(initialContent);
 
-    // Update preview on content change
+    // Export jar to window for external functions
+    window.jar = jar;
+
+    // Update preview on content change using debounced function
     jar.onUpdate(() => {
-      debouncedUpdatePreview();
+      if (typeof window.debouncedUpdatePreview === 'function') {
+        debounceTimer = window.debouncedUpdatePreview(() => {
+          window.updatePreview(window.jar,
+            () => document.getElementById('language').value,
+            () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+          );
+        }, debounceTimer);
+      } else {
+        // Fallback if shared function not available
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          window.updatePreview(window.jar,
+            () => document.getElementById('language').value,
+            () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+          );
+        }, 300);
+      }
     });
 
     // Restore preview visibility preference
     const previewHidden = localStorage.getItem('previewHidden') === 'true';
-    if (previewHidden) {
-      document.getElementById('editor-preview-container').classList.add('preview-hidden');
-      document.getElementById('preview-text').textContent = 'Show';
+    const container = document.getElementById('editor-preview-container');
+    const controlsIcon = document.querySelector('#controls-preview-button i[data-lucide]');
+    const controlsButton = document.getElementById('controls-preview-text');
+    const previewButton = document.getElementById('preview-text');
 
-      // Update controls button if it exists
-      const controlsButton = document.getElementById('controls-preview-text');
-      const controlsIcon = document.querySelector('#controls-preview-button i[data-lucide]');
+    if (previewHidden) {
+      container.classList.add('preview-hidden');
+      if (controlsIcon) controlsIcon.setAttribute('data-lucide', 'eye');
       if (controlsButton) controlsButton.textContent = 'Show Preview';
-      if (controlsIcon) {
-        controlsIcon.setAttribute('data-lucide', 'eye-off');
-        if (window.lucide) window.lucide.createIcons();
-      }
+      if (previewButton) previewButton.textContent = 'Show';
+    } else {
+      container.classList.remove('preview-hidden');
+      if (controlsIcon) controlsIcon.setAttribute('data-lucide', 'eye-off');
+      if (controlsButton) controlsButton.textContent = 'Preview';
+      if (previewButton) previewButton.textContent = 'Hide';
     }
 
     // Initialize Lucide icons

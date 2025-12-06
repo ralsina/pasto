@@ -180,6 +180,8 @@ compress_asset() {
 # Compress JavaScript files
 compress_asset "$ASSETS_DIR/bundle.js"
 compress_asset "$ASSETS_DIR/codejar.min.js"
+compress_asset "$ASSETS_DIR/editor-shared.js"
+compress_asset "$ASSETS_DIR/mobile-controls.js"
 
 # Compress CSS files
 for css in "$ASSETS_DIR"/*.css; do
