@@ -121,22 +121,6 @@
   .copy-overlay-btn svg,
   .eye-overlay-btn i,
   .eye-overlay-btn svg {
-      .eye-overlay-btn {
-        position: absolute;
-        top: 0.75rem;
-        right: 3.25rem;
-        background: var(--pico-secondary-background);
-        border: 1px solid var(--pico-muted-border-color);
-        border-radius: var(--pico-border-radius);
-        padding: 0.5rem;
-        cursor: pointer;
-        opacity: 0.7;
-        transition: opacity 0.2s, background-color 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-      }
     width: 1.25rem;
     height: 1.25rem;
     color: var(--pico-primary);
@@ -542,6 +526,52 @@
 
     if (langParam) {
       document.getElementById('view-language').value = langParam;
+    }
+
+    // Auto-detect language when no specific language is assigned
+    const languageSelect = document.getElementById('view-language');
+    const isAutoDetect = (languageSelect.value === '' || languageSelect.value === 'Auto');
+
+    if (isAutoDetect && rawContent) {
+      // Use the highlight endpoint to detect language
+      const formData = new FormData();
+      formData.append('content', rawContent);
+      formData.append('language', '');
+      formData.append('theme', 'monokai');
+
+      fetch('/highlight', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.detected_language) {
+          const autoDetectOption = Array.from(languageSelect.options).find(
+            option => option.value === '' || option.value === 'Auto'
+          );
+          if (autoDetectOption) {
+            autoDetectOption.textContent = `Auto (${data.detected_language})`;
+          }
+
+          // Re-highlight the content with the detected language
+          const pasteContent = document.getElementById('paste-content');
+          if (pasteContent && data.html) {
+            pasteContent.innerHTML = data.html;
+
+            // Update markdown rendered content if it exists
+            const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
+            if (isMarkdown) {
+              const renderedDiv = document.getElementById('rendered-markdown');
+              if (renderedDiv) {
+                renderedDiv.innerHTML = marked.parse(rawContent);
+              }
+            }
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error detecting language:', error);
+      });
     }
   });
 </script>

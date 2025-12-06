@@ -269,10 +269,14 @@
           option.textContent = langName;
           languageSelect.appendChild(option);
         });
-      })
-      .catch(error => console.error('Error loading languages:', error));
 
-    // Initialize preview
-    updatePreview();
+        // Initialize preview after languages are loaded
+        updatePreview();
+      })
+      .catch(error => {
+        console.error('Error loading languages:', error);
+        // Still initialize preview even if language loading fails
+        updatePreview();
+      });
   });
 </script>
