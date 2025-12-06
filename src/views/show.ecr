@@ -795,14 +795,14 @@
         <a href="/" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
         </a>
-        <button onclick="downloadPaste()" class="controls-button" title="Download" aria-label="Download paste as file">
-          <i data-lucide="download" style="width: 20px; height: 20px;"></i>
-        </button>
         <select id="view-language" onchange="changeLanguage()" class="controls-select" aria-label="View as different programming language">
           <% Pasto::Paste.available_languages.each do |lang| %>
             <option value="<%= lang == "Auto" ? "" : lang %>" <%= lang == paste.language ? "selected" : "" %>><%= lang %></option>
           <% end %>
         </select>
+        <button onclick="downloadPaste()" class="controls-button" title="Download" aria-label="Download paste as file">
+          <i data-lucide="download" style="width: 20px; height: 20px;"></i>
+        </button>
         <% if current_user %>
         <button onclick="forkPaste()" class="controls-button" title="Fork (create your own copy)" aria-label="Fork paste - create your own copy">
           <i data-lucide="git-fork" style="width: 20px; height: 20px;"></i>
