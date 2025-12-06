@@ -134,8 +134,12 @@
           <i data-lucide="save" style="width: 16px; height: 16px;"></i>
           Save
         </button>
-        <button onclick="togglePreview()" class="controls-button" title="Toggle Preview" id="controls-preview-button">
+        <button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => document.getElementById('syntax-theme')?.value || 'monokai')" class="controls-button" title="Show Preview" id="controls-show-preview-button" style="display: none;">
           <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+          <span id="controls-preview-text">Show</span>
+        </button>
+        <button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => document.getElementById('syntax-theme')?.value || 'monokai')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" style="display: flex;">
+          <i data-lucide="eye-off" style="width: 16px; height: 16px;"></i>
           <span id="controls-preview-text">Preview</span>
         </button>
         <a href="/${pasteId}" class="controls-button" title="Cancel" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
@@ -208,19 +212,19 @@
     // Restore preview visibility preference
     const previewHidden = localStorage.getItem('previewHidden') === 'true';
     const container = document.getElementById('editor-preview-container');
-    const controlsIcon = document.querySelector('#controls-preview-button i[data-lucide]');
-    const controlsButton = document.getElementById('controls-preview-text');
+    const showButton = document.getElementById('controls-show-preview-button');
+    const hideButton = document.getElementById('controls-hide-preview-button');
     const previewButton = document.getElementById('preview-text');
 
     if (previewHidden) {
       container.classList.add('preview-hidden');
-      if (controlsIcon) controlsIcon.setAttribute('data-lucide', 'eye');
-      if (controlsButton) controlsButton.textContent = 'Show Preview';
+      if (showButton) showButton.style.display = 'flex';
+      if (hideButton) hideButton.style.display = 'none';
       if (previewButton) previewButton.textContent = 'Show';
     } else {
       container.classList.remove('preview-hidden');
-      if (controlsIcon) controlsIcon.setAttribute('data-lucide', 'eye-off');
-      if (controlsButton) controlsButton.textContent = 'Preview';
+      if (showButton) showButton.style.display = 'none';
+      if (hideButton) hideButton.style.display = 'flex';
       if (previewButton) previewButton.textContent = 'Hide';
     }
 

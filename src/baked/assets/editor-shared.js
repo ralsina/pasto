@@ -122,18 +122,20 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
 // Common toggle preview functionality
 function togglePreview(jar, getLanguageValue, getSyntaxThemeValue) {
   const container = document.getElementById('editor-preview-container');
-  const controlsIcon = document.querySelector('#controls-preview-button i[data-lucide]');
+  const showButton = document.getElementById('controls-show-preview-button');
+  const hideButton = document.getElementById('controls-hide-preview-button');
 
   const isHidden = container.classList.toggle('preview-hidden');
 
-  // Update controls button icon (show regular eye when hidden, crossed eye when visible)
-  if (controlsIcon) {
+  // Toggle button visibility
+  if (showButton && hideButton) {
     if (isHidden) {
-      controlsIcon.setAttribute('data-lucide', 'eye');
+      showButton.style.display = 'flex';
+      hideButton.style.display = 'none';
     } else {
-      controlsIcon.setAttribute('data-lucide', 'eye-off');
+      showButton.style.display = 'none';
+      hideButton.style.display = 'flex';
     }
-    if (window.lucide) lucide.createIcons();
   }
 
   if (!isHidden) {
