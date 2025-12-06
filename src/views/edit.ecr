@@ -131,26 +131,26 @@
           <% end %>
         </select>
         <button onclick="updatePaste()" class="controls-button" title="Save Changes">
-          <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="save" style="width: 20px; height: 20px;"></i>
           Save
         </button>
         <button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => document.getElementById('syntax-theme')?.value || 'monokai')" class="controls-button" title="Show Preview" id="controls-show-preview-button" style="display: none;">
-          <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
           <span id="controls-preview-text">Show</span>
         </button>
         <button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => document.getElementById('syntax-theme')?.value || 'monokai')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" style="display: flex;">
-          <i data-lucide="eye-off" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="eye-off" style="width: 20px; height: 20px;"></i>
           <span id="controls-preview-text">Preview</span>
         </button>
         <a href="/${pasteId}" class="controls-button" title="Cancel" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
           Cancel
         </a>
         <a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="help-circle" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
         </a>
         <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="user" style="width: 20px; height: 20px;"></i>
         </a>
       `;
     }

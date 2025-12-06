@@ -322,7 +322,7 @@
       </h2>
       <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; color: #856404;">
         <strong style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-          <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
           Important: Save this information!
         </strong>
         You must save both the password and the URL below. Without them, you cannot access this paste again.
@@ -333,7 +333,7 @@
         <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
           <code style="font-size: 1.1rem; color: var(--pico-primary, #0074d9); word-break: break-all; display: block;">${encryptionKey}</code>
           <button onclick="copyEncryptionKey('${encryptionKey}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
-            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
             Copy
           </button>
         </div>
@@ -344,7 +344,7 @@
         <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
           <code style="font-size: 0.9rem; color: var(--pico-color, #333); word-break: break-all; display: block;">${pasteUrl}</code>
           <button onclick="copyText('${pasteUrl}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
-            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
             Copy
           </button>
         </div>
@@ -352,11 +352,11 @@
 
       <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center;">
         <button onclick="viewEncryptedPaste('${pasteUrl.split('/').pop()}', '${encryptionKey}')" style="background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: bold;">
-          <i data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          <i data-lucide="eye" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
           View Paste
         </button>
         <button onclick="closeEncryptionKeyDialog()" style="background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer;">
-          <i data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          <i data-lucide="check" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
           I've saved the information
         </button>
       </div>
@@ -376,7 +376,7 @@
       // Show temporary feedback
       const button = event.target.closest('button');
       const originalHTML = button.innerHTML;
-      button.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px;"></i> Copied!';
+      button.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Copied!';
       button.style.background = '#28a745';
 
       if (window.lucide) {
@@ -398,7 +398,7 @@
       // Show temporary feedback
       const button = event.target.closest('button');
       const originalHTML = button.innerHTML;
-      button.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px;"></i> Copied!';
+      button.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Copied!';
       button.style.background = '#28a745';
 
       if (window.lucide) {
@@ -464,7 +464,7 @@
       </h2>
       <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; color: #856404;">
         <strong style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-          <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
           Important: Save this information!
         </strong>
         You must save both the password and the URL below. Without them, you cannot access this paste again.
@@ -475,7 +475,7 @@
         <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
           <code style="font-size: 1.1rem; color: var(--pico-primary, #0074d9); word-break: break-all; display: block;">${password}</code>
           <button onclick="copyText('${password}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
-            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
             Copy
           </button>
         </div>
@@ -486,7 +486,7 @@
         <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
           <code style="font-size: 0.9rem; color: var(--pico-color, #333); word-break: break-all; display: block;">${pasteUrl}</code>
           <button onclick="copyText('${pasteUrl}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
-            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
             Copy
           </button>
         </div>
@@ -494,11 +494,11 @@
 
       <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center;">
         <button onclick="viewEncryptedPaste('${pasteId}', '${password}')" style="background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: bold;">
-          <i data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          <i data-lucide="eye" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
           View Paste
         </button>
         <button onclick="closePasswordDialog()" style="background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer;">
-          <i data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          <i data-lucide="check" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
           I've saved the information
         </button>
       </div>
@@ -518,7 +518,7 @@
       // Show temporary feedback
       const button = event.target.closest('button');
       const originalHTML = button.innerHTML;
-      button.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px;"></i> Copied!';
+      button.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Copied!';
       button.style.background = '#28a745';
 
       if (window.lucide) {

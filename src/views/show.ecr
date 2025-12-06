@@ -793,10 +793,10 @@
     if (controlsGroup) {
       controlsGroup.innerHTML = `
         <a href="/" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-          <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
         </a>
         <button onclick="downloadPaste()" class="controls-button" title="Download" aria-label="Download paste as file">
-          <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="download" style="width: 20px; height: 20px;"></i>
         </button>
         <select id="view-language" onchange="changeLanguage()" class="controls-select" aria-label="View as different programming language">
           <% Pasto::Paste.available_languages.each do |lang| %>
@@ -805,32 +805,32 @@
         </select>
         <% if current_user %>
         <button onclick="forkPaste()" class="controls-button" title="Fork (create your own copy)" aria-label="Fork paste - create your own copy">
-          <i data-lucide="git-fork" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="git-fork" style="width: 20px; height: 20px;"></i>
         </button>
         <% end %>
         <% if current_user && paste.user_id == current_user.sepia_id %>
         <a href="/<%= paste.base_id %>/edit" class="controls-button" title="Edit Paste" aria-label="Edit Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-          <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="pencil" style="width: 20px; height: 20px;"></i>
         </a>
         <% if version_count > 1 %>
         <a href="/<%= paste.base_id %>/history" class="controls-button" title="View History (<%= version_count %> versions)" aria-label="View History" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-          <i data-lucide="history" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="history" style="width: 20px; height: 20px;"></i>
         </a>
         <% end %>
         <button onclick="deletePaste()" class="controls-button" title="Delete Paste" aria-label="Delete paste permanently" style="color: var(--pico-del-color);">
-          <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="trash-2" style="width: 20px; height: 20px;"></i>
         </button>
         <% end %>
         <% if is_version_view %>
         <a href="/<%= base_paste_id %>" class="controls-button" title="Back to Latest" aria-label="Back to Latest" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-          <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
         </a>
         <% end %>
         <a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="help-circle" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
         </a>
         <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="user" style="width: 20px; height: 20px;"></i>
         </a>
       `;
 

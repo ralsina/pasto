@@ -23,7 +23,7 @@
           <div class="history-item-info">
             <span class="history-version">
               <% if index == 0 %>
-                <i data-lucide="star" style="width: 14px; height: 14px;"></i>
+                <i data-lucide="star" style="width: 16px; height: 16px;"></i>
                 Current (v<%= version.generation %>)
               <% else %>
                 v<%= version.generation %>
@@ -49,8 +49,8 @@
         </div>
         
         <div class="history-item-meta">
-          <span><i data-lucide="file-text" style="width: 12px; height: 12px;"></i> <%= version.content.lines.size %> lines</span>
-          <span><i data-lucide="code" style="width: 12px; height: 12px;"></i> <%= version.language || "Unknown" %></span>
+          <span><i data-lucide="file-text" style="width: 16px; height: 16px;"></i> <%= version.content.lines.size %> lines</span>
+          <span><i data-lucide="code" style="width: 16px; height: 16px;"></i> <%= version.language || "Unknown" %></span>
         </div>
       </div>
     <% end %>
