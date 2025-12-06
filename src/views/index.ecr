@@ -139,13 +139,15 @@
       btn.setAttribute('aria-label', 'Disable encryption');
       btn.style.background = 'var(--pico-primary)';
       btn.style.borderColor = 'var(--pico-primary)';
+      btn.style.color = 'white';
       icon.setAttribute('data-lucide', 'lock');
     } else {
       // Update to unlocked state
       btn.title = 'Enable Encryption';
       btn.setAttribute('aria-label', 'Enable encryption');
-      btn.style.background = 'var(--pico-secondary-background)';
-      btn.style.borderColor = 'var(--pico-muted-border-color)';
+      btn.style.background = 'transparent';
+      btn.style.borderColor = 'var(--pico-primary)';
+      btn.style.color = 'var(--pico-primary)';
       icon.setAttribute('data-lucide', 'unlock');
     }
 
@@ -699,7 +701,7 @@
         <select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language">
           <option value="">Auto</option>
         </select>
-        <button onclick="toggleEncryption()" class="controls-button" id="encryption-toggle-btn" title="Enable Encryption" aria-label="Toggle encryption" style="background: var(--pico-secondary-background); border: 1px solid var(--pico-muted-border-color);">
+        <button onclick="toggleEncryption()" class="controls-button" id="encryption-toggle-btn" title="Enable Encryption" aria-label="Toggle encryption" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);">
           <i data-lucide="unlock" style="width: 20px; height: 20px;"></i>
         </button>
         <button onclick="createPaste(event)" class="controls-button" title="Create Paste" aria-label="Create Paste">
