@@ -555,7 +555,7 @@ post "/highlight" do |env|
   content = content.gsub("\r\n", "\n").gsub("\r", "\n")
 
   # Handle language detection
-  if language.empty? || language == "Auto-detect" || language == ""
+  if language.empty? || language == "Auto" || language == ""
     language = nil
   end
 
@@ -1200,7 +1200,7 @@ end
 get "/api/languages" do |env|
   env.response.content_type = "application/json"
 
-  languages = [{"name" => "Auto-detect", "value" => ""}]
+  languages = [{"name" => "Auto", "value" => ""}]
 
   # Get all available lexers from Tartrazine
   Tartrazine.lexers.sort.each do |lexer|

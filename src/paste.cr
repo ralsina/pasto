@@ -25,7 +25,7 @@ module Pasto
       @created_at = Time.utc
       @updated_at = Time.utc
 
-      # Auto-detect language: first from filename, then from content
+      # Auto language: first from filename, then from content
       if @language.nil?
         if @filename
           ext = File.extname(@filename.not_nil!)
@@ -490,7 +490,7 @@ module Pasto
               <div class="language-selector">
                 <label for="language">View as different language:</label>
                 <select id="language" onchange="changeLanguage(this.value)">
-                  <option value="">Auto-detect</option>
+                  <option value="">Auto</option>
                   #{Pasto::Paste.generate_language_options(language_override)}
                 </select>
               </div>
@@ -632,7 +632,7 @@ module Pasto
 
     def self.available_languages : Array(String)
       # Get all available lexers from Tartrazine
-      ["Auto-detect"] + Tartrazine.lexers.sort
+      ["Auto"] + Tartrazine.lexers.sort
     end
 
     def self.generate_language_options(current_language : String? = nil) : String

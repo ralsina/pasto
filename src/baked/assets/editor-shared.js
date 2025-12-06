@@ -94,18 +94,18 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
     }
 
     // Update language selector text to show detected language if auto-detection is active
-    const isAutoDetect = (languageSelect.value === 'Auto-detect' || languageSelect.value === '');
+    const isAutoDetect = (languageSelect.value === 'Auto' || languageSelect.value === '');
 
     if (isAutoDetect) {
       const autoDetectOption = Array.from(languageSelect.options || []).find(
-        option => option.value === 'Auto-detect' || option.value === ''
+        option => option.value === 'Auto' || option.value === ''
       );
 
       if (autoDetectOption) {
         if (data.detected_language) {
-          autoDetectOption.textContent = `Auto-detect (${data.detected_language})`;
+          autoDetectOption.textContent = `Auto (${data.detected_language})`;
         } else {
-          autoDetectOption.textContent = 'Auto-detect';
+          autoDetectOption.textContent = 'Auto';
         }
       }
     }

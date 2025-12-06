@@ -95,13 +95,13 @@
 
       // Update currentLanguage if auto-detect is active and language was detected
       const languageSelect = document.getElementById('language');
-      const isAutoDetect = (languageSelect?.value === 'Auto-detect' || languageSelect?.value === '');
+      const isAutoDetect = (languageSelect?.value === 'Auto' || languageSelect?.value === '');
       if (isAutoDetect && languageSelect?.options) {
         const autoDetectOption = Array.from(languageSelect.options).find(
-          option => option.value === 'Auto-detect' || option.value === ''
+          option => option.value === 'Auto' || option.value === ''
         );
         if (autoDetectOption && autoDetectOption.textContent.includes('(')) {
-          // Extract detected language from text like "Auto-detect (javascript)"
+          // Extract detected language from text like "Auto (javascript)"
           const match = autoDetectOption.textContent.match(/\(([^)]+)\)/);
           if (match) {
             currentLanguage = match[1];
@@ -158,7 +158,7 @@
       controlsGroup.innerHTML = `
         <input type="text" id="paste-title" placeholder="Title (optional)" class="controls-input">
         <select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language">
-          <option value="">Auto-detect</option>
+          <option value="">Auto</option>
         </select>
         <button onclick="createPaste()" class="controls-button" title="Create Paste" aria-label="Create Paste">
           <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
