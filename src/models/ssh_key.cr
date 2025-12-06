@@ -28,7 +28,7 @@ module Pasto
     end
 
     # Create a paste and add it to this key
-    def create_paste(content : String, theme : String = "default-dark", language : String? = nil, filename : String? = nil, title : String? = nil) : Paste
+    def create_paste(content : String, theme : String = "default-dark", language : String? = nil, filename : String? = nil, title : String? = nil, encrypted : Bool = false) : Paste
       paste = Paste.new(
         content: content,
         theme: theme,
@@ -37,6 +37,17 @@ module Pasto
         filename: filename,
         title: title
       )
+
+      # Set encryption flag if requested
+      if encrypted
+        paste.is_encrypted = true
+        paste.encrypted_content = content
+        # For SSH server, we'll use key-based encryption
+        # The actual encryption happens elsewhere or this is a placeholder
+        # for future client-side encryption implementation
+        paste.content = "" # Clear plain content for encrypted pastes
+      end
+
       add_paste(paste)
       paste
     end

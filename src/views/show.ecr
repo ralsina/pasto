@@ -483,6 +483,32 @@
     const pasteContent = document.getElementById('paste-content');
     const isPasswordBased = <%= paste.password_based ? "true" : "false" %>;
 
+    // Check Web Crypto API availability first
+    if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle !== 'object') {
+      // Show error for insecure environment
+      pasteContent.innerHTML = `
+        <div id="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
+          <div style="background: #ff6b6b; color: white; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+            <h3>🔒 Insecure Environment Detected</h3>
+            <p><strong>This encrypted paste cannot be accessed in your current browser environment.</strong></p>
+            <p>Web Crypto API requires a <strong>secure context</strong> (HTTPS) to function properly.</p>
+            <div style="margin-top: 1rem;">
+              <strong>To fix this issue:</strong>
+              <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                <li>Access this page via <strong>HTTPS</strong> instead of HTTP</li>
+                <li>Use <strong>127.0.0.1</strong> instead of <strong>0.0.0.0</strong> for local development</li>
+                <li>Ensure you're using a modern browser that supports Web Crypto API</li>
+              </ul>
+            </div>
+            <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9;">
+              This security requirement protects your encrypted data from being exposed in insecure contexts.
+            </p>
+          </div>
+        </div>
+      `;
+      return; // Don't proceed with encryption dialog
+    }
+
     // Create and show the dialog
     pasteContent.innerHTML = `
       <div id="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
@@ -681,6 +707,7 @@
     }
   }
 
+  
   // Handle encrypted content decryption
   async function handleEncryptedContent() {
     if (!isEncrypted || !encryptedContent || !encryptionIv) {

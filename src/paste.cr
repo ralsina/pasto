@@ -820,6 +820,62 @@ module Pasto
       @user_id
     end
 
+    # Decrypt encrypted content using AES-256-GCM
+    def decrypt_content(encryption_key : String) : String
+      return @content unless @is_encrypted && @encrypted_content && @encryption_iv
+
+      begin
+        # Decode the base64 encrypted content
+        encrypted_data = Base64.decode_string(@encrypted_content.as(String))
+
+        # Split into ciphertext and auth_tag (last 16 bytes)
+        ciphertext = encrypted_data[0...-16]
+        auth_tag = encrypted_data[-16..]
+
+        # Setup decryption
+        decipher = OpenSSL::Cipher.new("aes-256-gcm")
+        decipher.decrypt
+        decipher.key = Base64.decode_string(encryption_key)
+        decipher.iv = Base64.decode_string(@encryption_iv.as(String))
+
+        # Set the authentication tag before decryption
+        decipher.auth_tag = auth_tag
+
+        # Decrypt the content
+        decrypted_content = decipher.update(ciphertext) + decipher.final
+
+        decrypted_content
+      rescue ex
+        raise "Failed to decrypt content: #{ex.message}"
+      end
+    end
+
+    # Encrypt content using AES-256-GCM (for client-side encryption compatibility)
+    def encrypt_content(encryption_key : String, encryption_iv : String) : String
+      return @content if @content.empty?
+
+      begin
+        cipher = OpenSSL::Cipher.new("aes-256-gcm")
+        cipher.encrypt
+        cipher.key = Base64.decode_string(encryption_key)
+        cipher.iv = Base64.decode_string(encryption_iv)
+
+        # Encrypt the content
+        encrypted_data = cipher.update(@content) + cipher.final
+
+        # Get the authentication tag (16 bytes for GCM)
+        auth_tag = cipher.auth_tag
+
+        # Combine ciphertext + auth_tag for Web Crypto API compatibility
+        webcrypto_compatible_data = encrypted_data + auth_tag
+
+        # Return as Base64 for storage/transmission
+        Base64.strict_encode(webcrypto_compatible_data)
+      rescue ex
+        raise "Failed to encrypt content: #{ex.message}"
+      end
+    end
+
     private def generate_id : String
       # Generate a short random ID
       Random::Secure.urlsafe_base64(6).gsub(/[-_]/, "").chars.first(8).join

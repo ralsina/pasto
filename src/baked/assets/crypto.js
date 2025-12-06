@@ -59,6 +59,11 @@ class PastoCrypto {
   // Decrypt ciphertext using AES-256-GCM
   static async decrypt(encryptedBase64, ivBase64, keyBase64) {
     try {
+      // Check if Web Crypto API is available
+      if (!window.crypto || !window.crypto.subtle) {
+        throw new Error('Web Crypto API is not available. This feature requires a secure context (HTTPS) or a modern browser.');
+      }
+
       // Convert base64 strings to bytes
       const encrypted = this.fromBase64(encryptedBase64);
       const iv = this.fromBase64(ivBase64);
