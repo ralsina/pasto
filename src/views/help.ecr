@@ -23,3 +23,28 @@
     margin-top: 1.5em;
   }
 </style>
+
+<script>
+  // Inject controls into controls-group
+  document.addEventListener('DOMContentLoaded', function() {
+    const controlsGroup = document.getElementById('controls-group');
+    if (controlsGroup) {
+      controlsGroup.innerHTML = `
+        <a href="/" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+        </a>
+        <a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="help-circle" style="width: 16px; height: 16px;"></i>
+        </a>
+        <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+        </a>
+      `;
+
+      // Initialize Lucide icons
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+  });
+</script>
