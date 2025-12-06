@@ -1,3 +1,4 @@
+require "json"
 require "sepia"
 require "hansa"
 require "tartrazine"
@@ -5,6 +6,7 @@ require "html"
 
 module Pasto
   class Paste < Sepia::Object
+    include JSON::Serializable
     include Sepia::Serializable
 
     property content : String
@@ -18,6 +20,20 @@ module Pasto
     property ssh_ip : String?
     property user_id : String?
 
+    # Encryption fields
+    property encrypted_content : String?
+    property is_encrypted : Bool = false
+    property encryption_iv : String?
+    property encryption_tag : String?
+    property encryption_salt : String?
+    property encryption_iterations : Int32 = 100000
+    property password_based : Bool = false
+
+    # Security features
+    property expires_at : Time?
+    property burn_after_reading : Bool = false
+    property view_count : Int32 = 0
+
     def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil, @title : String? = nil, @filename : String? = nil)
       # Normalize line endings to just '\n'
       @content = content.gsub("\r\n", "\n").gsub("\r", "\n")
@@ -28,7 +44,7 @@ module Pasto
       # Auto language: first from filename, then from content
       if @language.nil?
         if @filename
-          ext = File.extname(@filename.not_nil!)
+          ext = File.extname(@filename.as(String))
           detected = language_for_extension(ext)
           @language = detected unless detected == "text"
         end
@@ -41,8 +57,8 @@ module Pasto
 
     # Get display title - returns explicit title or auto-generated from content
     def display_title : String
-      if @title && !@title.not_nil!.strip.empty?
-        return @title.not_nil!
+      if @title && !@title.as(String).strip.empty?
+        return @title.as(String)
       end
 
       # Generate from first line of content
@@ -68,35 +84,11 @@ module Pasto
 
     # Sepia serialization methods
     def to_sepia : String
-      {
-        content:         @content,
-        title:           @title,
-        filename:        @filename,
-        language:        @language,
-        theme:           @theme,
-        created_at:      @created_at.to_rfc3339,
-        updated_at:      @updated_at.to_rfc3339,
-        ssh_fingerprint: @ssh_fingerprint,
-        ssh_ip:          @ssh_ip,
-        user_id:         @user_id,
-      }.to_json
+      to_json()
     end
 
     def self.from_sepia(sepia_string : String) : Paste
-      data = Hash(String, JSON::Any).from_json(sepia_string)
-      paste = new(
-        content: data["content"].as_s,
-        language: data["language"]?.try(&.as_s?),
-        theme: data["theme"]?.try(&.as_s?) || "default-dark",
-        ssh_fingerprint: data["ssh_fingerprint"]?.try(&.as_s?),
-        ssh_ip: data["ssh_ip"]?.try(&.as_s?),
-        user_id: data["user_id"]?.try(&.as_s?),
-        title: data["title"]?.try(&.as_s?),
-        filename: data["filename"]?.try(&.as_s?)
-      )
-      paste.created_at = Time.parse_rfc3339(data["created_at"].as_s)
-      paste.updated_at = Time.parse_rfc3339(data["updated_at"].as_s)
-      paste
+      from_json(sepia_string)
     end
 
     # Compatibility methods

@@ -617,6 +617,24 @@ post "/" do |env|
   syntax_theme = env.params.body["syntax_theme"]?.to_s
   syntax_theme = "default-dark" if syntax_theme.empty?
 
+  # Handle encryption fields
+  is_encrypted = env.params.body["is_encrypted"]?.to_s == "true"
+  encryption_iv = env.params.body["encryption_iv"]?.to_s
+  encryption_iv = nil if encryption_iv.strip.empty?
+
+  # Handle password-based encryption fields
+  password_based = env.params.body["password_based"]?.to_s == "true"
+  encryption_salt = env.params.body["encryption_salt"]?.to_s
+  encryption_salt = nil if encryption_salt.strip.empty?
+
+  encryption_iterations_str = env.params.body["encryption_iterations"]?.to_s
+  if encryption_iterations_str.empty?
+    encryption_iterations = 100000
+  else
+    encryption_iterations = encryption_iterations_str.to_i
+    encryption_iterations = 100000 if encryption_iterations == 0
+  end
+
   if content.empty?
     env.response.status_code = 400
     next "Content cannot be empty"
@@ -636,6 +654,23 @@ post "/" do |env|
   end
 
   paste = Pasto::Paste.new(content, language, syntax_theme, user_id: user_id, title: title)
+
+  # Set encryption fields if this is encrypted content
+  if is_encrypted
+    paste.is_encrypted = true
+    paste.encrypted_content = content
+    paste.encryption_iv = encryption_iv
+    paste.password_based = password_based
+
+    # Set password-based encryption fields if applicable
+    if password_based
+      paste.encryption_salt = encryption_salt
+      paste.encryption_iterations = encryption_iterations
+    end
+
+    # Clear the regular content for encrypted pastes
+    paste.content = ""
+  end
 
   if paste.save
     # If user has SSH keys, add paste to their first key for consistency

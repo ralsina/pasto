@@ -55,7 +55,8 @@
     .anon-warning a:hover {
       text-decoration: none;
     }
-  </style>
+
+    </style>
 <% end %>
 
 <%= render "src/views/_editor_container.ecr" %>
@@ -111,9 +112,442 @@
     }
   }
 
-  function createPaste() {
+  // Toggle encryption state and button appearance
+  let isEncryptionEnabled = false;
+
+  function toggleEncryption() {
+    const btn = document.getElementById('encryption-toggle-btn');
+
+    if (!btn) {
+      console.error('Encryption toggle button not found!');
+      return;
+    }
+
+    // Lucide converts <i> to <svg>, so we need to find the SVG element
+    const icon = btn.querySelector('svg.lucide');
+    if (!icon) {
+      console.error('Lucide icon element not found in encryption toggle button!');
+      return;
+    }
+
+    isEncryptionEnabled = !isEncryptionEnabled;
+    console.log('toggleEncryption called, new state:', isEncryptionEnabled);
+
+    if (isEncryptionEnabled) {
+      // Update to locked state
+      btn.title = 'Disable Encryption';
+      btn.setAttribute('aria-label', 'Disable encryption');
+      btn.style.background = 'var(--pico-primary)';
+      btn.style.borderColor = 'var(--pico-primary)';
+      icon.setAttribute('data-lucide', 'lock');
+    } else {
+      // Update to unlocked state
+      btn.title = 'Enable Encryption';
+      btn.setAttribute('aria-label', 'Enable encryption');
+      btn.style.background = 'var(--pico-secondary-background)';
+      btn.style.borderColor = 'var(--pico-muted-border-color)';
+      icon.setAttribute('data-lucide', 'unlock');
+    }
+
+    // Recreate icons
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
+
+  // Show encryption options dialog
+  function showEncryptionOptionsDialog() {
+    return new Promise((resolve, reject) => {
+      // Create modal dialog
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      `;
+
+      dialog.innerHTML = `
+        <div style="background: var(--pico-background-color); border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; border: 1px solid var(--pico-border-color);">
+          <h3 style="margin-top: 0; color: var(--pico-primary); display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="lock" style="width: 24px; height: 24px;"></i>
+            Encryption Options
+          </h3>
+          <p style="margin-bottom: 1.5rem; color: var(--pico-color);">
+            Choose how you want to encrypt this paste:
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 1rem; background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px;">
+              <input type="radio" name="passwordType" value="auto" checked style="margin: 0;">
+              <div>
+                <strong>Auto Password</strong>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Generate a secure random password</div>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 1rem; background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px;">
+              <input type="radio" name="passwordType" value="custom" style="margin: 0;">
+              <div style="flex: 1;">
+                <strong>Custom Password</strong>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Use your own password (compatible with password managers)</div>
+              </div>
+            </label>
+
+            <div id="customPasswordDiv" style="display: none; margin-top: 0.5rem;">
+              <input type="password" id="customPasswordInput" placeholder="Enter your password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem; background: var(--pico-background-color);">
+              <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">Minimum 8 characters</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
+            <button id="cancelEncryptionBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+              Cancel
+            </button>
+            <button id="confirmEncryptionBtn" style="background: var(--pico-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+              Encrypt & Save
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(dialog);
+
+      // Initialize icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // Handle password type selection
+      const passwordTypeRadios = dialog.querySelectorAll('input[name="passwordType"]');
+      const customPasswordDiv = dialog.querySelector('#customPasswordDiv');
+      const customPasswordInput = dialog.querySelector('#customPasswordInput');
+
+      passwordTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+          if (this.value === 'custom') {
+            customPasswordDiv.style.display = 'block';
+            setTimeout(() => customPasswordInput.focus(), 100);
+          } else {
+            customPasswordDiv.style.display = 'none';
+            customPasswordInput.value = '';
+          }
+        });
+      });
+
+      // Handle button clicks
+      const cancelBtn = dialog.querySelector('#cancelEncryptionBtn');
+      const confirmBtn = dialog.querySelector('#confirmEncryptionBtn');
+
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+        reject(new Error('User cancelled encryption'));
+      });
+
+      confirmBtn.addEventListener('click', () => {
+        const selectedType = dialog.querySelector('input[name="passwordType"]:checked').value;
+
+        if (selectedType === 'custom') {
+          const password = customPasswordInput.value.trim();
+          if (password.length < 8) {
+            alert('Password must be at least 8 characters long');
+            return;
+          }
+          resolve({ type: 'custom', password: password });
+        } else {
+          resolve({ type: 'auto' });
+        }
+
+        document.body.removeChild(dialog);
+      });
+
+      // Handle Enter key in custom password input
+      customPasswordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          confirmBtn.click();
+        }
+      });
+
+      // Handle escape key
+      dialog.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          cancelBtn.click();
+        }
+      });
+
+      // Focus the first radio button
+      dialog.querySelector('input[name="passwordType"]').focus();
+    });
+  }
+
+  function showEncryptionKeyDialog(encryptionKey, pasteUrl) {
+    // Create modal dialog
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    `;
+
+    const dialogContent = document.createElement('div');
+    dialogContent.style.cssText = `
+      background: var(--pico-background-color, #fff);
+      border: 1px solid var(--pico-primary, #0074d9);
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    `;
+
+    dialogContent.innerHTML = `
+      <h2 style="margin-top: 0; color: var(--pico-primary, #0074d9);">
+        <i data-lucide="lock" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
+        Encrypted Paste Created!
+      </h2>
+      <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; color: #856404;">
+        <strong style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+          Important: Save this information!
+        </strong>
+        You must save both the password and the URL below. Without them, you cannot access this paste again.
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="color: var(--pico-muted-color, #666); font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 4px;">🔑 Password</label>
+        <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
+          <code style="font-size: 1.1rem; color: var(--pico-primary, #0074d9); word-break: break-all; display: block;">${encryptionKey}</code>
+          <button onclick="copyEncryptionKey('${encryptionKey}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
+            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="color: var(--pico-muted-color, #666); font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 4px;">🔗 Paste URL</label>
+        <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
+          <code style="font-size: 0.9rem; color: var(--pico-color, #333); word-break: break-all; display: block;">${pasteUrl}</code>
+          <button onclick="copyText('${pasteUrl}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
+            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center;">
+        <button onclick="viewEncryptedPaste('${pasteUrl.split('/').pop()}', '${encryptionKey}')" style="background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: bold;">
+          <i data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          View Paste
+        </button>
+        <button onclick="closeEncryptionKeyDialog()" style="background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer;">
+          <i data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          I've saved the information
+        </button>
+      </div>
+    `;
+
+    dialog.appendChild(dialogContent);
+    document.body.appendChild(dialog);
+
+    // Re-initialize Lucide icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  function copyEncryptionKey(key) {
+    navigator.clipboard.writeText(key).then(() => {
+      // Show temporary feedback
+      const button = event.target.closest('button');
+      const originalHTML = button.innerHTML;
+      button.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px;"></i> Copied!';
+      button.style.background = '#28a745';
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.style.background = '';
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, 2000);
+    });
+  }
+
+  function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      // Show temporary feedback
+      const button = event.target.closest('button');
+      const originalHTML = button.innerHTML;
+      button.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px;"></i> Copied!';
+      button.style.background = '#28a745';
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.style.background = '';
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, 2000);
+    });
+  }
+
+  function closeEncryptionKeyDialog() {
+    const dialog = document.querySelector('div[style*="position: fixed"]');
+    if (dialog) {
+      dialog.remove();
+    }
+  }
+
+  function viewEncryptedPaste(pasteId, encryptionKey) {
+    // Store the key in session storage temporarily
+    if (typeof PastoCrypto !== 'undefined') {
+      PastoCrypto.storeKeyInSession(pasteId, encryptionKey);
+    }
+    window.location.href = `/${pasteId}`;
+  }
+
+  function showPasswordDialog(password, pasteId, pasteUrl) {
+    // Create modal dialog for user-provided passwords
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    `;
+
+    const dialogContent = document.createElement('div');
+    dialogContent.style.cssText = `
+      background: var(--pico-background-color, #fff);
+      border: 1px solid var(--pico-primary, #0074d9);
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    `;
+
+    dialogContent.innerHTML = `
+      <h2 style="margin-top: 0; color: var(--pico-primary, #0074d9);">
+        <i data-lucide="lock" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
+        Encrypted Paste Created!
+      </h2>
+      <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; color: #856404;">
+        <strong style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+          Important: Save this information!
+        </strong>
+        You must save both the password and the URL below. Without them, you cannot access this paste again.
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="color: var(--pico-muted-color, #666); font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 4px;">🔑 Password</label>
+        <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
+          <code style="font-size: 1.1rem; color: var(--pico-primary, #0074d9); word-break: break-all; display: block;">${password}</code>
+          <button onclick="copyText('${password}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
+            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="color: var(--pico-muted-color, #666); font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 4px;">🔗 Paste URL</label>
+        <div style="background: var(--pico-code-background-color, #f4f4f4); border: 1px solid var(--pico-border-color, #ddd); border-radius: 4px; padding: 1rem; font-family: monospace; word-break: break-all; position: relative;">
+          <code style="font-size: 0.9rem; color: var(--pico-color, #333); word-break: break-all; display: block;">${pasteUrl}</code>
+          <button onclick="copyText('${pasteUrl}')" style="position: absolute; top: 8px; right: 8px; background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
+            <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center;">
+        <button onclick="viewEncryptedPaste('${pasteId}', '${password}')" style="background: var(--pico-primary, #0074d9); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: bold;">
+          <i data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          View Paste
+        </button>
+        <button onclick="closePasswordDialog()" style="background: var(--pico-secondary, #6c757d); color: white; border: none; border-radius: 4px; padding: 0.75rem 1.5rem; cursor: pointer;">
+          <i data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;"></i>
+          I've saved the information
+        </button>
+      </div>
+    `;
+
+    dialog.appendChild(dialogContent);
+    document.body.appendChild(dialog);
+
+    // Re-initialize Lucide icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  function copyPassword(password) {
+    navigator.clipboard.writeText(password).then(() => {
+      // Show temporary feedback
+      const button = event.target.closest('button');
+      const originalHTML = button.innerHTML;
+      button.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px;"></i> Copied!';
+      button.style.background = '#28a745';
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.style.background = '';
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, 2000);
+    });
+  }
+
+  function closePasswordDialog() {
+    const dialog = document.querySelector('div[style*="position: fixed"]');
+    if (dialog) {
+      dialog.remove();
+    }
+  }
+
+  async function createPaste(event) {
+    if (event) {
+      event.preventDefault();
+    }
     const content = jar ? jar.toString() : '';
     const languageSelect = document.getElementById('language');
+
+    console.log('createPaste called, isEncryptionEnabled:', isEncryptionEnabled);
 
     if (!languageSelect) {
       alert('Language selector not available');
@@ -127,27 +561,132 @@
       return;
     }
 
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('language', language);
+    try {
+      let finalContent = content;
+      let encryptionIv = '';
+      let encryptionKey = '';
+      let encryptionSalt = '';
+      let isPasswordBased = false;
+      let isEncrypted = false;
+      let encryptionOptions = null;
 
-    fetch('/', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => {
-      if (response.redirected) {
-        window.location.href = response.url;
-      } else {
-        return response.text().then(text => {
-          throw new Error(text);
-        });
+      // Handle encryption if enabled
+      if (isEncryptionEnabled) {
+        console.log('Encryption is enabled, showing dialog...');
+        if (typeof PastoCrypto === 'undefined') {
+          alert('Encryption module not loaded. Please refresh the page and try again.');
+          return;
+        }
+
+        // Show encryption options dialog
+        try {
+          encryptionOptions = await showEncryptionOptionsDialog();
+          console.log('Encryption options received:', encryptionOptions);
+          isEncrypted = true;
+        } catch (error) {
+          // User cancelled encryption, stop the paste creation
+          console.log('Encryption cancelled:', error.message);
+          return;
+        }
       }
-    })
-    .catch(error => {
+
+      if (isEncrypted && encryptionOptions) {
+        let encryptionResult;
+        if (encryptionOptions.type === 'custom') {
+          // Use user-provided password
+          encryptionResult = await PastoCrypto.encryptWithPassword(content, encryptionOptions.password);
+          encryptionSalt = encryptionResult.salt;
+          isPasswordBased = true;
+          encryptionKey = encryptionOptions.password; // Store password for session
+        } else {
+          // Use auto-generated key
+          encryptionResult = await PastoCrypto.encrypt(content);
+          encryptionKey = encryptionResult.key;
+        }
+
+        finalContent = encryptionResult.encrypted;
+        encryptionIv = encryptionResult.iv;
+      }
+
+      const formData = new FormData();
+      formData.append('content', finalContent);
+      formData.append('language', language);
+
+      if (isEncrypted) {
+        formData.append('is_encrypted', 'true');
+        formData.append('encryption_iv', encryptionIv);
+        if (isPasswordBased) {
+          formData.append('password_based', 'true');
+          formData.append('encryption_salt', encryptionSalt);
+          formData.append('encryption_iterations', '100000');
+        }
+      }
+
+      console.log('FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (key === 'content') {
+          console.log(key + ': [content hidden]');
+        } else {
+          console.log(key + ':', value);
+        }
+      }
+
+      // For encrypted pastes, we need to handle the redirect differently
+      // Let the browser follow redirects normally, but store the encryption data
+      if (isEncrypted && encryptionKey) {
+        // Store encryption data in session storage before submitting
+        const pasteId = 'pending_' + Date.now();
+        PastoCrypto.storeKeyInSession(pasteId, encryptionKey);
+
+        // Add the paste ID to form data so server can include it in redirect
+        formData.append('pending_paste_id', pasteId);
+      }
+
+      const response = await fetch('/', {
+        method: 'POST',
+        body: formData
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      console.log('Response redirected:', response.redirected);
+
+      if (response.redirected) {
+        // Browser followed the redirect
+        const redirectUrl = response.url;
+        console.log('Redirect URL:', redirectUrl);
+
+        if (isEncrypted && encryptionKey) {
+          const pasteId = redirectUrl.split('/').pop();
+
+          // Move the stored key from pending ID to actual paste ID
+          const pendingId = 'pending_' + Date.now();
+          const storedKey = PastoCrypto.getKeyFromSession(pendingId);
+          if (storedKey) {
+            PastoCrypto.removeKeyFromSession(pendingId);
+            PastoCrypto.storeKeyInSession(pasteId, storedKey);
+          }
+
+          if (isPasswordBased) {
+            showPasswordDialog(encryptionKey, pasteId, redirectUrl);
+          } else {
+            showEncryptionKeyDialog(encryptionKey, redirectUrl);
+          }
+        } else {
+          window.location.href = redirectUrl;
+        }
+      } else if (response.ok) {
+        // Handle successful response without redirect
+        const text = await response.text();
+        throw new Error('Unexpected response: ' + text);
+      } else {
+        const text = await response.text();
+        throw new Error(text);
+      }
+    } catch (error) {
       console.error('Error creating paste:', error);
       alert('Error creating paste: ' + error.message);
-    });
+    }
   }
 
   // Initialize CodeJar and inject controls
@@ -160,8 +699,11 @@
         <select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language">
           <option value="">Auto</option>
         </select>
-        <button onclick="createPaste()" class="controls-button" title="Create Paste" aria-label="Create Paste">
-          <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+        <button onclick="toggleEncryption()" class="controls-button" id="encryption-toggle-btn" title="Enable Encryption" aria-label="Toggle encryption" style="background: var(--pico-secondary-background); border: 1px solid var(--pico-muted-border-color);">
+          <i data-lucide="unlock" style="width: 16px; height: 16px;"></i>
+        </button>
+        <button onclick="createPaste(event)" class="controls-button" title="Create Paste" aria-label="Create Paste">
+          <i data-lucide="save" style="width: 16px; height: 16px;"></i>
         </button>
         <button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai')" class="controls-button" title="Show Preview" id="controls-show-preview-button" aria-label="Show Preview" style="display: none;">
           <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
