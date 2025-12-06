@@ -132,6 +132,11 @@
   const rawContent = <%= paste.content.to_json %>;
   const pasteFilename = <%= (paste.filename || paste.sepia_id).to_json %>;
   const pasteLanguage = <%= (paste.language || "text").to_json %>;
+
+  // Store encryption information
+  const isEncrypted = <%= paste.responds_to?(:is_encrypted) && paste.is_encrypted ? "true" : "false" %>;
+  const encryptedContent = <%= paste.responds_to?(:encrypted_content) && paste.encrypted_content ? paste.encrypted_content.to_json : "null" %>;
+  const encryptionIv = <%= paste.responds_to?(:encryption_iv) && paste.encryption_iv ? paste.encryption_iv.to_json : "null" %>;
   
   // Map languages to typical file extensions (reversed from Tartrazine's LEXERS_BY_FILENAME)
   // Generated from all lexers - picking the most canonical extension for each
@@ -382,23 +387,26 @@
   
   function copyToClipboard() {
     const btn = document.querySelector('.copy-overlay-btn');
-    
+
+    // Use the potentially decrypted content
+    const contentToCopy = window.rawContent || rawContent;
+
     // Try modern clipboard API first, fall back to execCommand
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(rawContent).then(() => {
+      navigator.clipboard.writeText(contentToCopy).then(() => {
         showCopySuccess(btn);
       }).catch(() => {
-        fallbackCopy(btn);
+        fallbackCopy(btn, contentToCopy);
       });
     } else {
-      fallbackCopy(btn);
+      fallbackCopy(btn, contentToCopy);
     }
   }
   
-  function fallbackCopy(btn) {
+  function fallbackCopy(btn, content) {
     // Fallback for non-HTTPS or older browsers
     const textarea = document.createElement('textarea');
-    textarea.value = rawContent;
+    textarea.value = content;
     textarea.style.position = 'fixed';
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
@@ -425,7 +433,9 @@
   }
   
   function downloadPaste() {
-    const blob = new Blob([rawContent], { type: 'text/plain' });
+    // Use the potentially decrypted content
+    const contentToDownload = window.rawContent || rawContent;
+    const blob = new Blob([contentToDownload], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -468,8 +478,317 @@
     window.location.href = url.toString();
   }
 
+  // Show password dialog for encrypted content
+  function showPasswordDialog() {
+    const pasteContent = document.getElementById('paste-content');
+    const isPasswordBased = <%= paste.password_based ? "true" : "false" %>;
+
+    // Create and show the dialog
+    pasteContent.innerHTML = `
+      <div id="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
+        <h3 style="color: var(--pico-primary);">🔒 This paste is encrypted</h3>
+        <p style="margin-bottom: 1.5rem;">Enter the ${isPasswordBased === "true" ? "password" : "encryption key"} to decrypt this content:</p>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 400px; margin: 0 auto;">
+          <input
+            type="password"
+            id="encryption-key-input"
+            placeholder="Enter ${isPasswordBased === "true" ? "password" : "encryption key"}"
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-family: ${isPasswordBased === "true" ? "inherit" : "monospace"};"
+            autocomplete="off"
+          >
+          <button
+            id="decrypt-button"
+            style="background: var(--pico-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: 500;"
+            onclick="attemptDecryption()"
+          >
+            Decrypt
+          </button>
+          <button
+            id="cancel-button"
+            style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;"
+            onclick="showEncryptedInfo()"
+          >
+            Show Info
+          </button>
+        </div>
+        <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 1.5rem;">
+          <strong>Tip:</strong> The key should have been provided to you separately.
+        </p>
+      </div>
+    `;
+
+    // Focus on the input field
+    setTimeout(() => {
+      const input = document.getElementById('encryption-key-input');
+      if (input) {
+        input.focus();
+        // Add enter key support
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            attemptDecryption();
+          }
+        });
+      }
+    }, 100);
+  }
+
+  // Show encrypted paste info dialog
+  function showEncryptedInfo() {
+    const pasteContent = document.getElementById('paste-content');
+    pasteContent.innerHTML = `
+      <div id="encryption-info" style="padding: 2rem; text-align: center; color: var(--pico-color);">
+        <h3 style="color: var(--pico-primary);">🔒 Encrypted Paste</h3>
+        <p style="margin-bottom: 1.5rem;">This content is protected with AES-256-GCM encryption.</p>
+        <div style="background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px; padding: 1rem; margin: 1rem 0; text-align: left;">
+          <h4 style="margin-top: 0; color: var(--pico-primary);">How to decrypt:</h4>
+          <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+            <li>Obtain the encryption key from the person who shared this paste</li>
+            <li>Click the "Enter Key" button below</li>
+            <li>Paste the key and the content will decrypt automatically</li>
+          </ol>
+        </div>
+        <div style="background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px; padding: 1rem; margin: 1rem 0; text-align: left;">
+          <h4 style="margin-top: 0; color: var(--pico-primary);">About this encryption:</h4>
+          <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+            <li><strong>Algorithm:</strong> AES-256-GCM</li>
+            <li><strong>Security:</strong> Zero-knowledge - the server cannot decrypt your content</li>
+            <li><strong>Compatibility:</strong> Works with OpenSSL command line tools</li>
+          </ul>
+        </div>
+        <button
+          onclick="showPasswordDialog()"
+          style="background: var(--pico-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: 500;"
+        >
+          Enter Key
+        </button>
+      </div>
+    `;
+  }
+
+  // Attempt decryption with user-provided key
+  async function attemptDecryption() {
+    const keyInput = document.getElementById('encryption-key-input');
+    const decryptButton = document.getElementById('decrypt-button');
+    const dialog = document.getElementById('encryption-dialog');
+
+    const key = keyInput ? keyInput.value.trim() : '';
+
+    if (!key) {
+      alert('Please enter an encryption key');
+      return;
+    }
+
+    // Update button state
+    if (decryptButton) {
+      decryptButton.textContent = 'Decrypting...';
+      decryptButton.disabled = true;
+    }
+
+    try {
+      // Store key in session storage instead of URL fragment
+      const currentPath = window.location.pathname;
+      const pasteSepiaId = currentPath.substring(1);
+      PastoCrypto.storeKeyInSession(pasteSepiaId, key);
+
+      let decryptedContent;
+
+      // Check if this is password-based encryption
+      const isPasswordBased = <%= paste.password_based ? "true" : "false" %>;
+
+      if (isPasswordBased) {
+        // Get encryption salt and iterations from the paste data
+        const encryptionSalt = "<%= paste.encryption_salt %>";
+        const encryptionIterations = <%= paste.encryption_iterations || 100000 %>;
+
+        // Decrypt using password (no base64 validation for passwords)
+        decryptedContent = await PastoCrypto.decryptWithPassword(encryptedContent, encryptionIv, encryptionSalt, key, encryptionIterations);
+      } else {
+        // Validate key format for key-based encryption
+        if (!PastoCrypto.validateKey(key)) {
+          alert('Invalid encryption key format. The key should be a valid base64 string.');
+          if (decryptButton) {
+            decryptButton.textContent = 'Decrypt';
+            decryptButton.disabled = false;
+          }
+          return;
+        }
+
+        // Decrypt using key
+        decryptedContent = await PastoCrypto.decrypt(encryptedContent, encryptionIv, key);
+      }
+
+      // Update the content with the decrypted data
+      const pasteContent = document.getElementById('paste-content');
+      pasteContent.textContent = decryptedContent;
+
+      // Update rawContent for copy/download functionality
+      window.rawContent = decryptedContent;
+
+      // Re-highlight the decrypted content
+      const formData = new FormData();
+      formData.append('content', decryptedContent);
+      formData.append('language', pasteLanguage);
+      formData.append('theme', 'monokai');
+
+      const response = await fetch('/highlight', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.html) {
+          pasteContent.innerHTML = data.html;
+        }
+      }
+
+      // Update markdown rendering if needed
+      const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
+      if (isMarkdown) {
+        const renderedDiv = document.getElementById('rendered-markdown');
+        if (renderedDiv) {
+          renderedDiv.innerHTML = marked.parse(decryptedContent);
+        }
+      }
+
+      // Update the paste header to show it's decrypted
+      const headerElement = document.querySelector('.paste-header h2');
+      if (headerElement) {
+        headerElement.innerHTML = '🔓 ' + headerElement.textContent;
+      }
+
+      // Show success message briefly
+      const successMessage = document.createElement('div');
+      successMessage.innerHTML = '✅ Successfully decrypted!';
+      successMessage.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--pico-ins-color); color: white; padding: 0.75rem 1rem; border-radius: 4px; z-index: 1000; animation: fadeInOut 2s ease-in-out;';
+      document.body.appendChild(successMessage);
+
+      setTimeout(() => {
+        document.body.removeChild(successMessage);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Decryption error:', error);
+
+      // Restore button state
+      if (decryptButton) {
+        decryptButton.textContent = 'Decrypt';
+        decryptButton.disabled = false;
+      }
+
+      // Show error message
+      alert('Failed to decrypt content: ' + error.message);
+    }
+  }
+
+  // Handle encrypted content decryption
+  async function handleEncryptedContent() {
+    if (!isEncrypted || !encryptedContent || !encryptionIv) {
+      return;
+    }
+
+    // Get paste ID from current URL
+    const currentPath = window.location.pathname;
+    const pasteSepiaId = currentPath.substring(1); // Remove leading '/'
+
+    // Check if this is password-based encryption
+    const isPasswordBased = <%= paste.password_based ? "true" : "false" %>;
+
+    let encryptionKey;
+    if (isPasswordBased) {
+      // For password-based encryption, check session storage first
+      encryptionKey = PastoCrypto.getKeyFromSession(pasteSepiaId);
+      if (!encryptionKey) {
+        showPasswordDialog();
+        return;
+      }
+    } else {
+      // For key-based encryption, check session storage
+      encryptionKey = PastoCrypto.getKeyFromSession(pasteSepiaId);
+      if (!encryptionKey) {
+        showPasswordDialog();
+        return;
+      }
+    }
+
+    try {
+      let decryptedContent;
+
+      if (isPasswordBased) {
+        // Get encryption salt and iterations from the paste data
+        const encryptionSalt = "<%= paste.encryption_salt %>";
+        const encryptionIterations = <%= paste.encryption_iterations || 100000 %>;
+
+        // Decrypt using password (no validation needed for passwords)
+        decryptedContent = await PastoCrypto.decryptWithPassword(encryptedContent, encryptionIv, encryptionSalt, encryptionKey, encryptionIterations);
+      } else {
+        // Validate key format for key-based encryption
+        if (!PastoCrypto.validateKey(encryptionKey)) {
+          throw new Error('Invalid encryption key format. Expected base64-encoded key.');
+        }
+
+        // Decrypt using key
+        decryptedContent = await PastoCrypto.decrypt(encryptedContent, encryptionIv, encryptionKey);
+      }
+
+      // Update the content with the decrypted data
+      const pasteContent = document.getElementById('paste-content');
+      pasteContent.textContent = decryptedContent;
+
+      // Update rawContent for copy/download functionality
+      window.rawContent = decryptedContent;
+
+      // Re-highlight the decrypted content
+      const formData = new FormData();
+      formData.append('content', decryptedContent);
+      formData.append('language', pasteLanguage);
+      formData.append('theme', 'monokai');
+
+      const response = await fetch('/highlight', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.html) {
+          pasteContent.innerHTML = data.html;
+        }
+      }
+
+      // Update markdown rendering if needed
+      const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
+      if (isMarkdown) {
+        const renderedDiv = document.getElementById('rendered-markdown');
+        if (renderedDiv) {
+          renderedDiv.innerHTML = marked.parse(decryptedContent);
+        }
+      }
+
+      // Update the paste header to show it's decrypted
+      const headerElement = document.querySelector('.paste-header h2');
+      if (headerElement) {
+        headerElement.innerHTML = '🔓 ' + headerElement.textContent;
+      }
+
+    } catch (error) {
+      console.error('Decryption error:', error);
+      document.getElementById('paste-content').innerHTML =
+        '<div style="padding: 2rem; text-align: center; color: var(--pico-del-color);">' +
+        '<h3>❌ Decryption Failed</h3>' +
+        '<p>Unable to decrypt this content. The key may be invalid or corrupted.</p>' +
+        '<p style="font-size: 0.9rem; opacity: 0.7;">Error: ' + error.message + '</p>' +
+        '</div>';
+    }
+  }
+
   // Inject controls into controls-group and set initial language
   document.addEventListener('DOMContentLoaded', function() {
+    // Handle encrypted content first
+    if (isEncrypted) {
+      handleEncryptedContent();
+    }
+
     const controlsGroup = document.getElementById('controls-group');
     if (controlsGroup) {
       controlsGroup.innerHTML = `

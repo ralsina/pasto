@@ -136,3 +136,4 @@ Comprehensive rate limiting is configured:
 - Static assets are baked into the binary using BakedFileHandler
 - Assets include CSS themes, JavaScript for live preview
 - Cache directory stores rendered HTML for performance
+- only I the user can authorize marking a task in that list as completed
