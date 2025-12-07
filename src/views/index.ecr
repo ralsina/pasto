@@ -614,6 +614,12 @@
       formData.append('content', finalContent);
       formData.append('language', language);
 
+      // Add expiration if selected
+      const expirationSelect = document.getElementById('expiration');
+      if (expirationSelect && expirationSelect.value) {
+        formData.append('expiration', expirationSelect.value);
+      }
+
       if (isEncrypted) {
         formData.append('is_encrypted', 'true');
         formData.append('encryption_iv', encryptionIv);
@@ -700,6 +706,15 @@
         <input type="text" id="paste-title" placeholder="Title (optional)" class="controls-input">
         <select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language">
           <option value="">Auto</option>
+        </select>
+        <select id="expiration" class="controls-select" aria-label="Select expiration time" title="Set paste expiration time">
+          <option value="">Never</option>
+          <option value="10m">10 minutes</option>
+          <option value="1h">1 hour</option>
+          <option value="1d">1 day</option>
+          <option value="1w">1 week</option>
+          <option value="1M">1 month</option>
+          <option value="view-once">View Once 🔥</option>
         </select>
         <button onclick="toggleEncryption()" class="controls-button" id="encryption-toggle-btn" title="Enable Encryption" aria-label="Toggle encryption" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);">
           <i data-lucide="unlock" style="width: 20px; height: 20px;"></i>

@@ -62,7 +62,8 @@
       "Bash(wget:*)",
       "Bash(PASTO_PORT=3010 ./bin/pasto:*)",
       "Bash(xargs:*)",
-      "Bash(node debug_decryption:*)"
+      "Bash(node debug_decryption:*)",
+      "mcp__playwright__browser_handle_dialog"
     ],
     "deny": [],
     "ask": []

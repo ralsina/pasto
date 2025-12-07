@@ -613,53 +613,89 @@
           mainControls.style.display = 'none';
         } else {
           // Always recreate mobile controls layout for sidebar expansion
+          console.log('DEBUG: In else branch - sidebar is expanded');
           const controlsGroup = mainControls.querySelector('.controls-group');
+          console.log('DEBUG: controlsGroup found:', !!controlsGroup);
           if (controlsGroup) {
+            console.log('DEBUG: controlsGroup exists, getting children');
             const controlsHTML = Array.from(controlsGroup.children);
+            console.log('DEBUG: controlsHTML length:', controlsHTML.length);
 
             // Organize into logical rows for mobile - the controls are direct elements
+            console.log('DEBUG: Starting control categorization');
             const titleInput = controlsHTML.find(el => el.matches('input[type="text"]'));
-            const languageSelect = controlsHTML.find(el => el.matches('select'));
+            console.log('DEBUG: titleInput found:', !!titleInput);
+            const selects = controlsHTML.filter(el => el.matches('select'));
+            console.log('DEBUG: selects found:', selects.length);
             const buttons = controlsHTML.filter(el =>
               el.matches('button') ||
               el.querySelector('button') ||
-              (el.matches('a') && (
-                el.getAttribute('title') === 'Help' ||
-                el.getAttribute('title') === 'Profile / Login' ||
-                el.getAttribute('aria-label') === 'Help' ||
-                el.getAttribute('aria-label') === 'Profile / Login'
-              ))
+              el.matches('a')
             );
+            console.log('DEBUG: buttons found:', buttons.length);
 
+            console.log('DEBUG: Starting HTML generation');
             let mobileHTML = '<div class="controls-group">';
 
             // Row 1: Title input (if exists)
+            console.log('DEBUG: Processing title input');
             if (titleInput) {
+              console.log('DEBUG: Adding title input row');
               const mobileTitleInput = titleInput.cloneNode(true);
-              mobileTitleInput.id = ''; // Remove ID to prevent duplicates
+              mobileTitleInput.id = 'mobile-' + (titleInput.id || 'title');
               mobileHTML += '<div class="controls-row">' + mobileTitleInput.outerHTML + '</div>';
             }
 
-            // Row 2: Language select (if exists)
-            if (languageSelect) {
-              const mobileLanguageSelect = languageSelect.cloneNode(true);
-              mobileLanguageSelect.id = ''; // Remove ID to prevent duplicates
-              mobileHTML += '<div class="controls-row">' + mobileLanguageSelect.outerHTML + '</div>';
+            // Row 2: All selects (language, expiration, etc.)
+            console.log('DEBUG: Processing selects');
+            if (selects.length > 0) {
+              console.log('DEBUG: Adding select rows');
+              selects.forEach(select => {
+                const mobileSelect = select.cloneNode(true);
+                mobileSelect.id = 'mobile-' + (select.id || 'select');
+                mobileHTML += '<div class="controls-row">' + mobileSelect.outerHTML + '</div>';
+              });
             }
 
             // Row 3: Action buttons (arranged horizontally)
+            console.log('DEBUG: Processing buttons');
             if (buttons.length > 0) {
+              console.log('DEBUG: Adding buttons row');
               mobileHTML += '<div class="controls-row">';
               buttons.forEach(button => {
                 const mobileButton = button.cloneNode(true);
-                mobileButton.id = ''; // Remove ID to prevent duplicates
+                mobileButton.id = 'mobile-' + (button.id || 'button');
                 mobileHTML += mobileButton.outerHTML;
               });
               mobileHTML += '</div>';
+              console.log('DEBUG: Buttons row completed');
+            } else {
+              console.log('DEBUG: No buttons found to process');
             }
 
+            console.log('DEBUG: Finalizing HTML');
             mobileHTML += '</div>';
+            console.log('DEBUG: Setting mobileControls.innerHTML');
             mobileControls.innerHTML = mobileHTML;
+            console.log('DEBUG: mobileControls.innerHTML set');
+
+            // Re-attach event handlers to mobile controls
+            setTimeout(() => {
+              // Language select change handler
+              const mobileLanguageSelect = mobileControls.querySelector('select');
+              if (mobileLanguageSelect) {
+                mobileLanguageSelect.addEventListener('change', () => {
+                  if (typeof window.updateLanguage === 'function') {
+                    window.updateLanguage();
+                  }
+                });
+              }
+
+              // Re-create Lucide icons
+              if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+              }
+            }, 100);
           }
           mainControls.style.display = 'none';
         }
@@ -675,13 +711,16 @@
 
     // Sidebar toggle function
     function toggleSidebar() {
+      console.log('=== toggleSidebar() called ===');
       const sidebar = document.getElementById('sidebar');
       const toggleIcon = document.getElementById('toggle-icon');
 
       sidebar.classList.toggle('collapsed');
 
       // Handle controls placement based on new sidebar state
+      console.log('About to call handleMobileControls()');
       handleMobileControls();
+      console.log('Returned from handleMobileControls()');
 
       // Update toggle icon
       const isCollapsed = sidebar.classList.contains('collapsed');

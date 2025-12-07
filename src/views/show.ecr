@@ -58,6 +58,10 @@
     <i data-lucide="qr-code"></i>
   </button>
 
+  <button class="raw-overlay-btn" onclick="viewRaw()" title="View raw content" aria-label="View raw paste content">
+    <i data-lucide="code"></i>
+  </button>
+
   <button class="copy-overlay-btn" onclick="copyToClipboard()" title="Copy to clipboard" aria-label="Copy paste content to clipboard">
     <i data-lucide="copy"></i>
   </button>
@@ -117,9 +121,9 @@
   .qr-overlay-btn {
     position: absolute;
     top: 0.75rem;
-    right: <%= is_markdown ? "5.75rem" : "3.25rem" %>;
-    background: var(--pico-primary);
-    border: 1px solid var(--pico-primary);
+    right: <%= is_markdown ? "5.75rem" : "5.75rem" %>;
+    background: var(--pico-secondary-background);
+    border: 1px solid var(--pico-muted-border-color);
     border-radius: var(--pico-border-radius);
     width: 40px;
     height: 40px;
@@ -137,14 +141,42 @@
     z-index: 2;
   }
   
-  .copy-overlay-btn:hover, .eye-overlay-btn:hover {
+  .copy-overlay-btn:hover, .eye-overlay-btn:hover, .raw-overlay-btn:hover {
     opacity: 1;
     background: var(--pico-secondary-hover-background);
   }
 
   .qr-overlay-btn:hover {
     opacity: 1;
-    background: var(--pico-primary-hover);
+    background: var(--pico-secondary-hover-background);
+  }
+
+  .raw-overlay-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: <%= is_markdown ? "3.25rem" : "3.25rem" %>;
+    background: var(--pico-secondary-background);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0.7;
+    transform: translateZ(0);
+    will-change: opacity, background-color;
+    transition: opacity 0.2s, background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+
+  .raw-overlay-btn:hover {
+    opacity: 1;
+    background: var(--pico-secondary-hover-background);
   }
   
   .copy-overlay-btn.copied {
@@ -164,7 +196,14 @@
   .qr-overlay-btn svg {
     width: 1.25rem;
     height: 1.25rem;
-    color: white;
+    color: var(--pico-primary);
+  }
+
+  .raw-overlay-btn i,
+  .raw-overlay-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--pico-primary);
   }
 </style>
 
@@ -478,6 +517,12 @@
     const pasteId = window.location.pathname.substring(1); // Remove leading '/'
 
     generateQRDialog(pasteId);
+  }
+
+  // View raw content of the paste
+  function viewRaw() {
+    const pasteId = window.location.pathname.substring(1); // Remove leading '/'
+    window.open(`/${pasteId}/raw`, '_blank');
   }
 
   function generateQRDialog(pasteId) {
