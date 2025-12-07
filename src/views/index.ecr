@@ -542,6 +542,174 @@
     }
   }
 
+  function showPasteCreatedModal(pasteUrl, isViewOnce) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: var(--background-color, white);
+      color: var(--color, #333);
+      padding: 2rem;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
+
+    const title = document.createElement('h2');
+    title.textContent = '✅ Paste Created Successfully!';
+    title.style.cssText = `
+      margin: 0 0 1rem 0;
+      color: inherit;
+      font-size: 1.5rem;
+    `;
+
+    const message = document.createElement('p');
+    message.textContent = isViewOnce
+      ? 'Your view-once paste has been created. Click the link below to view it - it will be permanently deleted after viewing.'
+      : 'Your paste has been created successfully. You can share it using the link below.';
+    message.style.cssText = `
+      margin: 0 0 1rem 0;
+      color: inherit;
+      opacity: 0.8;
+      line-height: 1.4;
+    `;
+
+    const urlContainer = document.createElement('div');
+    urlContainer.style.cssText = `
+      margin: 1rem 0;
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    `;
+
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.value = pasteUrl;
+    urlInput.readOnly = true;
+    urlInput.style.cssText = `
+      flex: 1;
+      height: 2.5rem;
+      padding: 0 0.75rem;
+      border: 2px solid var(--muted-border-color, #ddd);
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      background: var(--background-color, #f8f9fa);
+      color: inherit;
+      box-sizing: border-box;
+    `;
+
+    const copyButton = document.createElement('button');
+    copyButton.innerHTML = '📋 Copy';
+    copyButton.style.cssText = `
+      height: 2.5rem;
+      padding: 0 1rem;
+      border: none;
+      border-radius: 4px;
+      background: var(--primary, #007bff);
+      color: white;
+      cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    copyButton.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(pasteUrl);
+        const originalText = copyButton.innerHTML;
+        copyButton.innerHTML = '✅ Copied!';
+        copyButton.style.background = '#28a745';
+        setTimeout(() => {
+          copyButton.innerHTML = originalText;
+          copyButton.style.background = '#007bff';
+        }, 2000);
+      } catch (err) {
+        // Fallback for older browsers
+        urlInput.select();
+        document.execCommand('copy');
+        copyButton.innerHTML = '✅ Copied!';
+        copyButton.style.background = '#28a745';
+        setTimeout(() => {
+          copyButton.innerHTML = '📋 Copy';
+          copyButton.style.background = '#007bff';
+        }, 2000);
+      }
+    };
+
+    const viewButton = document.createElement('a');
+    viewButton.href = pasteUrl;
+    viewButton.textContent = isViewOnce ? '🔥 View Paste (Once)' : '👁️ View Paste';
+    viewButton.style.cssText = `
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      background: ${isViewOnce ? '#dc3545' : '#28a745'};
+      color: white;
+      cursor: pointer;
+      font-weight: 500;
+      text-decoration: none;
+      text-align: center;
+      margin-top: 1rem;
+      margin-right: 0.5rem;
+    `;
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.cssText = `
+      padding: 0.75rem 1.5rem;
+      border: 1px solid var(--muted-border-color, #ddd);
+      border-radius: 4px;
+      background: var(--background-color, white);
+      color: inherit;
+      cursor: pointer;
+      font-weight: 500;
+      margin-top: 1rem;
+    `;
+
+    closeButton.onclick = () => modal.remove();
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.remove();
+    };
+
+    urlContainer.appendChild(urlInput);
+    urlContainer.appendChild(copyButton);
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; gap: 0.5rem; margin-top: 1rem;';
+    buttonContainer.appendChild(viewButton);
+    buttonContainer.appendChild(closeButton);
+
+    modalContent.appendChild(title);
+    modalContent.appendChild(message);
+    modalContent.appendChild(urlContainer);
+    modalContent.appendChild(buttonContainer);
+
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+
+    // Auto-select the URL for easy copying
+    urlInput.select();
+    urlInput.focus();
+  }
+
   async function createPaste(event) {
     if (event) {
       event.preventDefault();
@@ -657,15 +825,14 @@
 
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
-      console.log('Response redirected:', response.redirected);
 
-      if (response.redirected) {
-        // Browser followed the redirect
-        const redirectUrl = response.url;
-        console.log('Redirect URL:', redirectUrl);
+      if (response.ok) {
+        // Handle JSON response
+        const result = await response.json();
+        console.log('Paste created successfully:', result);
 
         if (isEncrypted && encryptionKey) {
-          const pasteId = redirectUrl.split('/').pop();
+          const pasteId = result.id;
 
           // Move the stored key from pending ID to actual paste ID
           const pendingId = 'pending_' + Date.now();
@@ -676,17 +843,13 @@
           }
 
           if (isPasswordBased) {
-            showPasswordDialog(encryptionKey, pasteId, redirectUrl);
+            showPasswordDialog(encryptionKey, pasteId, result.url);
           } else {
-            showEncryptionKeyDialog(encryptionKey, redirectUrl);
+            showEncryptionKeyDialog(encryptionKey, result.url);
           }
         } else {
-          window.location.href = redirectUrl;
+          showPasteCreatedModal(result.url, result.is_view_once);
         }
-      } else if (response.ok) {
-        // Handle successful response without redirect
-        const text = await response.text();
-        throw new Error('Unexpected response: ' + text);
       } else {
         const text = await response.text();
         throw new Error(text);

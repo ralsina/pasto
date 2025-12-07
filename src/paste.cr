@@ -33,7 +33,7 @@ module Pasto
     property expires_at : Time = Time.utc(9999, 1, 1)
     property? burn_after_reading : Bool = false
     property view_count : Int32 = 0
-    property private : Bool = false
+    property? private : Bool = false
 
     def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil, @title : String? = nil, @filename : String? = nil)
       # Normalize line endings to just '\n'
@@ -918,7 +918,7 @@ module Pasto
 
     # Check if paste should be burned after reading (increment view count and check)
     def should_burn_after_reading? : Bool
-      burn_after_reading? && view_count > 0
+      burn_after_reading? && view_count >= 2
     end
 
     # Increment view count and return if it was burned

@@ -64,6 +64,13 @@ module Pasto
     render "src/views/layout.ecr"
   end
 
+  # Favicon redirect for browsers that request /favicon without extension
+  get "/favicon" do |env|
+    env.response.status_code = 301
+    env.response.headers["Location"] = "/assets/favicon.png"
+    ""
+  end
+
   # Helper to extract client IP from request
   def self.get_client_ip(env) : String
     if forwarded = env.request.headers["X-Forwarded-For"]?
@@ -691,8 +698,14 @@ post "/" do |env|
     # Invalidate any existing cache for this paste
     Pasto::Cache.invalidate(paste.sepia_id)
 
-    # Redirect to the paste view
-    env.redirect "/#{paste.sepia_id}"
+    # Return JSON response with paste URL
+    env.response.content_type = "application/json"
+    {
+      "success"      => true,
+      "url"          => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"}/#{paste.sepia_id}",
+      "id"           => paste.sepia_id,
+      "is_view_once" => paste.burn_after_reading?,
+    }.to_json
   else
     env.response.status_code = 500
     "Failed to save paste"
@@ -1178,19 +1191,19 @@ get "/:id" do |env|
   current_user = Pasto.get_current_user(env)
 
   # Check if paste is private and user is not the owner
-  if paste.private && paste.user_id != (current_user.try(&.sepia_id))
+  if paste.private? && paste.user_id != (current_user.try(&.sepia_id))
     env.response.status_code = 403
     next "This paste is private and can only be accessed by the owner"
   end
 
   # Handle burn after reading functionality
   if paste.burn_after_reading?
-    # Increment view count and check if it should be burned
-    if paste.should_burn_after_reading?
+    # Increment view count first, then check if it should be burned
+    should_burn = paste.increment_view_count!
+    if should_burn
       env.response.status_code = 410
       next "This paste has been viewed and is no longer available"
     end
-    paste.increment_view_count!
   end
 
   # Get theme preferences with priority: user config > cookie > defaults
@@ -1360,16 +1373,29 @@ get "/:id/raw" do |env|
   end
 
   # Check if paste has expired or been burned
-  if paste.expired? || (paste.burn_after_reading? && paste.should_burn_after_reading?)
+  if paste.expired?
     env.response.status_code = 410
-    next "Paste is no longer available"
+    next "Paste has expired"
+  end
+
+  if paste.burn_after_reading?
+    puts "DEBUG MAIN VIEW: Paste has burn_after_reading=true, view_count=#{paste.view_count}"
+    puts "DEBUG MAIN VIEW: should_burn_after_reading? #{paste.should_burn_after_reading?}"
+
+    if paste.should_burn_after_reading?
+      puts "DEBUG MAIN VIEW: Paste should be burned - returning 410"
+      env.response.status_code = 410
+      next "This paste has been viewed and is no longer available"
+    else
+      puts "DEBUG MAIN VIEW: Paste should NOT be burned yet - view_count=#{paste.view_count}"
+    end
   end
 
   # Validate session to get current user (needed for private paste check)
   current_user = Pasto.get_current_user(env)
 
   # Check if paste is private and user is not the owner
-  if paste.private && paste.user_id != (current_user.try(&.sepia_id))
+  if paste.private? && paste.user_id != (current_user.try(&.sepia_id))
     env.response.status_code = 403
     next "This paste is private and can only be accessed by the owner"
   end
