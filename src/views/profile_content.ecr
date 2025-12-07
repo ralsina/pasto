@@ -3,6 +3,7 @@
     const topBarRight = document.querySelector('.top-bar-right');
     if (topBarRight) {
       let html = `<a href="/" class="top-bar-btn" title="Create New Paste"><i data-lucide="plus"></i></a>`;
+      html += `<a href="/help" class="top-bar-btn" title="Help"><i data-lucide="help-circle"></i></a>`;
       <% if current_user %>
       html += `<button onclick=\"document.getElementById('logout-form').submit()\" class=\"top-bar-btn\" title=\"Logout\"><i data-lucide=\"log-out\"></i></button>`;
       <% end %>
@@ -50,18 +51,7 @@
         <small>This name will be shown on your profile. Leave empty to remain anonymous.</small>
       </form>
 
-      <div class="user-details">
-        <div class="detail-row">
-          <strong>SSH Keys:</strong> <%= current_user.keys.size %>
-        </div>
-        <div class="detail-row">
-          <strong>Total Pastes:</strong> <%= current_user.all_pastes.size %>
-        </div>
-        <div class="detail-row">
-          <strong>Member Since:</strong> <%= current_user.created_at.to_s("%B %d, %Y") %>
-        </div>
-      </div>
-
+  
     </div>
 
     <!-- SSH Keys Section -->
@@ -92,11 +82,21 @@
         <div class="pastes-list">
           <% user_pastes.sort_by(&.created_at).reverse.first(20).each do |paste| %>
           <div class="paste-item">
-            <a href="/<%= paste.sepia_id %>" class="paste-link">
-              <span class="paste-title"><%= HTML.escape(paste.display_title) %></span>
-              <span class="paste-lang"><%= paste.language || "text" %></span>
-              <span class="paste-date"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %></span>
-            </a>
+            <div class="paste-link">
+              <a href="/<%= paste.sepia_id %>" class="paste-content">
+                <span class="paste-title"><%= HTML.escape(paste.display_title) %></span>
+                <span class="paste-lang"><%= paste.language || "text" %></span>
+                <span class="paste-date"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %></span>
+              </a>
+              <div class="paste-actions">
+                <a href="/<%= paste.sepia_id %>/edit" class="edit-btn" title="Edit Paste" aria-label="Edit Paste">
+                  <i data-lucide="edit-2"></i>
+                </a>
+                <button class="delete-btn" onclick="confirmDelete('<%= paste.sepia_id %>')" title="Delete Paste" aria-label="Delete Paste">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </div>
+            </div>
           </div>
           <% end %>
           <% if user_pastes.size > 20 %>
@@ -135,6 +135,39 @@
   <% end %>
 </div>
 
+<script>
+function confirmDelete(pasteId) {
+  if (confirm('Are you sure you want to delete this paste? This action cannot be undone.')) {
+    fetch(`/${pasteId}/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        // Reload the page to show updated paste list
+        window.location.reload();
+      } else {
+        // Handle error
+        alert('Failed to delete paste. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error deleting paste:', error);
+      alert('Failed to delete paste. Please try again.');
+    });
+  }
+}
+
+// Reinitialize Lucide icons for the new buttons
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+});
+</script>
+
 <style>
   .profile-container {
     max-width: 900px;
@@ -169,9 +202,7 @@
   }
 
   .edit-name-form {
-    margin: 1.5rem 0;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--pico-border-color);
+    margin: 1.5rem 0 1rem 0;
   }
 
   .edit-name-form label {
@@ -299,17 +330,61 @@
 
   .paste-link {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto;
     gap: 1rem;
     padding: 0.75rem 1rem;
     background-color: var(--pico-code-background-color);
-    text-decoration: none;
-    color: inherit;
     transition: background-color 0.2s;
   }
 
   .paste-link:hover {
     background-color: var(--pico-secondary-background);
+  }
+
+  .paste-content {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .paste-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .edit-btn, .delete-btn {
+    padding: 0.25rem;
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-border-color);
+    background-color: var(--pico-background-color);
+    color: var(--pico-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    transition: all 0.2s;
+  }
+
+  .edit-btn:hover {
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-primary);
+  }
+
+  .delete-btn:hover {
+    background-color: var(--pico-del-background);
+    color: var(--pico-del-color);
+    border-color: var(--pico-del-border);
+  }
+
+  .edit-btn i, .delete-btn i {
+    width: 14px;
+    height: 14px;
   }
 
   .paste-title {
@@ -446,12 +521,24 @@
     }
 
     .paste-link {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 0.5rem;
     }
 
-    .paste-size {
-      text-align: left;
+    .paste-content {
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+    }
+
+    .paste-actions {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+
+    .edit-btn, .delete-btn {
+      min-width: 32px;
+      height: 32px;
     }
   }
 </style>

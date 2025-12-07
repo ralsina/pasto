@@ -97,7 +97,23 @@ module Pasto
 
     # Compatibility methods
     def self.from_file(id : String) : Paste?
+      # Try to load latest generation first, fall back to any generation
+
+      latest_obj = Paste.latest(id)
+      latest_obj ? latest_obj : Sepia::Storage.load(Paste, id)
+    rescue Enumerable::EmptyError
+      # If latest() fails with empty enumerable, try direct load
       Sepia::Storage.load(Paste, id)
+    rescue
+      # Catch any other exceptions (e.g., "not found in storage")
+      nil
+    end
+
+    # Safe loading method that handles exceptions
+    def self.safe_load(id : String) : Paste?
+      from_file(id)
+    rescue
+      nil
     end
 
     def save(force_new_generation : Bool = false) : Bool

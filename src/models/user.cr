@@ -42,9 +42,15 @@ module Pasto
       add_key(key)
     end
 
-    # Get all pastes for this user (from SSH keys)
+    # Get all pastes for this user (latest versions from storage)
     def all_pastes : Array(Paste)
-      @keys.flat_map(&.pastes)
+      @keys.flat_map(&.pastes).compact_map do |paste|
+        begin
+          Paste.from_file(paste.sepia_id)
+        rescue
+          nil # Skip pastes that can't be loaded
+        end
+      end.compact
     end
 
     # Sepia serialization methods

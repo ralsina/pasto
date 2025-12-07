@@ -889,17 +889,27 @@ end
 post "/:id/delete" do |env|
   id = env.params.url["id"]
 
-  paste = Pasto::Paste.from_file(id)
-  if paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
+  # Must be logged in first
+  current_user = Pasto.get_current_user(env)
+  unless current_user
+    env.response.content_type = "application/json"
+    env.response.status_code = 401
+    next {"success" => false, "error" => "You must be logged in to delete pastes"}.to_json
   end
 
-  # Must be logged in and own the paste
-  current_user = Pasto.get_current_user(env)
-  unless current_user && paste.user_id == current_user.sepia_id
+  # Try to find the paste safely - if it doesn't exist, return success
+  paste = Pasto::Paste.from_file(id)
+  if paste.nil?
+    # Paste doesn't exist, return success for idempotent behavior
+    env.response.content_type = "application/json"
+    next {"success" => true, "message" => "Paste already deleted"}.to_json
+  end
+
+  # Check ownership
+  unless paste.user_id == current_user.sepia_id
+    env.response.content_type = "application/json"
     env.response.status_code = 403
-    next "You don't have permission to delete this paste"
+    next {"success" => false, "error" => "You don't have permission to delete this paste"}.to_json
   end
 
   # Remove paste from user's SSH key pastes array
@@ -919,12 +929,18 @@ post "/:id/delete" do |env|
   end
 
   # Also delete the base paste if it exists separately
-  if base_paste = Pasto::Paste.from_file(base_id)
-    Pasto::Cache.invalidate(base_id)
-    Sepia::Storage.delete(base_paste)
+  begin
+    if base_paste = Pasto::Paste.from_file(base_id)
+      Pasto::Cache.invalidate(base_id)
+      Sepia::Storage.delete(base_paste)
+    end
+  rescue
+    # Base paste doesn't exist, which is fine
   end
 
-  env.redirect "/"
+  # Return JSON response
+  env.response.content_type = "application/json"
+  {"success" => true, "message" => "Paste deleted successfully"}.to_json
 end
 
 # View paste history (list of versions)
@@ -1163,8 +1179,13 @@ get "/:id" do |env|
       # Use the paste_id as the id for the rest of the route
       id = paste_id
 
-      paste = Pasto::Paste.from_file(paste_id)
-      if paste.nil?
+      begin
+        paste = Pasto::Paste.from_file(paste_id)
+        if paste.nil?
+          env.response.status_code = 404
+          next "Paste not found"
+        end
+      rescue
         env.response.status_code = 404
         next "Paste not found"
       end
@@ -1175,8 +1196,13 @@ get "/:id" do |env|
   end
 
   # Load the paste (either with original id or modified id from extension handling)
-  paste = Pasto::Paste.from_file(id)
-  if paste.nil?
+  begin
+    paste = Pasto::Paste.from_file(id)
+    if paste.nil?
+      env.response.status_code = 404
+      next "Paste not found"
+    end
+  rescue
     env.response.status_code = 404
     next "Paste not found"
   end
