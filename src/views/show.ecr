@@ -12,9 +12,6 @@
   </div>
   <% if is_markdown %>
     <div id="rendered-markdown"></div>
-    <button class="eye-overlay-btn" id="toggle-md-render" onclick="toggleMarkdownView()" title="Show source" aria-label="Toggle between rendered and source view">
-      <i data-lucide="file-code-2"></i>
-    </button>
         <script>
       let showingMarkdown = true;
       document.addEventListener('DOMContentLoaded', function() {
@@ -53,75 +50,47 @@
     </script>
   <% end %>
 
-  <%# QR Code button for all pastes %>
-  <button class="qr-overlay-btn" id="show-qr-btn" onclick="showQRCode()" title="Show QR Code" aria-label="Show QR Code for sharing paste">
-    <i data-lucide="qr-code"></i>
-  </button>
+  <div class="overlay-buttons-container">
+    <%# QR Code button for all pastes %>
+    <button class="overlay-btn qr-btn" id="show-qr-btn" onclick="showQRCode()" title="Show QR Code" aria-label="Show QR Code for sharing paste">
+      <i data-lucide="qr-code"></i>
+    </button>
 
-  <button class="raw-overlay-btn" onclick="viewRaw()" title="View raw content" aria-label="View raw paste content">
-    <i data-lucide="code"></i>
-  </button>
+    <button class="overlay-btn raw-btn" onclick="viewRaw()" title="View raw content" aria-label="View raw paste content">
+      <i data-lucide="code"></i>
+    </button>
 
-  <button class="copy-overlay-btn" onclick="copyToClipboard()" title="Copy to clipboard" aria-label="Copy paste content to clipboard">
-    <i data-lucide="copy"></i>
-  </button>
+    <button class="overlay-btn copy-link-btn" onclick="copyLink()" title="Copy link" aria-label="Copy paste URL to clipboard">
+      <i data-lucide="link"></i>
+    </button>
+
+    <button class="overlay-btn copy-btn" onclick="copyToClipboard()" title="Copy to clipboard" aria-label="Copy paste content to clipboard">
+      <i data-lucide="copy"></i>
+    </button>
+
+    <% if is_markdown %>
+    <button class="overlay-btn eye-btn" id="toggle-md-render" onclick="toggleMarkdownView()" title="Show source" aria-label="Toggle between rendered and source view">
+      <i data-lucide="file-code-2"></i>
+    </button>
+    <% end %>
+  </div>
 </div>
 
 <style>
   .paste-content-wrapper {
     position: relative;
   }
-  
-  .copy-overlay-btn {
+
+  .overlay-buttons-container {
     position: absolute;
     top: 0.75rem;
     right: 0.75rem;
-    background: var(--pico-secondary-background);
-    border: 1px solid var(--pico-muted-border-color);
-    border-radius: var(--pico-border-radius);
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-    padding: 0;
-    cursor: pointer;
-    opacity: 0.7;
-    transform: translateZ(0);
-    will-change: opacity, background-color;
-    transition: opacity 0.2s, background-color 0.2s;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    gap: 0.5rem;
     z-index: 2;
   }
 
-  .eye-overlay-btn {
-    position: absolute;
-    top: 0.75rem;
-    right: 3.25rem;
-    background: var(--pico-secondary-background);
-    border: 1px solid var(--pico-muted-border-color);
-    border-radius: var(--pico-border-radius);
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-    padding: 0;
-    cursor: pointer;
-    opacity: 0.7;
-    transform: translateZ(0);
-    will-change: opacity, background-color;
-    transition: opacity 0.2s, background-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-  }
-
-  .qr-overlay-btn {
-    position: absolute;
-    top: 0.75rem;
-    right: <%= is_markdown ? "5.75rem" : "5.75rem" %>;
+  .overlay-btn {
     background: var(--pico-secondary-background);
     border: 1px solid var(--pico-muted-border-color);
     border-radius: var(--pico-border-radius);
@@ -138,69 +107,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
   }
-  
-  .copy-overlay-btn:hover, .eye-overlay-btn:hover, .raw-overlay-btn:hover {
+
+  .overlay-btn:hover {
     opacity: 1;
     background: var(--pico-secondary-hover-background);
   }
 
-  .qr-overlay-btn:hover {
-    opacity: 1;
-    background: var(--pico-secondary-hover-background);
-  }
-
-  .raw-overlay-btn {
-    position: absolute;
-    top: 0.75rem;
-    right: <%= is_markdown ? "3.25rem" : "3.25rem" %>;
-    background: var(--pico-secondary-background);
-    border: 1px solid var(--pico-muted-border-color);
-    border-radius: var(--pico-border-radius);
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-    padding: 0;
-    cursor: pointer;
-    opacity: 0.7;
-    transform: translateZ(0);
-    will-change: opacity, background-color;
-    transition: opacity 0.2s, background-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-  }
-
-  .raw-overlay-btn:hover {
-    opacity: 1;
-    background: var(--pico-secondary-hover-background);
-  }
-  
-  .copy-overlay-btn.copied {
+  .copy-btn.copied {
     background: var(--pico-ins-color);
   }
-  
-  .copy-overlay-btn i,
-  .copy-overlay-btn svg,
-  .eye-overlay-btn i,
-  .eye-overlay-btn svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: var(--pico-primary);
-  }
 
-  .qr-overlay-btn i,
-  .qr-overlay-btn svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: var(--pico-primary);
-  }
-
-  .raw-overlay-btn i,
-  .raw-overlay-btn svg {
+  .overlay-btn i,
+  .overlay-btn svg {
     width: 1.25rem;
     height: 1.25rem;
     color: var(--pico-primary);
@@ -466,7 +385,7 @@
   }
   
   function copyToClipboard() {
-    const btn = document.querySelector('.copy-overlay-btn');
+    const btn = document.querySelector('.copy-btn');
 
     // Use the potentially decrypted content
     const contentToCopy = window.rawContent || rawContent;
@@ -500,14 +419,15 @@
     document.body.removeChild(textarea);
   }
   
-  function showCopySuccess(btn) {
+  function showCopySuccess(btn, successMessage = 'Copied!') {
+    const originalContent = btn.innerHTML;
     btn.classList.add('copied');
     btn.innerHTML = '<i data-lucide="check"></i>';
     lucide.createIcons();
-    
+
     setTimeout(() => {
       btn.classList.remove('copied');
-      btn.innerHTML = '<i data-lucide="copy"></i>';
+      btn.innerHTML = originalContent;
       lucide.createIcons();
     }, 2000);
   }
@@ -523,6 +443,46 @@
   function viewRaw() {
     const pasteId = window.location.pathname.substring(1); // Remove leading '/'
     window.open(`/${pasteId}/raw`, '_blank');
+  }
+
+  // Copy link to the paste
+  function copyLink() {
+    const btn = document.querySelector('.copy-link-btn');
+
+    // Get the current page URL
+    const urlToCopy = window.location.href;
+
+    // Try modern clipboard API first, fall back to execCommand
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(urlToCopy).then(() => {
+        showCopySuccess(btn, 'Link copied!');
+      }).catch(() => {
+        fallbackCopyTextToClipboard(urlToCopy, btn, 'Link copied!');
+      });
+    } else {
+      fallbackCopyTextToClipboard(urlToCopy, btn, 'Link copied!');
+    }
+  }
+
+  // Fallback method for copying text to clipboard
+  function fallbackCopyTextToClipboard(text, btn, successMessage = 'Copied!') {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+      showCopySuccess(btn, successMessage);
+    } catch (err) {
+      showCopyError(btn);
+    }
+
+    document.body.removeChild(textArea);
   }
 
   function generateQRDialog(pasteId) {
