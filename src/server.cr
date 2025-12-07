@@ -5,12 +5,16 @@ require "rate_limiter"
 require "tartrazine"
 require "ecr"
 require "kemal-session"
+require "qr-code"
+require "qr-code/export/png"
+require "stumpy_png"
 require "./paste"
 require "./preview_generator"
 require "./user_session"
 require "./models/user"
 require "./models/auth_token"
 require "./models/ssh_key"
+require "./qr_generator"
 require "baked_file_system"
 require "baked_file_handler"
 
@@ -607,6 +611,10 @@ post "/" do |env|
   syntax_theme = env.params.body["syntax_theme"]?.to_s
   syntax_theme = "default-dark" if syntax_theme.empty?
 
+  # Handle expiration
+  expiration_str = env.params.body["expiration"]?.to_s
+  expires_at = Pasto::Paste.parse_expiration(expiration_str)
+
   # Handle encryption fields
   is_encrypted = env.params.body["is_encrypted"]?.to_s == "true"
   encryption_iv = env.params.body["encryption_iv"]?.to_s
@@ -644,6 +652,14 @@ post "/" do |env|
   end
 
   paste = Pasto::Paste.new(content, language, syntax_theme, user_id: user_id, title: title)
+
+  # Set expiration
+  paste.expires_at = expires_at
+
+  # Set burn_after_reading if view-once expiration
+  if expiration_str == "view-once"
+    paste.burn_after_reading = true
+  end
 
   # Set encryption fields if this is encrypted content
   if is_encrypted
@@ -753,6 +769,10 @@ post "/:id/edit" do |env|
   new_title = env.params.body["title"]?.to_s
   new_title = nil if new_title.strip.empty?
 
+  # Handle expiration
+  expiration_str = env.params.body["expiration"]?.to_s
+  expires_at = Pasto::Paste.parse_expiration(expiration_str)
+
   if new_content.empty?
     env.response.status_code = 400
     next "Content cannot be empty"
@@ -775,7 +795,13 @@ post "/:id/edit" do |env|
   paste.content = new_content.gsub("\r\n", "\n").gsub("\r", "\n")
   paste.language = new_language
   paste.title = new_title
+  paste.expires_at = expires_at
   paste.updated_at = Time.utc
+
+  # Set burn_after_reading if view-once expiration
+  if expiration_str == "view-once"
+    paste.burn_after_reading = true
+  end
 
   # Save with versioning to keep edit history
   if paste.save(force_new_generation: true)
@@ -1072,6 +1098,23 @@ get "/preview/:id" do |env|
     next send_file env, placeholder_path
   end
 
+  # Check if paste has expired
+  if paste.expired?
+    placeholder_path = generate_placeholder_file("Paste has expired")
+    env.response.status_code = 410
+    env.response.headers["Cache-Control"] = "public, max-age=300" # 5 minutes for errors
+    next send_file env, placeholder_path
+  end
+
+  # Handle burn after reading functionality for previews
+  # Note: We don't increment view count for previews to avoid accidental burning
+  if paste.burn_after_reading? && paste.should_burn_after_reading?
+    placeholder_path = generate_placeholder_file("Paste has been viewed and is no longer available")
+    env.response.status_code = 410
+    env.response.headers["Cache-Control"] = "public, max-age=300" # 5 minutes for errors
+    next send_file env, placeholder_path
+  end
+
   cache_path = PreviewGenerator.get_cache_path(id)
 
   # Generate cached image if it doesn't exist
@@ -1125,8 +1168,30 @@ get "/:id" do |env|
     next "Paste not found"
   end
 
-  # Validate session to get current user
+  # Check if paste has expired
+  if paste.expired?
+    env.response.status_code = 410
+    next "This paste has expired"
+  end
+
+  # Validate session to get current user (needed for private paste check)
   current_user = Pasto.get_current_user(env)
+
+  # Check if paste is private and user is not the owner
+  if paste.private && paste.user_id != (current_user.try(&.sepia_id))
+    env.response.status_code = 403
+    next "This paste is private and can only be accessed by the owner"
+  end
+
+  # Handle burn after reading functionality
+  if paste.burn_after_reading?
+    # Increment view count and check if it should be burned
+    if paste.should_burn_after_reading?
+      env.response.status_code = 410
+      next "This paste has been viewed and is no longer available"
+    end
+    paste.increment_view_count!
+  end
 
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
@@ -1235,6 +1300,92 @@ get "/api/themes" do |env|
 
   # Get all available themes from Tartrazine
   Tartrazine.themes.sort.to_json
+end
+
+# Generate QR code for a paste (returns PNG image)
+get "/api/qr/:id" do |env|
+  env.response.content_type = "image/png"
+
+  id = env.params.url["id"]
+
+  # Load the paste
+  paste = Pasto::Paste.from_file(id)
+  if paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Check if paste has expired or been burned
+  if paste.expired? || (paste.burn_after_reading? && paste.should_burn_after_reading?)
+    env.response.status_code = 410
+    next "Paste is no longer available"
+  end
+
+  # Get base URL from request or use default
+  scheme = env.request.headers["X-Forwarded-Proto"]? || "http"
+  host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
+  base_url = "#{scheme}://#{host}"
+
+  # Add port if non-standard
+  server_port = Kemal.config.port
+  if server_port && server_port != 80 && server_port != 443
+    base_url += ":#{server_port}"
+  end
+
+  # Generate QR code PNG
+  qr = QRCode.new("#{base_url}/#{id}")
+  png_bytes = qr.as_png(size: 256)
+
+  if png_bytes.empty?
+    env.response.status_code = 500
+    next "Failed to generate QR code"
+  end
+
+  # Set content length explicitly
+  env.response.content_length = png_bytes.size
+
+  # Write binary data directly to response
+  env.response.write(png_bytes)
+end
+
+# Raw paste endpoint
+get "/:id/raw" do |env|
+  id = env.params.url["id"]
+
+  # Load the paste
+  paste = Pasto::Paste.from_file(id)
+  if paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Check if paste has expired or been burned
+  if paste.expired? || (paste.burn_after_reading? && paste.should_burn_after_reading?)
+    env.response.status_code = 410
+    next "Paste is no longer available"
+  end
+
+  # Validate session to get current user (needed for private paste check)
+  current_user = Pasto.get_current_user(env)
+
+  # Check if paste is private and user is not the owner
+  if paste.private && paste.user_id != (current_user.try(&.sepia_id))
+    env.response.status_code = 403
+    next "This paste is private and can only be accessed by the owner"
+  end
+
+  # Set content type for raw text
+  env.response.content_type = "text/plain; charset=utf-8"
+
+  # For encrypted pastes, return the encrypted content
+  # For regular pastes, return the raw content
+  content = if paste.is_encrypted? && paste.responds_to?(:encrypted_content) && paste.encrypted_content
+              paste.encrypted_content
+            else
+              paste.content
+            end
+
+  content
 end
 
 # Error handling

@@ -20,7 +20,7 @@ module Pasto
     property ssh_ip : String?
     property user_id : String?
 
-    # Encryption fields
+    # Encryption fields - all nullable to handle existing JSON
     property encrypted_content : String?
     property? is_encrypted : Bool = false
     property encryption_iv : String?
@@ -30,9 +30,10 @@ module Pasto
     property? password_based : Bool = false
 
     # Security features
-    property expires_at : Time?
+    property expires_at : Time = Time.utc(9999, 1, 1)
     property? burn_after_reading : Bool = false
     property view_count : Int32 = 0
+    property private : Bool = false
 
     def initialize(content : String, @language : String? = nil, @theme : String = "default-dark", @ssh_fingerprint : String? = nil, @ssh_ip : String? = nil, @user_id : String? = nil, @title : String? = nil, @filename : String? = nil)
       # Normalize line endings to just '\n'
@@ -40,6 +41,9 @@ module Pasto
 
       @created_at = Time.utc
       @updated_at = Time.utc
+
+      # Default to far-future date (1/1/9999) for no expiration
+      @expires_at = Time.utc(9999, 1, 1)
 
       # Auto language: first from filename, then from content
       if @language.nil?
@@ -94,8 +98,6 @@ module Pasto
     # Compatibility methods
     def self.from_file(id : String) : Paste?
       Sepia::Storage.load(Paste, id)
-    rescue ex
-      nil
     end
 
     def save(force_new_generation : Bool = false) : Bool
@@ -874,6 +876,57 @@ module Pasto
       rescue ex
         raise "Failed to encrypt content: #{ex.message}"
       end
+    end
+
+    # Parse expiration string (e.g., "10m", "1h", "1d", "1w", "1M", "view-once") and return Time
+    def self.parse_expiration(expiration_str : String?) : Time
+      # Return far-future date if no expiration specified
+      return Time.utc(9999, 1, 1) if expiration_str.nil? || expiration_str.empty?
+
+      case expiration_str.downcase
+      when "10m"
+        Time.utc + 10.minutes
+      when "1h"
+        Time.utc + 1.hour
+      when "1d"
+        Time.utc + 1.day
+      when "1w"
+        Time.utc + 1.week
+      when "1m"
+        Time.utc + 1.month
+      when "1M"
+        Time.utc + 1.month
+      when "view-once"
+        # Special case for view-once - use far-future date for expires_at
+        # The actual burning logic is handled by burn_after_reading? flag
+        Time.utc(9999, 1, 1)
+      else
+        # Unknown expiration string - use far-future date as default
+        Time.utc(9999, 1, 1)
+      end
+    end
+
+    # Check if expiration string indicates burn_after_reading
+    def self.burn_after_reading?(expiration_str : String?) : Bool
+      expiration_str == "view-once"
+    end
+
+    # Check if paste has expired
+    def expired? : Bool
+      Time.utc > expires_at
+    end
+
+    # Check if paste should be burned after reading (increment view count and check)
+    def should_burn_after_reading? : Bool
+      burn_after_reading? && view_count > 0
+    end
+
+    # Increment view count and return if it was burned
+    def increment_view_count! : Bool
+      @view_count += 1
+      should_burn = should_burn_after_reading?
+      save if should_burn # Save the incremented count if it will be burned
+      should_burn
     end
 
     private def generate_id : String

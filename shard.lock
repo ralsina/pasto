@@ -61,6 +61,10 @@ shards:
     git: https://github.com/l3kn/pcf-parser.git
     version: 0.1.1
 
+  qr-code:
+    git: https://github.com/spider-gazelle/qr-code.git
+    version: 1.0.3
+
   radix:
     git: https://github.com/luislavena/radix.git
     version: 0.4.1
@@ -80,10 +84,6 @@ shards:
   sixteen:
     git: https://github.com/ralsina/sixteen.git
     version: 0.5.4
-
-  sodium:
-    git: https://github.com/didactic-drunk/sodium.cr.git
-    version: 1.2.3
 
   stumpy_core:
     git: https://github.com/stumpycr/stumpy_core.git

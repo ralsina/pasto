@@ -52,6 +52,12 @@
       }
     </script>
   <% end %>
+
+  <%# QR Code button for all pastes %>
+  <button class="qr-overlay-btn" id="show-qr-btn" onclick="showQRCode()" title="Show QR Code" aria-label="Show QR Code for sharing paste">
+    <i data-lucide="qr-code"></i>
+  </button>
+
   <button class="copy-overlay-btn" onclick="copyToClipboard()" title="Copy to clipboard" aria-label="Copy paste content to clipboard">
     <i data-lucide="copy"></i>
   </button>
@@ -107,10 +113,38 @@
     justify-content: center;
     z-index: 2;
   }
+
+  .qr-overlay-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: <%= is_markdown ? "5.75rem" : "3.25rem" %>;
+    background: var(--pico-primary);
+    border: 1px solid var(--pico-primary);
+    border-radius: var(--pico-border-radius);
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0.8;
+    transform: translateZ(0);
+    will-change: opacity, background-color;
+    transition: opacity 0.2s, background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
   
   .copy-overlay-btn:hover, .eye-overlay-btn:hover {
     opacity: 1;
     background: var(--pico-secondary-hover-background);
+  }
+
+  .qr-overlay-btn:hover {
+    opacity: 1;
+    background: var(--pico-primary-hover);
   }
   
   .copy-overlay-btn.copied {
@@ -124,6 +158,13 @@
     width: 1.25rem;
     height: 1.25rem;
     color: var(--pico-primary);
+  }
+
+  .qr-overlay-btn i,
+  .qr-overlay-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: white;
   }
 </style>
 
@@ -431,7 +472,50 @@
       lucide.createIcons();
     }, 2000);
   }
-  
+
+  // Show QR Code for paste sharing (URL only - key management is user concern)
+  function showQRCode() {
+    const pasteId = window.location.pathname.substring(1); // Remove leading '/'
+
+    generateQRDialog(pasteId);
+  }
+
+  function generateQRDialog(pasteId) {
+    // Build QR API URL - just the paste URL, no keys
+    const qrApiUrl = `/api/qr/${pasteId}`;
+
+    // Create modal dialog
+    const modal = document.createElement('dialog');
+    modal.style.cssText = `
+      padding: 2rem;
+      border: 2px solid var(--pico-primary);
+      border-radius: 0.5rem;
+      max-width: 90vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    `;
+
+    modal.innerHTML = `
+      <h3 style="margin-top: 0; margin-bottom: 1.5rem;">QR Code for Paste</h3>
+      <div id="qr-container" style="margin: 0 0 1.5rem 0; display: flex; justify-content: center;">
+        <div style="padding: 2rem; background: #f0f0f0; border-radius: 0.5rem;">
+          Loading QR code...
+        </div>
+      </div>
+      <button onclick="this.closest('dialog').close()" style="margin-right: 0.5rem;">Close</button>
+    `;
+
+    document.body.appendChild(modal);
+    modal.showModal();
+
+    // Display QR code directly using img tag
+    const qrContainer = document.getElementById('qr-container');
+    qrContainer.innerHTML = `
+      <img src="${qrApiUrl}" alt="QR Code" style="max-width: 300px; width: 100%; height: auto; border-radius: 0.5rem;" onerror="this.parentElement.innerHTML='<div style=\\'color: #d32f2f; text-align: center;\\'>Failed to load QR code</div>'" />
+    `;
+  }
+
   function downloadPaste() {
     // Use the potentially decrypted content
     const contentToDownload = window.rawContent || rawContent;
@@ -919,5 +1003,7 @@
         console.error('Error detecting language:', error);
       });
     }
-  });
+
+  
+});
 </script>
