@@ -503,10 +503,17 @@
           Loading QR code...
         </div>
       </div>
-      <button onclick="this.closest('dialog').close()" style="margin-right: 0.5rem;">Close</button>
+      <button id="qr-close-btn" style="margin-right: 0.5rem;">Close</button>
     `;
 
     document.body.appendChild(modal);
+
+    // Add event listener right after appending
+    document.getElementById('qr-close-btn').onclick = function() {
+      modal.close();
+      document.body.removeChild(modal);
+    };
+
     modal.showModal();
 
     // Display QR code directly using img tag
