@@ -9,6 +9,16 @@
   const initialContent = <%= paste.content.to_json %>;
   const initialTitle = <%= (paste.title || "").to_json %>;
 
+  // Security settings object
+  let securitySettings = {
+    accessControl: '<%= paste.private? ? "private" : "public" %>',
+    expiration: '<%= paste.expires_at.year == 9999 ? "" : paste.expires_at.to_s("%Y-%m-%d") %>',
+    burnAfterReading: <%= paste.burn_after_reading? ? "true" : "false" %>',
+    encryptionEnabled: <%= paste.is_encrypted? ? "true" : "false" %>,
+    encryptionPassword: null,
+    password: '<%= "" %>'
+  };
+
   // Use shared functions from external module
   function updateLanguage() {
     currentLanguage = document.getElementById('language').value;
@@ -82,10 +92,23 @@
     formData.append('language', language);
     formData.append('title', title);
 
-    // Add expiration if selected
-    const expirationSelect = document.getElementById('expiration');
-    if (expirationSelect && expirationSelect.value) {
-      formData.append('expiration', expirationSelect.value);
+    // Add security settings to form data
+    formData.append('access_control', securitySettings.accessControl);
+
+    if (securitySettings.expiration) {
+      formData.append('expiration', securitySettings.expiration);
+    }
+
+    if (securitySettings.burnAfterReading) {
+      formData.append('burn_after_reading', 'true');
+    }
+
+    if (securitySettings.accessControl === 'private') {
+      formData.append('private', 'true');
+    }
+
+    if (securitySettings.password) {
+      formData.append('password', securitySettings.password);
     }
 
     fetch('/' + pasteId + '/edit', {
@@ -107,6 +130,177 @@
       console.error('Error updating paste:', error);
       alert('Error updating paste: ' + error.message);
     });
+  }
+
+  // Security settings dialog function
+  function showSecuritySettingsDialog() {
+    const modal = document.createElement('dialog');
+    modal.style.cssText = `
+      padding: 2rem;
+      border: 2px solid var(--pico-primary);
+      border-radius: 0.5rem;
+      max-width: 500px;
+      width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
+    `;
+
+    modal.innerHTML = `
+      <h3 style="margin-top: 0; margin-bottom: 1.5rem;">
+        <i data-lucide="shield" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+        Security Settings
+      </h3>
+
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Access Control -->
+        <div>
+          <label for="security-access-control" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="shield" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Access Control</label>
+          <select id="security-access-control" style="width: 100%; padding: 0.5rem;">
+            <option value="public" ${securitySettings.accessControl === 'public' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Public</option>
+            <option value="password" ${securitySettings.accessControl === 'password' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Password Protected</option>
+            <option value="encrypted" ${securitySettings.encryptionEnabled ? 'selected' : ''}>End-to-End Encrypted</option>
+            <option value="private" ${securitySettings.accessControl === 'private' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Private</option>
+          </select>
+        </div>
+
+        <!-- Expiration -->
+        <div>
+          <label for="security-expiration" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="clock" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Expiration</label>
+          <select id="security-expiration" style="width: 100%; padding: 0.5rem;">
+            <option value="">Never</option>
+            <option value="10m" ${securitySettings.expiration === '10m' ? 'selected' : ''}>10 minutes</option>
+            <option value="1h" ${securitySettings.expiration === '1h' ? 'selected' : ''}>1 hour</option>
+            <option value="1d" ${securitySettings.expiration === '1d' ? 'selected' : ''}>1 day</option>
+            <option value="1w" ${securitySettings.expiration === '1w' ? 'selected' : ''}>1 week</option>
+            <option value="1M" ${securitySettings.expiration === '1M' ? 'selected' : ''}>1 month</option>
+          </select>
+        </div>
+
+        <!-- Burn After Reading -->
+        <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: 4px;">
+          <input type="checkbox" id="security-burn" ${securitySettings.burnAfterReading ? 'checked' : ''} style="margin: 0;">
+          <i data-lucide="flame" style="width: 16px; height: 16px;"></i>
+          <div style="flex: 1;">
+            <strong>Burn After Reading</strong>
+          </div>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
+        <button id="cancelSecurityBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+          Cancel
+        </button>
+        <button id="saveSecurityBtn" style="background: var(--pico-primary-background); color: var(--pico-primary-inverse); border: 1px solid var(--pico-primary); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+          Save Settings
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Add event listeners
+    const accessControlSelect = document.getElementById('security-access-control');
+    const encryptionOptions = document.getElementById('encryptionOptions');
+    const passwordOptions = document.getElementById('passwordOptions');
+
+    // Access control change handler
+    accessControlSelect.addEventListener('change', (e) => {
+      const value = e.target.value;
+
+      if (value === 'encrypted') {
+        securitySettings.encryptionEnabled = true;
+        securitySettings.accessControl = 'public';
+        if (encryptionOptions) encryptionOptions.style.display = 'block';
+        if (passwordOptions) passwordOptions.style.display = 'none';
+      } else {
+        securitySettings.encryptionEnabled = false;
+        securitySettings.accessControl = value;
+        if (encryptionOptions) encryptionOptions.style.display = 'none';
+        if (passwordOptions) passwordOptions.style.display = value === 'password' ? 'block' : 'none';
+      }
+    });
+
+    // Expiration change handler
+    document.getElementById('security-expiration').addEventListener('change', (e) => {
+      securitySettings.expiration = e.target.value;
+    });
+
+    // Burn after reading handler
+    document.getElementById('security-burn').addEventListener('change', (e) => {
+      securitySettings.burnAfterReading = e.target.checked;
+    });
+
+    // Cancel button
+    modal.querySelector('#cancelSecurityBtn').onclick = () => {
+      modal.close();
+      document.body.removeChild(modal);
+    };
+
+    // Save button
+    modal.querySelector('#saveSecurityBtn').onclick = () => {
+      modal.close();
+      document.body.removeChild(modal);
+      updateSecuritySettingsButton();
+    };
+
+    // Initialize Lucide icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
+    modal.showModal();
+  }
+
+  // Update security settings button appearance based on current settings
+  function updateSecuritySettingsButton() {
+    const securityBtn = document.getElementById('security-settings-btn');
+    if (!securityBtn) return;
+
+    // Count active security features
+    let activeFeatures = [];
+
+    if (securitySettings.expiration) {
+      activeFeatures.push('Expiration');
+    }
+
+    if (securitySettings.burnAfterReading) {
+      activeFeatures.push('Burn');
+    }
+
+    if (securitySettings.encryptionEnabled) {
+      activeFeatures.push('Encrypted');
+    }
+
+    // Update button appearance
+    if (activeFeatures.length > 0) {
+      // Has security features - use accent style
+      securityBtn.style.background = 'var(--pico-primary-background)';
+      securityBtn.style.color = 'var(--pico-primary-inverse)';
+      securityBtn.style.borderColor = 'var(--pico-primary)';
+
+      // Update icon to shield-check if features are active
+      const icon = securityBtn.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', 'shield-check');
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }
+    } else {
+      // No security features - use neutral style
+      securityBtn.style.background = 'transparent';
+      securityBtn.style.color = 'var(--pico-primary)';
+      securityBtn.style.borderColor = 'var(--pico-primary)';
+
+      // Update icon back to shield
+      const icon = securityBtn.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', 'shield');
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }
+    }
   }
 
   // Initialize CodeJar on page load
@@ -137,6 +331,9 @@
           <option value="1M">1 month</option>
           <option value="view-once">View Once 🔥</option>
         </select>
+        <button onclick="showSecuritySettingsDialog()" class="controls-button" id="security-settings-btn" title="Security Settings" aria-label="Security Settings" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);">
+          <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
+        </button>
         <button onclick="updatePaste()" class="controls-button" title="Save Changes" aria-label="Save Changes">
           <i data-lucide="save" style="width: 20px; height: 20px;"></i>
         </button>
@@ -268,7 +465,12 @@
       })
       .catch(error => console.error('Error loading languages:', error));
 
-    // Initialize preview
-    updatePreview();
+    // Initialize preview with a small delay to ensure proper initialization
+    setTimeout(() => {
+      updatePreview();
+    }, 100);
+
+    // Initialize security settings button appearance
+    updateSecuritySettingsButton();
   });
 </script>
