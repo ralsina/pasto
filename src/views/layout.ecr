@@ -104,7 +104,7 @@
     }
 
     .sidebar {
-      width: 300px;
+      width: 260px;
       flex-shrink: 0;
       border-right: 3px solid var(--pico-primary);
       background: var(--pico-background-color);
@@ -113,7 +113,7 @@
     }
 
     .sidebar.collapsed {
-      margin-left: -300px;
+      margin-left: -260px;
     }
 
     .main-content {
@@ -169,7 +169,7 @@
     }
 
     .sidebar:not(.collapsed) .sidebar-toggle {
-      left: 298.5px;
+      left: 258.5px;
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       border-top-right-radius: 4px;
@@ -185,7 +185,7 @@
       overflow-x: auto;
       justify-content: flex-end;
       margin-left: auto;
-      padding-left: 3rem; /* Space for sidebar toggle */
+      padding-left: 2.75rem; /* Space for sidebar toggle */
     }
 
     .controls-input {
@@ -355,9 +355,9 @@
     .editor-preview-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      height: calc(100vh - 200px); /* Account for controls and padding */
-      min-height: 400px;
+      gap: 0.75rem;
+      height: calc(100vh - 140px); /* Reduced to maximize content area */
+      min-height: 350px;
     }
 
     .editor-preview-container.preview-hidden {
@@ -369,7 +369,7 @@
     }
 
     .editor-pane {
-      border: 2px solid var(--pico-primary);
+      border: 1px solid var(--pico-primary);
       border-radius: 4px;
       overflow: hidden;
       display: flex;
@@ -378,14 +378,14 @@
 
     .editor-wrapper {
       flex: 1;
-      margin: 1rem;
+      margin: 0.75rem;
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
     .preview-pane {
-      border: 2px solid var(--pico-primary);
+      border: 1px solid var(--pico-primary);
       border-radius: 4px;
       overflow: hidden;
       display: flex;
@@ -416,7 +416,7 @@
     .preview-content {
       flex: 1;
       padding: 0;
-      margin: 0;
+      margin: 0.75rem;
       overflow: auto;
       display: flex;
       flex-direction: column;
