@@ -40,7 +40,7 @@ module Pasto
 
   # Unified access control result
   struct AccessResult
-    property allowed : Bool
+    property? allowed : Bool
     property paste : Pasto::Paste?
     property reason : String?
     property status_code : Int32
