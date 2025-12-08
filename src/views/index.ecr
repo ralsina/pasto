@@ -169,7 +169,7 @@ let securitySettings = {
 
 // Wrapper function for the shared security modal
   function showSecuritySettingsDialogWrapper() {
-    window.showSecuritySettingsDialog(securitySettings, {
+    window.showSharedSecurityModal(securitySettings, {
       onSave: (updatedSettings) => {
         // Update global security settings
         Object.assign(securitySettings, updatedSettings);
