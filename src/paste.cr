@@ -522,9 +522,9 @@ module Pasto
         <script>
           // Load saved themes from localStorage
           function loadSavedThemes() {
-            const savedPicoTheme = localStorage.getItem('pasto_pico_theme') || 'auto';
-            const savedPicoColor = localStorage.getItem('pasto_pico_color') || 'slate';
-            const savedSyntaxTheme = localStorage.getItem('pasto_syntax_theme') || '#{@theme}';
+            const savedPicoTheme = localStorage.getItem('picoTheme') || 'auto';
+            const savedPicoColor = localStorage.getItem('picoColor') || 'slate';
+            const savedSyntaxTheme = localStorage.getItem('syntaxTheme') || '#{@theme}';
 
             document.getElementById('pico-theme').value = savedPicoTheme;
             document.getElementById('pico-color').value = savedPicoColor;
@@ -541,9 +541,9 @@ module Pasto
             const syntaxTheme = document.getElementById('syntax-theme').value;
 
             // Save to localStorage
-            localStorage.setItem('pasto_pico_theme', picoTheme);
-            localStorage.setItem('pasto_pico_color', picoColor);
-            localStorage.setItem('pasto_syntax_theme', syntaxTheme);
+            localStorage.setItem('picoTheme', picoTheme);
+            localStorage.setItem('picoColor', picoColor);
+            localStorage.setItem('syntaxTheme', syntaxTheme);
 
             // Apply to current page
             applyThemes(picoTheme, picoColor, syntaxTheme);
@@ -552,7 +552,7 @@ module Pasto
           // Update syntax theme
           function updateSyntaxTheme() {
             const syntaxTheme = document.getElementById('syntax-theme').value;
-            localStorage.setItem('pasto_syntax_theme', syntaxTheme);
+            localStorage.setItem('syntaxTheme', syntaxTheme);
 
             // Update syntax CSS dynamically
             updateSyntaxCSS(syntaxTheme);

@@ -907,14 +907,14 @@
         codejarLink.href = `/assets/${resolvedTheme === 'dark' ? 'atom-one-dark.min.css' : 'atom-one-light.min.css'}`;
       }
 
-      // Save preferences to localStorage for all users
-      localStorage.setItem('picoTheme', picoTheme);
-      localStorage.setItem('picoColor', picoColor);
-      localStorage.setItem('syntaxTheme', syntaxTheme);
-
       // Save to server for logged-in users
       if (isUserLoggedIn) {
         saveThemesToServer(picoTheme, picoColor, syntaxTheme);
+      } else {
+        // For anonymous users, save to localStorage only
+        localStorage.setItem('picoTheme', picoTheme);
+        localStorage.setItem('picoColor', picoColor);
+        localStorage.setItem('syntaxTheme', syntaxTheme);
       }
 
       // Update data-theme attribute
@@ -959,11 +959,6 @@
 
       if (hasServerThemes && !isDefaultServerValues) {
         // For logged-in users, server has provided specific theme preferences
-        // Only sync localStorage with server preferences, don't apply them
-        localStorage.setItem('picoTheme', '<%= pico_theme %>');
-        localStorage.setItem('picoColor', '<%= pico_color %>');
-        localStorage.setItem('syntaxTheme', '<%= syntax_theme %>');
-
         // Set select elements to show server preferences
         document.getElementById('pico-theme').value = '<%= pico_theme %>';
         document.getElementById('pico-color').value = '<%= pico_color %>';
