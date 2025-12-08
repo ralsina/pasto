@@ -63,7 +63,10 @@
       "Bash(PASTO_PORT=3010 ./bin/pasto:*)",
       "Bash(xargs:*)",
       "Bash(node debug_decryption:*)",
-      "mcp__playwright__browser_handle_dialog"
+      "mcp__playwright__browser_handle_dialog",
+      "Bash(PASTO_THEME=github PASTO_PORT=3000 ./bin/pasto:*)",
+      "Bash(PASTO_PORT=3001 ./bin/pasto:*)",
+      "Bash(PASTO_PORT=4001 ./bin/pasto:*)"
     ],
     "deny": [],
     "ask": []

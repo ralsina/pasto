@@ -38,6 +38,120 @@ module Pasto
     User.find(user_session.user_id)
   end
 
+  # Unified access control result
+  struct AccessResult
+    property allowed : Bool
+    property paste : Pasto::Paste?
+    property reason : String?
+    property status_code : Int32
+
+    def initialize(@allowed : Bool, @paste : Pasto::Paste? = nil, @reason : String? = nil, @status_code : Int32 = 200)
+    end
+
+    def success? : Bool
+      @allowed && @paste != nil
+    end
+  end
+
+  # Unified access control helper for paste content access
+  # Handles existence, expiration, private status, and burn-after-reading checks
+  def self.validate_paste_access(env, require_owner : Bool = false, allow_raw_encrypted : Bool = false) : AccessResult
+    id = extract_paste_id(env)
+
+    return AccessResult.new(false, reason: "Invalid paste ID", status_code: 400) if id.nil? || id.empty?
+
+    # Load the paste
+    begin
+      paste = Pasto::Paste.from_file(id)
+      return AccessResult.new(false, reason: "Paste not found", status_code: 404) if paste.nil?
+    rescue
+      return AccessResult.new(false, reason: "Paste not found", status_code: 404)
+    end
+
+    # Check if paste has expired
+    if paste.expired?
+      return AccessResult.new(false, paste: paste, reason: "This paste has expired", status_code: 410)
+    end
+
+    # Get current user for private/owner checks
+    current_user = get_current_user(env)
+    current_user_id = current_user.try(&.sepia_id)
+
+    # Check ownership requirement
+    if require_owner && paste.user_id != current_user_id
+      return AccessResult.new(false, paste: paste, reason: "You don't have permission to access this paste", status_code: 403)
+    end
+
+    # Check private paste access
+    if paste.private? && paste.user_id != current_user_id
+      return AccessResult.new(false, paste: paste, reason: "This paste is private and can only be accessed by the owner", status_code: 403)
+    end
+
+    # Handle burn-after-reading functionality
+    if paste.burn_after_reading?
+      # For preview/QR endpoints, we check if it should be burned but don't increment
+      if allow_raw_encrypted
+        if paste.should_burn_after_reading?
+          return AccessResult.new(false, paste: paste, reason: "This paste has been viewed and is no longer available", status_code: 410)
+        end
+      else
+        # For regular views, increment view count and check if it should be burned
+        should_burn = paste.increment_view_count!
+        if should_burn
+          return AccessResult.new(false, paste: paste, reason: "This paste has been viewed and is no longer available", status_code: 410)
+        end
+      end
+    end
+
+    # For encrypted pastes in raw endpoints, allow access to encrypted content
+    if allow_raw_encrypted && paste.is_encrypted? && paste.responds_to?(:encrypted_content) && paste.encrypted_content
+      return AccessResult.new(true, paste: paste)
+    end
+
+    # Access granted
+    AccessResult.new(true, paste: paste)
+  end
+
+  # Extract paste ID from various URL patterns
+  private def self.extract_paste_id(env) : String?
+    path = env.request.path
+
+    # Handle different route patterns
+    if path.includes?("/api/qr/")
+      # /api/qr/:id
+      env.params.url["id"]?
+    elsif path.includes?("/preview/")
+      # /preview/:id.png
+      id_with_ext = env.params.url["id"]?
+      return id_with_ext.gsub(/\.png$/, "") if id_with_ext
+    elsif path.includes?("/raw")
+      # /:id/raw
+      env.params.url["id"]?
+    elsif path.includes?("/edit") || path.includes?("/delete") || path.includes?("/fork") || path.includes?("/history")
+      # /:id/edit, /:id/delete, /:id/fork, /:id/history
+      env.params.url["id"]?
+    elsif path.includes?("/version/")
+      # /:id/version/:gen - extract base ID
+      env.params.url["id"]?
+    else
+      # Main paste view /:id (with optional extension)
+      id = env.params.url["id"]?
+
+      # Handle file extensions in paste IDs (like /:id.py)
+      if id && path.includes?(".") && path.count('.') > 0
+        parts = path.split(".")
+        if parts.size >= 2
+          # Extract the part before the last extension
+          base_path = path[1..-1] # Remove leading /
+          ext_parts = base_path.split(".")
+          return ext_parts[0..-2].join(".")
+        end
+      end
+
+      id
+    end
+  end
+
   # /help endpoint: render the help markdown using the ECR template
   get "/help" do |env|
     env.response.content_type = "text/html"
@@ -283,6 +397,82 @@ before_all do |env|
       env.response.print "Too many requests. Please slow down. Retry after #{retry_after} seconds."
       env.response.close
       next
+    end
+  end
+end
+
+# Unified access control filters for paste content endpoints
+
+# Helper to check if path needs access control
+def self.needs_paste_access_control?(path : String) : Bool
+  # Skip non-paste routes (QR codes don't need validation - they're just URL encoders)
+  return false if path == "/help" || path == "/profile" || path == "/" ||
+                  path.starts_with?("/auth/") || path.starts_with?("/api/") ||
+                  path.starts_with?("/assets/") || path.starts_with?("/cache/") ||
+                  path == "/favicon.ico" || path == "/syntax-theme.css" ||
+                  path.starts_with?("/preview/") || path.starts_with?("/api/qr/") ||
+                  path.starts_with?("/api/languages") || path.starts_with?("/api/themes")
+
+  # Check if path looks like a paste endpoint
+  path_parts = path.split("/")
+  return false if path_parts.size < 2
+
+  # First part should be empty (leading slash), second should be paste ID
+  paste_id = path_parts[1]?
+  return false if paste_id.nil? || paste_id.empty?
+
+  true
+end
+
+# Apply access control to all GET routes that might access paste content
+before_get do |env|
+  path = env.request.path
+
+  # Check if this path needs access control
+  unless needs_paste_access_control?(path)
+    next
+  end
+
+  # Determine access requirements based on path
+  require_owner = path.ends_with?("/edit") || path.ends_with?("/history")
+  allow_raw_encrypted = path.ends_with?("/raw")
+
+  access_result = Pasto.validate_paste_access(env, require_owner: require_owner, allow_raw_encrypted: allow_raw_encrypted)
+  unless access_result.success?
+    env.response.status_code = access_result.status_code
+    next access_result.reason || "Access denied"
+  end
+end
+
+# Apply access control to POST routes for paste management
+before_post do |env|
+  path = env.request.path
+
+  # Only apply to paste management routes
+  unless path.includes?("/edit") || path.includes?("/delete") || path.includes?("/fork")
+    next
+  end
+
+  # Determine access requirements
+  if path.includes?("/fork")
+    # Fork doesn't require ownership, just login
+    current_user = Pasto.get_current_user(env)
+    unless current_user
+      env.response.status_code = 401
+      next "You must be logged in to fork a paste"
+    end
+    # Validate the original paste exists and is accessible
+    access_result = Pasto.validate_paste_access(env, require_owner: false)
+    unless access_result.success?
+      env.response.status_code = access_result.status_code
+      next access_result.reason || "Access denied"
+    end
+  else
+    # edit and delete require ownership
+    access_result = Pasto.validate_paste_access(env, require_owner: true)
+    unless access_result.success?
+      env.response.status_code = access_result.status_code
+      next access_result.reason || "Access denied"
     end
   end
 end
@@ -622,6 +812,10 @@ post "/" do |env|
   expiration_str = env.params.body["expiration"]?.to_s
   expires_at = Pasto::Paste.parse_expiration(expiration_str)
 
+  # Handle security fields
+  burn_after_reading = env.params.body["burn_after_reading"]?.to_s == "true"
+  is_private = env.params.body["private"]?.to_s == "true"
+
   # Handle encryption fields
   is_encrypted = env.params.body["is_encrypted"]?.to_s == "true"
   encryption_iv = env.params.body["encryption_iv"]?.to_s
@@ -663,10 +857,11 @@ post "/" do |env|
   # Set expiration
   paste.expires_at = expires_at
 
-  # Set burn_after_reading if view-once expiration
-  if expiration_str == "view-once"
-    paste.burn_after_reading = true
-  end
+  # Set burn_after_reading from either explicit checkbox or view-once expiration
+  paste.burn_after_reading = burn_after_reading || expiration_str == "view-once"
+
+  # Set access control fields
+  paste.private = is_private
 
   # Set encryption fields if this is encrypted content
   if is_encrypted
@@ -1342,23 +1537,11 @@ get "/api/themes" do |env|
 end
 
 # Generate QR code for a paste (returns PNG image)
+# Note: This endpoint doesn't validate the paste - it just generates a QR code for the URL
 get "/api/qr/:id" do |env|
   env.response.content_type = "image/png"
 
   id = env.params.url["id"]
-
-  # Load the paste
-  paste = Pasto::Paste.from_file(id)
-  if paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
-  end
-
-  # Check if paste has expired or been burned
-  if paste.expired? || (paste.burn_after_reading? && paste.should_burn_after_reading?)
-    env.response.status_code = 410
-    next "Paste is no longer available"
-  end
 
   # Get base URL from request or use default
   scheme = env.request.headers["X-Forwarded-Proto"]? || "http"
@@ -1371,7 +1554,7 @@ get "/api/qr/:id" do |env|
     base_url += ":#{server_port}"
   end
 
-  # Generate QR code PNG
+  # Generate QR code PNG (simple URL encoder - no validation needed)
   qr = QRCode.new("#{base_url}/#{id}")
   png_bytes = qr.as_png(size: 256)
 
