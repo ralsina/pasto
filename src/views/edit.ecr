@@ -1,4 +1,5 @@
 <%= render "src/views/_editor_container.ecr" %>
+<%= render "src/views/_security_modal.ecr" %>
 
 
 <script>
@@ -132,126 +133,21 @@
     });
   }
 
-  // Security settings dialog function
+  // Wrapper function for the shared security modal (edit version)
   function showSecuritySettingsDialog() {
-    const modal = document.createElement('dialog');
-    modal.style.cssText = `
-      padding: 2rem;
-      border: 2px solid var(--pico-primary);
-      border-radius: 0.5rem;
-      max-width: 500px;
-      width: 90vw;
-      max-height: 90vh;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    `;
+    window.showSecuritySettingsDialog(securitySettings, {
+      showEncryptionOptions: false, // Edit doesn't support changing encryption
+      showPasswordOptions: false,   // Edit doesn't support changing password protection
+      primaryButtonStyle: 'var(--pico-primary-background)',
+      primaryButtonTextColor: 'var(--pico-primary-inverse)',
+      onSave: (updatedSettings) => {
+        // Update global security settings
+        Object.assign(securitySettings, updatedSettings);
 
-    modal.innerHTML = `
-      <h3 style="margin-top: 0; margin-bottom: 1.5rem;">
-        <i data-lucide="shield" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
-        Security Settings
-      </h3>
-
-      <div>
-        <!-- Access Control -->
-        <div>
-          <label for="security-access-control" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="shield" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Access Control</label>
-          <select id="security-access-control" style="width: 100%; padding: 0.5rem;">
-            <option value="public" ${securitySettings.accessControl === 'public' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Public</option>
-            <option value="password" ${securitySettings.accessControl === 'password' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Password Protected</option>
-            <option value="encrypted" ${securitySettings.encryptionEnabled ? 'selected' : ''}>End-to-End Encrypted</option>
-            <option value="private" ${securitySettings.accessControl === 'private' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Private</option>
-          </select>
-        </div>
-
-        <!-- Expiration -->
-        <div>
-          <label for="security-expiration" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="clock" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Expiration</label>
-          <select id="security-expiration" style="width: 100%; padding: 0.5rem;">
-            <option value="">Never</option>
-            <option value="10m" ${securitySettings.expiration === '10m' ? 'selected' : ''}>10 minutes</option>
-            <option value="1h" ${securitySettings.expiration === '1h' ? 'selected' : ''}>1 hour</option>
-            <option value="1d" ${securitySettings.expiration === '1d' ? 'selected' : ''}>1 day</option>
-            <option value="1w" ${securitySettings.expiration === '1w' ? 'selected' : ''}>1 week</option>
-            <option value="1M" ${securitySettings.expiration === '1M' ? 'selected' : ''}>1 month</option>
-          </select>
-        </div>
-
-        <!-- Burn After Reading -->
-        <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: 4px;">
-          <input type="checkbox" id="security-burn" ${securitySettings.burnAfterReading ? 'checked' : ''} style="margin: 0;">
-          <i data-lucide="flame" style="width: 16px; height: 16px;"></i>
-          <div style="flex: 1;">
-            <strong>Burn After Reading</strong>
-          </div>
-        </label>
-      </div>
-
-      <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
-        <button id="cancelSecurityBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
-          Cancel
-        </button>
-        <button id="saveSecurityBtn" style="background: var(--pico-primary-background); color: var(--pico-primary-inverse); border: 1px solid var(--pico-primary); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
-          Save Settings
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Add event listeners
-    const accessControlSelect = document.getElementById('security-access-control');
-    const encryptionOptions = document.getElementById('encryptionOptions');
-    const passwordOptions = document.getElementById('passwordOptions');
-
-    // Access control change handler
-    accessControlSelect.addEventListener('change', (e) => {
-      const value = e.target.value;
-
-      if (value === 'encrypted') {
-        securitySettings.encryptionEnabled = true;
-        securitySettings.accessControl = 'public';
-        if (encryptionOptions) encryptionOptions.style.display = 'block';
-        if (passwordOptions) passwordOptions.style.display = 'none';
-      } else {
-        securitySettings.encryptionEnabled = false;
-        securitySettings.accessControl = value;
-        if (encryptionOptions) encryptionOptions.style.display = 'none';
-        if (passwordOptions) passwordOptions.style.display = value === 'password' ? 'block' : 'none';
+        // Update Security Settings button appearance
+        updateSecuritySettingsButton();
       }
     });
-
-    // Expiration change handler
-    document.getElementById('security-expiration').addEventListener('change', (e) => {
-      securitySettings.expiration = e.target.value;
-    });
-
-    // Burn after reading handler
-    document.getElementById('security-burn').addEventListener('change', (e) => {
-      securitySettings.burnAfterReading = e.target.checked;
-    });
-
-    // Cancel button
-    modal.querySelector('#cancelSecurityBtn').onclick = () => {
-      modal.close();
-      document.body.removeChild(modal);
-    };
-
-    // Save button
-    modal.querySelector('#saveSecurityBtn').onclick = () => {
-      modal.close();
-      document.body.removeChild(modal);
-      updateSecuritySettingsButton();
-    };
-
-    // Initialize Lucide icons
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
-
-    modal.showModal();
   }
 
   // Update security settings button appearance based on current settings
