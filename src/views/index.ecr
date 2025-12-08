@@ -157,135 +157,210 @@
     }
   }
 
-  // Show encryption options dialog
-  function showEncryptionOptionsDialog() {
-    return new Promise((resolve, reject) => {
-      // Create modal dialog
-      const dialog = document.createElement('div');
-      dialog.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      `;
+  // Security settings state management
+let securitySettings = {
+  accessControl: 'public', // public, password, private
+  expiration: '', // empty, 10m, 1h, 1d, 1w, 1M
+  burnAfterReading: false,
+  encryptionEnabled: false,
+  encryptionPassword: null
+};
 
-      dialog.innerHTML = `
-        <div style="background: var(--pico-background-color); border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; border: 1px solid var(--pico-border-color);">
-          <h3 style="margin-top: 0; color: var(--pico-primary); display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="lock" style="width: 24px; height: 24px;"></i>
-            Encryption Options
-          </h3>
-          <p style="margin-bottom: 1.5rem; color: var(--pico-color);">
-            Choose how you want to encrypt this paste:
-          </p>
+function showSecuritySettingsDialog() {
+    const modal = document.createElement('dialog');
+    modal.style.cssText = `
+      padding: 2rem;
+      border: 2px solid var(--pico-primary);
+      border-radius: 0.5rem;
+      max-width: 500px;
+      width: 90vw;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+      overflow-y: auto;
+    `;
 
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 1rem; background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px;">
-              <input type="radio" name="passwordType" value="auto" checked style="margin: 0;">
-              <div>
-                <strong>Auto Password</strong>
-                <div style="font-size: 0.9rem; opacity: 0.8;">Generate a secure random password</div>
+    modal.innerHTML = `
+      <h3 style="margin-top: 0; margin-bottom: 1.5rem;">
+        <i data-lucide="shield" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+        Security Settings
+      </h3>
+
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Access Control -->
+        <div>
+          <label for="security-access-control" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="shield" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Access Control</label>
+          <select id="security-access-control" style="width: 100%; padding: 0.5rem;">
+            <option value="public" ${securitySettings.accessControl === 'public' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Public</option>
+            <option value="password" ${securitySettings.accessControl === 'password' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Password Protected</option>
+            <option value="encrypted" ${securitySettings.encryptionEnabled ? 'selected' : ''}>End-to-End Encrypted</option>
+            <option value="private" ${securitySettings.accessControl === 'private' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Private</option>
+          </select>
+        </div>
+
+        <!-- Expiration -->
+        <div>
+          <label for="security-expiration" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="clock" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Expiration</label>
+          <select id="security-expiration" style="width: 100%; padding: 0.5rem;">
+            <option value="">Never</option>
+            <option value="10m" ${securitySettings.expiration === '10m' ? 'selected' : ''}>10 minutes</option>
+            <option value="1h" ${securitySettings.expiration === '1h' ? 'selected' : ''}>1 hour</option>
+            <option value="1d" ${securitySettings.expiration === '1d' ? 'selected' : ''}>1 day</option>
+            <option value="1w" ${securitySettings.expiration === '1w' ? 'selected' : ''}>1 week</option>
+            <option value="1M" ${securitySettings.expiration === '1M' ? 'selected' : ''}>1 month</option>
+          </select>
+        </div>
+
+        <!-- Burn After Reading -->
+        <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; background: var(--pico-background-color); border: 1px solid var(--pico-border-color); border-radius: 4px;">
+          <input type="checkbox" id="security-burn" ${securitySettings.burnAfterReading ? 'checked' : ''} style="margin: 0;">
+          <i data-lucide="flame" style="width: 16px; height: 16px;"></i>
+          <div style="flex: 1;">
+            <strong>Burn After Reading</strong>
+          </div>
+        </label>
+
+        <!-- Password Options -->
+        <div id="passwordOptions" style="display: ${securitySettings.accessControl === 'password' ? 'block' : 'none'}; margin-top: 1rem; padding: 1rem; background: var(--pico-secondary-background); border-radius: 4px;">
+          <label for="security-password" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Password</label>
+          <input type="password" id="security-password" placeholder="Enter password to protect paste" value="${securitySettings.password || ""}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem; background: var(--pico-background-color);">
+          <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">Minimum 8 characters required</div>
+        </div>
+
+          <div id="encryptionOptions" style="display: ${securitySettings.encryptionEnabled ? 'block' : 'none'}; margin-top: 1rem; padding: 1rem; background: var(--pico-secondary-background); border-radius: 4px;">
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="passwordType" value="auto" ${!securitySettings.encryptionPassword || securitySettings.encryptionPassword === 'auto' ? 'checked' : ''} style="margin: 0;">
+                <div>
+                  <strong>Auto Password</strong>
+                  <div style="font-size: 0.9rem; opacity: 0.8;">Generate secure random password</div>
+                </div>
+              </label>
+
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="passwordType" value="custom" ${securitySettings.encryptionPassword && securitySettings.encryptionPassword !== 'auto' ? 'checked' : ''} style="margin: 0;">
+                <div style="flex: 1;">
+                  <strong>Custom Password</strong>
+                  <div style="font-size: 0.9rem; opacity: 0.8;">Use your own password</div>
+                </div>
+              </label>
+
+              <div id="customPasswordDiv" style="display: ${securitySettings.encryptionPassword && securitySettings.encryptionPassword !== 'auto' ? 'block' : 'none'}; margin-top: 0.5rem;">
+                <input type="password" id="customPasswordInput" placeholder="Enter your password" value="${securitySettings.encryptionPassword && securitySettings.encryptionPassword !== 'auto' ? securitySettings.encryptionPassword : ''}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem; background: var(--pico-background-color);">
+                <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">Minimum 8 characters</div>
               </div>
-            </label>
-
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 1rem; background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px;">
-              <input type="radio" name="passwordType" value="custom" style="margin: 0;">
-              <div style="flex: 1;">
-                <strong>Custom Password</strong>
-                <div style="font-size: 0.9rem; opacity: 0.8;">Use your own password (compatible with password managers)</div>
-              </div>
-            </label>
-
-            <div id="customPasswordDiv" style="display: none; margin-top: 0.5rem;">
-              <input type="password" id="customPasswordInput" placeholder="Enter your password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem; background: var(--pico-background-color);">
-              <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">Minimum 8 characters</div>
             </div>
           </div>
-
-          <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
-            <button id="cancelEncryptionBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
-              Cancel
-            </button>
-            <button id="confirmEncryptionBtn" style="background: var(--pico-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
-              Encrypt & Save
-            </button>
-          </div>
         </div>
-      `;
+      </div>
 
-      document.body.appendChild(dialog);
+      <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
+        <button id="cancelSecurityBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+          Cancel
+        </button>
+        <button id="saveSecurityBtn" style="background: var(--pico-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+          Save Settings
+        </button>
+      </div>
+    `;
 
-      // Initialize icons
-      if (window.lucide) {
-        lucide.createIcons();
+    document.body.appendChild(modal);
+
+    // Add event listeners
+    const accessControlSelect = document.getElementById('security-access-control');
+    const passwordTypeRadios = document.querySelectorAll('input[name="passwordType"]');
+    const encryptionOptions = document.getElementById('encryptionOptions');
+    const passwordOptions = document.getElementById('passwordOptions');
+    const customPasswordDiv = document.getElementById('customPasswordDiv');
+    const customPasswordInput = document.getElementById('customPasswordInput');
+
+    // Access control change handler
+    accessControlSelect.addEventListener('change', (e) => {
+      const value = e.target.value;
+
+      if (value === 'encrypted') {
+        securitySettings.encryptionEnabled = true;
+        securitySettings.accessControl = 'public';
+        encryptionOptions.style.display = 'block';
+        passwordOptions.style.display = 'none';
+      } else {
+        securitySettings.encryptionEnabled = false;
+        securitySettings.accessControl = value;
+        encryptionOptions.style.display = 'none';
+        passwordOptions.style.display = value === 'password' ? 'block' : 'none';
       }
+    });
 
-      // Handle password type selection
-      const passwordTypeRadios = dialog.querySelectorAll('input[name="passwordType"]');
-      const customPasswordDiv = dialog.querySelector('#customPasswordDiv');
-      const customPasswordInput = dialog.querySelector('#customPasswordInput');
-
-      passwordTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-          if (this.value === 'custom') {
-            customPasswordDiv.style.display = 'block';
-            setTimeout(() => customPasswordInput.focus(), 100);
-          } else {
-            customPasswordDiv.style.display = 'none';
-            customPasswordInput.value = '';
-          }
-        });
+    // Password type change handlers
+    passwordTypeRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        customPasswordDiv.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        if (e.target.value === 'custom') {
+          customPasswordInput.focus();
+        }
       });
+    });
 
-      // Handle button clicks
-      const cancelBtn = dialog.querySelector('#cancelEncryptionBtn');
-      const confirmBtn = dialog.querySelector('#confirmEncryptionBtn');
+    
+    // Expiration change handler
+    document.getElementById('security-expiration').addEventListener('change', (e) => {
+      securitySettings.expiration = e.target.value;
+    });
 
-      cancelBtn.addEventListener('click', () => {
-        document.body.removeChild(dialog);
-        reject(new Error('User cancelled encryption'));
-      });
+    // Burn after reading handler
+    document.getElementById('security-burn').addEventListener('change', (e) => {
+      securitySettings.burnAfterReading = e.target.checked;
+    });
 
-      confirmBtn.addEventListener('click', () => {
-        const selectedType = dialog.querySelector('input[name="passwordType"]:checked').value;
+    // Cancel button
+    modal.querySelector('#cancelSecurityBtn').onclick = () => {
+      modal.close();
+      document.body.removeChild(modal);
+    };
 
-        if (selectedType === 'custom') {
-          const password = customPasswordInput.value.trim();
+    // Save button
+    modal.querySelector('#saveSecurityBtn').onclick = () => {
+      // Validate custom password if encryption is enabled
+      if (securitySettings.encryptionEnabled) {
+        const passwordType = modal.querySelector('input[name="passwordType"]:checked').value;
+        if (passwordType === 'custom') {
+          const password = customPasswordInput.value;
           if (password.length < 8) {
-            alert('Password must be at least 8 characters long');
+            alert('Password must be at least 8 characters long.');
+            customPasswordInput.focus();
             return;
           }
-          resolve({ type: 'custom', password: password });
+          securitySettings.encryptionPassword = password;
         } else {
-          resolve({ type: 'auto' });
+          securitySettings.encryptionPassword = 'auto';
         }
+      }
 
-        document.body.removeChild(dialog);
-      });
+      // Generate auto password if needed
+      if (securitySettings.encryptionEnabled && securitySettings.encryptionPassword === 'auto') {
+        securitySettings.encryptionPassword = generateSecurePassword();
+      }
 
-      // Handle Enter key in custom password input
-      customPasswordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          confirmBtn.click();
-        }
-      });
+      // Update window variables for form submission
+      window.encryptionPassword = securitySettings.encryptionPassword;
+      window.isEncryptionEnabled = securitySettings.encryptionEnabled;
 
-      // Handle escape key
-      dialog.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          cancelBtn.click();
-        }
-      });
+      modal.close();
+      document.body.removeChild(modal);
 
-      // Focus the first radio button
-      dialog.querySelector('input[name="passwordType"]').focus();
-    });
+      // Update Security Settings button appearance
+      updateSecuritySettingsButton();
+
+      // Show success message
+      showSecurityStatus();
+    };
+
+    // Initialize Lucide icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
+    modal.showModal();
   }
 
   function showEncryptionKeyDialog(encryptionKey, pasteUrl) {
@@ -782,10 +857,22 @@
       formData.append('content', finalContent);
       formData.append('language', language);
 
-      // Add expiration if selected
-      const expirationSelect = document.getElementById('expiration');
-      if (expirationSelect && expirationSelect.value) {
-        formData.append('expiration', expirationSelect.value);
+      // Add security settings
+      if (securitySettings.expiration) {
+        formData.append('expiration', securitySettings.expiration);
+      }
+
+      if (securitySettings.burnAfterReading) {
+        formData.append('burn_after_reading', 'true');
+      }
+
+      // Password protection not implemented yet
+      // if (securitySettings.accessControl === 'password') {
+      //   formData.append('password_required', 'true');
+      // }
+
+      if (securitySettings.accessControl === 'private') {
+        formData.append('private', 'true');
       }
 
       if (isEncrypted) {
@@ -848,7 +935,13 @@
             showEncryptionKeyDialog(encryptionKey, result.url);
           }
         } else {
-          showPasteCreatedModal(result.url, result.is_view_once);
+          // For non-encrypted pastes: show modal for burn-after-read, redirect otherwise
+          if (result.is_view_once) {
+            showPasteCreatedModal(result.url, true);
+          } else {
+            // Redirect to paste page for regular pastes
+            window.location.href = result.url;
+          }
         }
       } else {
         const text = await response.text();
@@ -870,17 +963,8 @@
         <select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language">
           <option value="">Auto</option>
         </select>
-        <select id="expiration" class="controls-select" aria-label="Select expiration time" title="Set paste expiration time">
-          <option value="">Never</option>
-          <option value="10m">10 minutes</option>
-          <option value="1h">1 hour</option>
-          <option value="1d">1 day</option>
-          <option value="1w">1 week</option>
-          <option value="1M">1 month</option>
-          <option value="view-once">View Once 🔥</option>
-        </select>
-        <button onclick="toggleEncryption()" class="controls-button" id="encryption-toggle-btn" title="Enable Encryption" aria-label="Toggle encryption" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);">
-          <i data-lucide="unlock" style="width: 20px; height: 20px;"></i>
+        <button onclick="showSecuritySettingsDialog()" class="controls-button" id="security-settings-btn" title="Security Settings" aria-label="Security Settings" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);">
+          <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
         </button>
         <button onclick="createPaste(event)" class="controls-button" title="Create Paste" aria-label="Create Paste">
           <i data-lucide="save" style="width: 20px; height: 20px;"></i>
@@ -999,6 +1083,67 @@
         console.error('Error loading languages:', error);
         // Still initialize preview even if language loading fails
         updatePreview();
+        updateSecuritySettingsButton();
       });
   });
+
+  // Update security settings button appearance based on current settings
+  function updateSecuritySettingsButton() {
+    const securityBtn = document.getElementById('security-settings-btn');
+    if (!securityBtn) return;
+
+    // Count active security features
+    let activeFeatures = [];
+
+    if (securitySettings.accessControl === 'password') {
+      activeFeatures.push('Password');
+    }
+
+    if (securitySettings.accessControl === 'private') {
+      activeFeatures.push('Private');
+    }
+
+    if (securitySettings.expiration) {
+      activeFeatures.push('Expiration');
+    }
+
+    if (securitySettings.burnAfterReading) {
+      activeFeatures.push('Burn');
+    }
+
+    if (securitySettings.encryptionEnabled) {
+      activeFeatures.push('Encrypted');
+    }
+
+    // Update button appearance
+    if (activeFeatures.length > 0) {
+      // Has security features - use accent style
+      securityBtn.style.background = 'var(--pico-primary)';
+      securityBtn.style.color = 'var(--pico-primary-inverse)';
+      securityBtn.title = `Security Settings: ${activeFeatures.join(', ')}`;
+
+      // Update icon to shield with check
+      const icon = securityBtn.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', 'shield-check');
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }
+    } else {
+      // No security features - use outline style
+      securityBtn.style.background = 'transparent';
+      securityBtn.style.color = 'var(--pico-primary)';
+      securityBtn.title = 'Security Settings';
+
+      // Update icon to regular shield
+      const icon = securityBtn.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', 'shield');
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }
+    }
+  }
 </script>
