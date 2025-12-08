@@ -67,47 +67,32 @@
   let debounceTimer;
   let currentLanguage = '';
 
-  // Use shared functions from external module
+  // Wrapper functions for shared editor functionality
   function updateLanguage() {
+    window.updateLanguage(jar, currentLanguage);
+    // Update currentLanguage variable for auto-detection
     currentLanguage = document.getElementById('language').value;
-    if (jar) {
-      // Re-highlight with new language using shared function
-      jar.updateCode(jar.toString());
-    }
-    updatePreview();
   }
 
   function togglePreview() {
-    // Use shared togglePreview function
-    if (typeof window.togglePreview === 'function') {
-      window.togglePreview(jar,
-        () => document.getElementById('language').value,
-        () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
-      );
-    }
+    window.togglePreview(jar, window.getLanguageGetter, window.getThemeGetter);
   }
 
   function updatePreview() {
-    // Use shared updatePreview function
-    if (typeof window.updatePreview === 'function') {
-      window.updatePreview(jar,
-        () => document.getElementById('language').value,
-        () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
-      );
+    window.updatePreview(jar, window.getLanguageGetter, window.getThemeGetter);
 
-      // Update currentLanguage if auto-detect is active and language was detected
-      const languageSelect = document.getElementById('language');
-      const isAutoDetect = (languageSelect?.value === 'Auto' || languageSelect?.value === '');
-      if (isAutoDetect && languageSelect?.options) {
-        const autoDetectOption = Array.from(languageSelect.options).find(
-          option => option.value === 'Auto' || option.value === ''
-        );
-        if (autoDetectOption && autoDetectOption.textContent.includes('(')) {
-          // Extract detected language from text like "Auto (javascript)"
-          const match = autoDetectOption.textContent.match(/\(([^)]+)\)/);
-          if (match) {
-            currentLanguage = match[1];
-          }
+    // Update currentLanguage if auto-detect is active and language was detected
+    const languageSelect = document.getElementById('language');
+    const isAutoDetect = (languageSelect?.value === 'Auto' || languageSelect?.value === '');
+    if (isAutoDetect && languageSelect?.options) {
+      const autoDetectOption = Array.from(languageSelect.options).find(
+        option => option.value === 'Auto' || option.value === ''
+      );
+      if (autoDetectOption && autoDetectOption.textContent.includes('(')) {
+        // Extract detected language from text like "Auto (javascript)"
+        const match = autoDetectOption.textContent.match(/\(([^)]+)\)/);
+        if (match) {
+          currentLanguage = match[1];
         }
       }
     }
@@ -804,12 +789,7 @@ let securitySettings = {
         <button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" aria-label="Hide Preview" style="display: flex;">
           <i data-lucide="eye-off" style="width: 20px; height: 20px;"></i>
         </button>
-        <a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
-        </a>
-        <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="user" style="width: 20px; height: 20px;"></i>
-        </a>
+        <%= render "src/views/_controls_help_profile.ecr" %>
       `;
     }
 
