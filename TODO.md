@@ -60,12 +60,11 @@ Make Pasto the best pastebin application by combining developer-friendly workflo
 ## Phase 2: Enhanced Privacy & Features (High Value)
 
 ### 🔒 Privacy Controls
-- [ ] **Enhanced Privacy Levels**
-  - [ ] **Public**: Listed, searchable (current default)
-  - [ ] **Unlisted**: Not listed, accessible via URL only
-  - [ ] **Private**: Owner-only, requires login
-  - [ ] **Encrypted variants** of each privacy level
-  - [ ] Extend existing user system with visibility controls
+- [x] **Enhanced Privacy Levels**
+  - [x] **Public**: Accessible via URL only (privacy-by-design)
+  - [x] **Private**: Owner-only, requires login
+  - [x] **Encrypted variants** of privacy levels
+  - [x] User-based access control system
 
 - [ ] **Custom Paste URLs**
   - [ ] Allow custom paste IDs: `/my-custom-paste`
@@ -116,23 +115,24 @@ Make Pasto the best pastebin application by combining developer-friendly workflo
 
 ## Technical Implementation Details
 
-### Database Model Extensions
+### Database Model Extensions ✅ IMPLEMENTED
 ```crystal
 class Paste
-  # Existing fields...
+  # ✅ Implemented fields...
   property expires_at : Time?
   property password_hash : String?
-  property visibility : String # "public", "unlisted", "private"
-  property view_count : Int32 = 0
+  property? private : Bool = false  # Simplified: URL-only access vs owner-only
   property burn_after_reading : Bool = false
-  property attachment_path : String?
-  property custom_id : String?
 
-  # Encryption fields
+  # ✅ Encryption fields
   property encrypted_content : String?
-  property is_encrypted : Bool = false
+  property? is_encrypted : Bool = false
   property encryption_iv : String?
   property encryption_tag : String?
+
+  # ❌ Not implemented fields
+  # property attachment_path : String?
+  # property custom_id : String?
 end
 ```
 
@@ -141,28 +141,35 @@ end
 - [ ] `pasto-ssh` - Enhanced SSH client with encryption support
 - [ ] Integration with existing `pasto-ssh` binary
 
-### New HTTP Endpoints
+### New HTTP Endpoints ✅ MOSTLY IMPLEMENTED
 ```
-POST /api/encrypt          # Store encrypted blob
-GET  /{id}#key            # Decrypt in browser
-GET  /raw/{id}            # Get encrypted blob
-POST /{id}/decrypt        # Client-side decryption
-GET  /qr/{id}             # QR code image
-POST /{id}/access         # Track view-once access
+✅ GET  /{id}#key            # Decrypt in browser (client-side)
+✅ GET  /raw/{id}            # Get raw content (including encrypted)
+✅ GET  /qr/{id}             # QR code image with encryption key
+✅ POST /{id}                # Standard paste creation
+✅ POST /{id}/delete         # Delete paste (owner only)
+❌ POST /api/encrypt         # Dedicated API endpoint
+❌ POST /{id}/decrypt        # Client-side decryption helper
+✅ POST /{id}/access         # Track view-once access (handled internally)
 ```
 
-### New SSH Commands
+### New SSH Commands ✅ PARTIALLY IMPLEMENTED
 ```bash
-# Encryption workflows
-cat file.txt | ssh pasto.com --encrypted
-ssh pasto.com --encrypted --expire=1h < file.txt
+# ✅ Encryption workflows
+cat file.txt | ssh -p 2222 pasto.com --encrypted
+ssh -p 2222 pasto.com --encrypted --expire=1h < file.txt
 
-# Retrieve encrypted content
-ssh pasto.com get <paste_id>
+# ✅ Basic paste creation
+echo "Hello World" | ssh -p 2222 pasto.com
+ssh -p 2222 pasto.com paste < file.txt
 
-# Help and documentation
-ssh pasto.com help encryption
-ssh pasto.com help security
+# ✅ Help and documentation
+ssh -p 2222 pasto.com help
+
+# ❌ Not yet implemented
+# ssh -p 2222 pasto.com get <paste_id>  # Retrieve encrypted content
+# ssh -p 2222 pasto.com help encryption
+# ssh -p 2222 pasto.com help security
 ```
 
 ## Competitive Advantages After Implementation
@@ -184,12 +191,6 @@ ssh pasto.com help security
 - [ ] Zero successful plaintext leaks (by design)
 - [ ] All sensitive data processed client-side
 - [ ] Independent security audit passed
-
-### Usage Metrics
-- [ ] Encrypted vs unencrypted paste ratio > 30%
-- [ ] SSH usage growth > 50%
-- [ ] User adoption and retention rates
-- [ ] Feature usage analytics
 
 ### Performance Metrics
 - [ ] Sub-100ms encryption/decryption times
