@@ -780,23 +780,8 @@
       // Update rawContent for copy/download functionality
       window.rawContent = decryptedContent;
 
-      // Re-highlight the decrypted content
-      const formData = new FormData();
-      formData.append('content', decryptedContent);
-      formData.append('language', pasteLanguage);
-      formData.append('theme', 'monokai');
-
-      const response = await fetch('/highlight', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.html) {
-          pasteContent.innerHTML = data.html;
-        }
-      }
+      // SECURITY: Do NOT send decrypted content to server for highlighting
+      // Encrypted content is displayed as plain text only
 
       // Update markdown rendering if needed
       const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
@@ -895,23 +880,8 @@
       // Update rawContent for copy/download functionality
       window.rawContent = decryptedContent;
 
-      // Re-highlight the decrypted content
-      const formData = new FormData();
-      formData.append('content', decryptedContent);
-      formData.append('language', pasteLanguage);
-      formData.append('theme', 'monokai');
-
-      const response = await fetch('/highlight', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.html) {
-          pasteContent.innerHTML = data.html;
-        }
-      }
+      // SECURITY: Do NOT send decrypted content to server for highlighting
+      // Encrypted content is displayed as plain text only
 
       // Update markdown rendering if needed
       const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
@@ -1003,7 +973,9 @@
     const languageSelect = document.getElementById('view-language');
     const isAutoDetect = (languageSelect.value === '' || languageSelect.value === 'Auto');
 
-    if (isAutoDetect && rawContent) {
+    // SECURITY: Do not send potentially decrypted content to server for language detection
+    // Only run auto-detection for non-encrypted content
+    if (isAutoDetect && rawContent && !isEncrypted) {
       // Use the highlight endpoint to detect language
       const formData = new FormData();
       formData.append('content', rawContent);
