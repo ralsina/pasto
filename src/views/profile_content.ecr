@@ -54,113 +54,133 @@
   
     </div>
 
-    <!-- SSH Keys Section -->
-    <div class="ssh-keys-section">
-      <h3>🔑 SSH Keys</h3>
-      <% if current_user.keys.empty? %>
-        <p class="no-items">No SSH keys linked to your account.</p>
-      <% else %>
-        <div class="keys-list">
-          <% current_user.keys.each do |ssh_key| %>
-            <div class="key-item">
-              <code class="fingerprint"><%= ssh_key.sepia_id.gsub("_", "/") %></code>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
+    <!-- Accordion Sections -->
+    <div class="accordion-sections">
 
-    <!-- API Keys Section -->
-    <div class="api-keys-section">
-      <h3>🔐 API Keys</h3>
-      <% api_keys = current_user.all_api_keys %>
-      <% if api_keys.empty? %>
-        <p class="no-items">No API keys generated yet.</p>
-        <p>Create API keys via SSH to access the Pasto API programmatically:</p>
-        <code class="command-example">ssh -p <%= ssh_port %> <%= ssh_host %> api-key create</code>
-        <p><small>After creating an API key, you can use it with HTTP Bearer authentication:</small></p>
-        <code class="command-example">curl -H "Authorization: Bearer pasto_ak_your_key" <%= env.request.headers["X-Forwarded-Proto"]? || "http" %>://<%= env.request.headers["Host"]? || "localhost:3000" %>/api/v1/me</code>
-      <% else %>
-        <div class="api-keys-list">
-          <% api_keys.each do |api_key| %>
-            <div class="api-key-item">
-              <div class="api-key-info">
-                <code class="api-key-id"><%= api_key.id %></code>
-                <div class="api-key-meta">
-                  <span class="created-date">Created: <%= api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M") %></span>
-                  <span class="usage-count">Used: <%= api_key.key_data.usage_count %> times</span>
-                  <% if last_used = api_key.key_data.last_used_at %>
-                    <span class="last-used">Last used: <%= last_used.to_s("%Y-%m-%d %H:%M") %></span>
-                  <% end %>
+      <!-- Pastes Accordion -->
+      <details class="accordion" open>
+        <summary class="accordion-summary">
+          <span class="accordion-title">📋 Your Pastes</span>
+          <% user_pastes = current_user.all_pastes %>
+          <span class="accordion-count"><%= user_pastes.size %> items</span>
+        </summary>
+        <div class="accordion-content">
+          <% if user_pastes.empty? %>
+            <p class="no-items">You haven't created any pastes yet.</p>
+            <p>Create pastes via the web interface or using SSH:</p>
+            <code class="command-example">echo "Hello World" | ssh -p <%= ssh_port %> <%= ssh_host %> paste</code>
+          <% else %>
+            <div class="pastes-list">
+              <% user_pastes.sort_by(&.created_at).reverse.first(20).each do |paste| %>
+              <div class="paste-item <%= paste.burn_after_reading? ? "burn-after-reading" : "" %>">
+                <div class="paste-link">
+                  <a href="/<%= paste.sepia_id %>" class="paste-content">
+                    <span class="paste-title">
+                      <%= HTML.escape(paste.display_title) %>
+                      <% if paste.burn_after_reading? %>
+                        <i data-lucide="flame" class="burn-icon" title="Burn-after-reading paste"></i>
+                        <span class="burn-badge">View once</span>
+                      <% end %>
+                      <% if paste.is_encrypted? %>
+                        <i data-lucide="lock" class="lock-icon" title="Encrypted paste"></i>
+                        <span class="encrypted-badge">Encrypted</span>
+                      <% end %>
+                      <% if paste.private? %>
+                        <i data-lucide="shield" class="private-icon" title="Private paste"></i>
+                        <span class="private-badge">Private</span>
+                      <% end %>
+                    </span>
+                    <span class="paste-lang"><%= paste.language || "text" %></span>
+                    <span class="paste-date"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %></span>
+                  </a>
+                  <div class="paste-actions">
+                    <% unless paste.burn_after_reading? %>
+                    <a href="/<%= paste.sepia_id %>/edit" class="edit-btn" title="Edit Paste" aria-label="Edit Paste">
+                      <i data-lucide="edit-2"></i>
+                    </a>
+                    <% end %>
+                    <button class="delete-btn" onclick="confirmDelete('<%= paste.sepia_id %>')" title="Delete Paste" aria-label="Delete Paste">
+                      <i data-lucide="trash-2"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div class="api-key-actions">
-                <button class="copy-btn" onclick="copyToClipboard('<%= api_key.id %>')" title="Copy API Key">
-                  <i data-lucide="copy"></i>
-                </button>
-              </div>
+              <% end %>
+              <% if user_pastes.size > 20 %>
+              <p class="more-pastes">Showing 20 of <%= user_pastes.size %> pastes</p>
+              <% end %>
             </div>
           <% end %>
         </div>
-        <div class="api-docs-link">
-          <a href="/api-docs" target="_blank" class="docs-btn">
-            <i data-lucide="book-open"></i>
-            View API Documentation
-          </a>
-        </div>
-      <% end %>
-    </div>
+      </details>
 
-    <!-- User's Pastes Section -->
-    <div class="pastes-section">
-      <h3>📋 Your Pastes</h3>
-      <% user_pastes = current_user.all_pastes %>
-      <% if user_pastes.empty? %>
-        <p class="no-items">You haven't created any pastes yet.</p>
-        <p>Create pastes via the web interface or using SSH:</p>
-        <code class="command-example">echo "Hello World" | ssh -p <%= ssh_port %> <%= ssh_host %> paste</code>
-      <% else %>
-        <div class="pastes-list">
-          <% user_pastes.sort_by(&.created_at).reverse.first(20).each do |paste| %>
-          <div class="paste-item <%= paste.burn_after_reading? ? "burn-after-reading" : "" %>">
-            <div class="paste-link">
-              <a href="/<%= paste.sepia_id %>" class="paste-content">
-                <span class="paste-title">
-                  <%= HTML.escape(paste.display_title) %>
-                  <% if paste.burn_after_reading? %>
-                    <i data-lucide="flame" class="burn-icon" title="Burn-after-reading paste"></i>
-                    <span class="burn-badge">View once</span>
-                  <% end %>
-                  <% if paste.is_encrypted? %>
-                    <i data-lucide="lock" class="lock-icon" title="Encrypted paste"></i>
-                    <span class="encrypted-badge">Encrypted</span>
-                  <% end %>
-                  <% if paste.private? %>
-                    <i data-lucide="shield" class="private-icon" title="Private paste"></i>
-                    <span class="private-badge">Private</span>
-                  <% end %>
-                </span>
-                <span class="paste-lang"><%= paste.language || "text" %></span>
-                <span class="paste-date"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %></span>
-              </a>
-              <div class="paste-actions">
-                <% unless paste.burn_after_reading? %>
-                <a href="/<%= paste.sepia_id %>/edit" class="edit-btn" title="Edit Paste" aria-label="Edit Paste">
-                  <i data-lucide="edit-2"></i>
-                </a>
-                <% end %>
-                <button class="delete-btn" onclick="confirmDelete('<%= paste.sepia_id %>')" title="Delete Paste" aria-label="Delete Paste">
-                  <i data-lucide="trash-2"></i>
-                </button>
-              </div>
+      <!-- API Keys Accordion -->
+      <details class="accordion">
+        <summary class="accordion-summary">
+          <span class="accordion-title">🔐 API Keys</span>
+          <% api_keys = current_user.all_api_keys %>
+          <span class="accordion-count"><%= api_keys.size %> keys</span>
+        </summary>
+        <div class="accordion-content">
+          <% if api_keys.empty? %>
+            <p class="no-items">No API keys generated yet.</p>
+            <p>Create API keys via SSH to access the Pasto API programmatically:</p>
+            <code class="command-example">ssh -p <%= ssh_port %> <%= ssh_host %> api-key create</code>
+            <p><small>After creating an API key, you can use it with HTTP Bearer authentication:</small></p>
+            <code class="command-example">curl -H "Authorization: Bearer pasto_ak_your_key" <%= env.request.headers["X-Forwarded-Proto"]? || "http" %>://<%= env.request.headers["Host"]? || "localhost:3000" %>/api/v1/me</code>
+          <% else %>
+            <div class="api-keys-list">
+              <% api_keys.each do |api_key| %>
+                <div class="api-key-item">
+                  <div class="api-key-info">
+                    <code class="api-key-id"><%= api_key.id %></code>
+                    <div class="api-key-meta">
+                      <span class="created-date">Created: <%= api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M") %></span>
+                      <span class="usage-count">Used: <%= api_key.key_data.usage_count %> times</span>
+                      <% if last_used = api_key.key_data.last_used_at %>
+                        <span class="last-used">Last used: <%= last_used.to_s("%Y-%m-%d %H:%M") %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                  <div class="api-key-actions">
+                    <button class="copy-btn" onclick="copyToClipboard('<%= api_key.id %>')" title="Copy API Key">
+                      <i data-lucide="copy"></i>
+                    </button>
+                  </div>
+                </div>
+              <% end %>
             </div>
-          </div>
-          <% end %>
-          <% if user_pastes.size > 20 %>
-          <p class="more-pastes">Showing 20 of <%= user_pastes.size %> pastes</p>
+            <div class="api-docs-link">
+              <a href="/api-docs" target="_blank" class="docs-btn">
+                <i data-lucide="book-open"></i>
+                View API Documentation
+              </a>
+            </div>
           <% end %>
         </div>
-      <% end %>
+      </details>
+
+      <!-- SSH Keys Accordion -->
+      <details class="accordion">
+        <summary class="accordion-summary">
+          <span class="accordion-title">🔑 SSH Keys</span>
+          <span class="accordion-count"><%= current_user.keys.size %> keys</span>
+        </summary>
+        <div class="accordion-content">
+          <% if current_user.keys.empty? %>
+            <p class="no-items">No SSH keys linked to your account.</p>
+          <% else %>
+            <div class="keys-list">
+              <% current_user.keys.each do |ssh_key| %>
+                <div class="key-item">
+                  <code class="fingerprint"><%= ssh_key.sepia_id.gsub("_", "/") %></code>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </details>
+
     </div>
   <% else %>
     <div class="not-logged-in">
@@ -278,12 +298,93 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--pico-del-color);
   }
 
-  .user-info, .not-logged-in, .ssh-keys-section, .api-keys-section, .pastes-section {
+  .user-info, .not-logged-in {
     background-color: var(--pico-background-color);
     border: 1px solid var(--pico-border-color);
     border-radius: var(--pico-border-radius);
     padding: 2rem;
     margin-bottom: 1.5rem;
+  }
+
+  .accordion-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .accordion {
+    background-color: var(--pico-background-color);
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+    overflow: hidden;
+  }
+
+  .accordion[open] {
+    border-color: var(--pico-primary-border);
+  }
+
+  .accordion-summary {
+    background-color: var(--pico-secondary-background);
+    border: none;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+    list-style: none;
+    user-select: none;
+  }
+
+  .accordion-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .accordion-summary::before {
+    content: '▶';
+    margin-right: 0.75rem;
+    transition: transform 0.2s;
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+  }
+
+  .accordion[open] > .accordion-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .accordion-summary:hover {
+    background-color: var(--pico-secondary-hover-background);
+  }
+
+  .accordion[open] > .accordion-summary {
+    background-color: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+  }
+
+  .accordion-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .accordion-count {
+    background-color: var(--pico-code-background-color);
+    color: var(--pico-muted-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .accordion[open] > .accordion-summary .accordion-count {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--pico-primary-inverse);
+  }
+
+  .accordion-content {
+    padding: 1.5rem;
+    border-top: 1px solid var(--pico-border-color);
   }
 
   .edit-name-form {
@@ -336,11 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-top: 0.25rem;
   }
 
-  .ssh-keys-section h3, .api-keys-section h3, .pastes-section h3 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-  }
-
+  
   .user-details {
     margin: 1.5rem 0;
   }
@@ -747,8 +844,12 @@ document.addEventListener('DOMContentLoaded', function() {
       padding: 1rem;
     }
 
-    .user-info, .not-logged-in, .ssh-keys-section, .api-keys-section, .pastes-section {
+    .user-info, .not-logged-in {
       padding: 1.5rem;
+    }
+
+    .accordion-content {
+      padding: 1rem;
     }
 
     .input-group {
