@@ -362,6 +362,21 @@ def add_rate_limit_headers(env, result : RateLimitResult)
   env.response.headers["X-RateLimit-Reset"] = result.reset_time.to_unix.to_s
 end
 
+# CORS middleware for API endpoints (must run first)
+before_all do |env|
+  # Only apply to API routes
+  if env.request.path.starts_with?("/api/")
+    # Handle preflight OPTIONS requests
+    continue = Pasto::Filters.handle_cors_preflight(env)
+    unless continue
+      next  # Skip further processing for OPTIONS requests
+    end
+
+    # Add CORS headers to all API responses
+    Pasto::Filters.add_cors_headers(env)
+  end
+end
+
 # Apply security headers and rate limiting to all requests
 before_all do |env|
   Pasto::Filters.add_security_headers(env)
