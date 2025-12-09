@@ -1915,6 +1915,141 @@ get "/api/v1/pastes/:id/content" do |env|
   end
 end
 
+# PATCH /api/v1/pastes/:id - Update a paste (owner only)
+patch "/api/v1/pastes/:id" do |env|
+  env.response.content_type = "application/json"
+
+  api_user = Pasto::Filters.get_api_user_from_context(env)
+  unless api_user
+    env.response.status_code = 401
+    next {
+      "error"   => "Unauthorized",
+      "message" => "User not found",
+    }.to_json
+  end
+
+  id = env.params.url["id"]
+
+  # Load paste
+  begin
+    paste = Pasto::Paste.from_file(id)
+  rescue
+    env.response.status_code = 404
+    next {
+      "error"   => "Not Found",
+      "message" => "Paste not found",
+    }.to_json
+  end
+
+  if paste.nil?
+    env.response.status_code = 404
+    next {
+      "error"   => "Not Found",
+      "message" => "Paste not found",
+    }.to_json
+  end
+
+  # Check if user is the owner (only owners can update)
+  if paste.user_id != api_user.sepia_id
+    env.response.status_code = 403
+    next {
+      "error"   => "Forbidden",
+      "message" => "You don't have permission to update this paste",
+    }.to_json
+  end
+
+  # Parse request body
+  request_body = env.request.body
+  if request_body.nil?
+    env.response.status_code = 400
+    next {
+      "error"   => "Bad Request",
+      "message" => "Request body is required",
+    }.to_json
+  end
+
+  begin
+    # Read and parse JSON body
+    body_content = request_body.gets_to_end
+    if body_content.empty?
+      env.response.status_code = 400
+      next {
+        "error"   => "Bad Request",
+        "message" => "Request body cannot be empty",
+      }.to_json
+    end
+
+    update_data = JSON.parse(body_content).as_h
+
+    # Validate that content field exists
+    unless update_data.has_key?("content")
+      env.response.status_code = 400
+      next {
+        "error"   => "Bad Request",
+        "message" => "Content field is required",
+      }.to_json
+    end
+
+    new_content = update_data["content"].as_s?
+    if new_content.nil?
+      env.response.status_code = 400
+      next {
+        "error"   => "Bad Request",
+        "message" => "Content must be a string",
+      }.to_json
+    end
+
+    if new_content.empty?
+      env.response.status_code = 400
+      next {
+        "error"   => "Bad Request",
+        "message" => "Content cannot be empty",
+      }.to_json
+    end
+
+    # Update paste content
+    paste.content = new_content
+
+    # Save the updated paste
+    if paste.save
+      # Return updated paste data
+      {
+        "id"                 => paste.sepia_id,
+        "title"              => paste.display_title,
+        "language"           => paste.language,
+        "created_at"         => paste.created_at.to_rfc3339,
+        "updated_at"         => paste.updated_at.to_rfc3339,
+        "private"            => paste.private?,
+        "encrypted"          => paste.is_encrypted?,
+        "burn_after_reading" => paste.burn_after_reading?,
+        "size"               => paste.content.bytesize,
+        "is_owner"           => true,
+        "url"                => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}",
+        "raw_url"            => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}/raw",
+      }.to_json
+    else
+      env.response.status_code = 500
+      next {
+        "error"   => "Internal Server Error",
+        "message" => "Failed to update paste",
+      }.to_json
+    end
+
+  rescue JSON::ParseException
+    env.response.status_code = 400
+    next {
+      "error"   => "Bad Request",
+      "message" => "Invalid JSON in request body",
+    }.to_json
+  rescue ex
+    env.response.status_code = 500
+    next {
+      "error"   => "Internal Server Error",
+      "message" => "An unexpected error occurred: #{ex.message}",
+    }.to_json
+  end
+end
+
 # DELETE /api/v1/pastes/:id - Delete a paste (owner only)
 delete "/api/v1/pastes/:id" do |env|
   env.response.content_type = "application/json"
