@@ -68,11 +68,6 @@ module Pasto
       return AccessResult.new(false, reason: "Paste not found", status_code: 404)
     end
 
-    # Check if paste has expired
-    if paste.expired?
-      return AccessResult.new(false, paste: paste, reason: "This paste has expired", status_code: 410)
-    end
-
     # Get current user for private/owner checks
     current_user = get_current_user(env)
     current_user_id = current_user.try(&.sepia_id)
@@ -1344,14 +1339,6 @@ get "/preview/:id" do |env|
     next send_file env, placeholder_path
   end
 
-  # Check if paste has expired
-  if paste.expired?
-    placeholder_path = generate_placeholder_file("Paste has expired")
-    env.response.status_code = 410
-    env.response.headers["Cache-Control"] = "public, max-age=300" # 5 minutes for errors
-    next send_file env, placeholder_path
-  end
-
   # Handle burn after reading functionality for previews
   # Note: We don't increment view count for previews to avoid accidental burning
   if paste.burn_after_reading? && paste.should_burn_after_reading?
@@ -1422,12 +1409,6 @@ get "/:id" do |env|
   rescue
     env.response.status_code = 404
     next "Paste not found"
-  end
-
-  # Check if paste has expired
-  if paste.expired?
-    env.response.status_code = 410
-    next "This paste has expired"
   end
 
   # Validate session to get current user (needed for private paste check)
@@ -1599,12 +1580,6 @@ get "/:id/raw" do |env|
   if paste.nil?
     env.response.status_code = 404
     next "Paste not found"
-  end
-
-  # Check if paste has expired or been burned
-  if paste.expired?
-    env.response.status_code = 410
-    next "Paste has expired"
   end
 
   # Note: For burn-after-reading pastes in raw endpoint, we'll increment after sending content

@@ -100,10 +100,26 @@ module Pasto
       # Try to load latest generation first, fall back to any generation
 
       latest_obj = Paste.latest(id)
-      latest_obj ? latest_obj : Sepia::Storage.load(Paste, id)
+      paste = latest_obj ? latest_obj : Sepia::Storage.load(Paste, id)
+
+      # Check if paste has expired - if so, delete it and return nil
+      if paste && paste.expired?
+        puts "⏰ Paste #{id} has expired - deleting permanently"
+        paste.delete_completely!
+        return nil
+      end
+
+      paste
     rescue Enumerable::EmptyError
       # If latest() fails with empty enumerable, try direct load
-      Sepia::Storage.load(Paste, id)
+      paste = Sepia::Storage.load(Paste, id)
+      # Check if paste has expired - if so, delete it and return nil
+      if paste && paste.expired?
+        puts "⏰ Paste #{id} has expired - deleting permanently"
+        paste.delete_completely!
+        return nil
+      end
+      paste
     rescue
       # Catch any other exceptions (e.g., "not found in storage")
       nil
