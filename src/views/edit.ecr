@@ -194,13 +194,7 @@
         </a>
         <input type="text" id="paste-title" value="${initialTitle}" placeholder="Title (optional)" class="controls-input">
         <select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language">
-          <!-- Preload Auto and paste's language for immediate responsiveness -->
           <option value="">Auto</option>
-          <% if lang = paste.language %>
-          <% if !lang.empty? %>
-          <option value="<%= lang.downcase %>" selected><%= lang %></option>
-          <% end %>
-          <% end %>
         </select>
           <button onclick="showSecuritySettingsDialog()" class="controls-button" id="security-settings-btn" title="Security Settings" aria-label="Security Settings" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);">
           <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
@@ -256,23 +250,13 @@
 
     // Update preview on content change using debounced function
     jar.onUpdate(() => {
-      if (typeof window.debouncedUpdatePreview === 'function') {
-        debounceTimer = window.debouncedUpdatePreview(() => {
-          window.updatePreview(window.jar,
-            () => document.getElementById('language').value,
-            () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
-          );
-        }, debounceTimer);
-      } else {
-        // Fallback if shared function not available
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          window.updatePreview(window.jar,
-            () => document.getElementById('language').value,
-            () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
-          );
-        }, 300);
-      }
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        window.updatePreview(window.jar,
+          () => document.getElementById('language')?.value || '',
+          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+        );
+      }, 300);
     });
 
     // Restore preview visibility preference
@@ -301,40 +285,45 @@
       .then(response => response.json())
       .then(languages => {
         const languageSelect = document.getElementById('language');
-        const currentValue = languageSelect.value;
-        languageSelect.innerHTML = '<option value="">Auto</option>';
+        if (!languageSelect) {
+          console.error('Language selector not found when loading languages');
+          return;
+        }
 
-        // Add paste's current language if it exists
-        <% if lang = paste.language %>
-        <% if !lang.empty? %>
-        const currentOption = document.createElement('option');
-        currentOption.value = '<%= lang.downcase %>';
-        currentOption.textContent = '<%= lang %>';
-        currentOption.selected = true;
-        languageSelect.appendChild(currentOption);
-        <% end %>
-        <% end %>
+        const currentValue = languageSelect.value;
+        const pasteLanguage = '<%= (paste.language || "").downcase %>';
+
+        languageSelect.innerHTML = '<option value="">Auto</option>';
 
         // Add all available languages
         languages.forEach(langObj => {
           // langObj is an object with {name: "...", value: "..."}
           if (langObj && langObj.name && langObj.value) {
-            // Skip if this is the current language (already added)
-            if (langObj.value.toLowerCase() !== '<%= (paste.language || "").downcase %>') {
-              const option = document.createElement('option');
-              option.value = langObj.value;
-              option.textContent = langObj.name;
-              languageSelect.appendChild(option);
+            const option = document.createElement('option');
+            option.value = langObj.value;
+            option.textContent = langObj.name;
+
+            // Select the current language if it matches
+            if (langObj.value.toLowerCase() === pasteLanguage) {
+              option.selected = true;
+              currentLanguage = pasteLanguage; // Update currentLanguage variable
             }
+
+            languageSelect.appendChild(option);
           }
         });
-      })
-      .catch(error => console.error('Error loading languages:', error));
 
-    // Initialize preview with a small delay to ensure proper initialization
-    setTimeout(() => {
-      updatePreview();
-    }, 100);
+        // Update currentLanguage to match the selected value
+        currentLanguage = languageSelect.value || '';
+
+        // Initialize preview after languages are loaded
+        updatePreview();
+      })
+      .catch(error => {
+        console.error('Error loading languages:', error);
+        // Still initialize preview even if language loading fails
+        updatePreview();
+      });
 
     // Initialize security settings button appearance
     updateSecuritySettingsButton();

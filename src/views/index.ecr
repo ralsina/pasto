@@ -759,23 +759,13 @@ let securitySettings = {
 
     // Update preview on content change using debounced function
     jar.onUpdate(() => {
-      if (typeof window.debouncedUpdatePreview === 'function') {
-        debounceTimer = window.debouncedUpdatePreview(() => {
-          window.updatePreview(window.jar,
-            () => document.getElementById('language').value,
-            () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
-          );
-        }, debounceTimer);
-      } else {
-        // Fallback if shared function not available
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          window.updatePreview(window.jar,
-            () => document.getElementById('language').value,
-            () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
-          );
-        }, 300);
-      }
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        window.updatePreview(window.jar,
+          () => document.getElementById('language')?.value || '',
+          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+        );
+      }, 300);
     });
 
     // Restore preview visibility preference

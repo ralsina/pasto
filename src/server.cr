@@ -880,13 +880,15 @@ post "/highlight" do |env|
   end
 
   begin
-    highlighted_content, _css = Pasto::Paste.highlight_content(content, language, theme)
-
     # Detect language if not provided
     detected_language = language
     if detected_language.nil? || detected_language.empty?
       detected_language = Pasto::Paste.get_best_supported_language(content)
     end
+
+    # Use detected language for highlighting
+    highlight_language = detected_language || language
+    highlighted_content, _css = Pasto::Paste.highlight_content(content, highlight_language, theme)
 
     # Return JSON with both highlighted content and detected language
     env.response.content_type = "application/json"
