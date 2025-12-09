@@ -1284,30 +1284,60 @@ Kemal.config.public_folder = public_dir
 
 # Serve cached files directly if they exist
 
-# Error handling
+# 404 page route
+get "/404" do |env|
+  current_user = Pasto.get_current_user(env)
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  page_title = "404 - Not Found"
+  is_home_page = false
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+
+  # Social media metadata
+  meta_title = "404 - Not Found - Pasto"
+  meta_description = "The requested paste could not be found on Pasto"
+  meta_url = ""
+  meta_image = ""
+
+  # Set 404 status code
+  env.response.status_code = 404
+
+  reason = "not_found"
+
+  content = render "src/views/404.ecr"
+  render "src/views/layout.ecr"
+end
+
+# Error handling for other 404 cases
 error 404 do |env|
-  env.response.content_type = "text/html"
-  <<-HTML
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Not Found - Pasto</title>
-    <link rel="icon" type="image/png" href="/assets/favicon.png">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-  </head>
-  <body>
-    <main class="container">
-      <hgroup>
-        <h2>404 - Not Found</h2>
-        <p>The requested paste could not be found.</p>
-      </hgroup>
-      <a href="/">Create a new paste</a>
-    </main>
-  </body>
-  </html>
-  HTML
+  current_user = Pasto.get_current_user(env)
+  saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
+  saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  page_title = "404 - Not Found"
+  is_home_page = false
+  pico_theme = saved_pico_theme
+  pico_color = saved_pico_color
+  syntax_theme = saved_syntax_theme
+  resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+
+  # Social media metadata
+  meta_title = "404 - Not Found - Pasto"
+  meta_description = "The requested paste could not be found on Pasto"
+  meta_url = ""
+  meta_image = ""
+
+  # Set 404 status code
+  env.response.status_code = 404
+
+  reason = "not_found"
+
+  content = render "src/views/404.ecr"
+  render "src/views/layout.ecr"
 end
 
 # Preview image route for social media cards (must come before catch-all routes)
@@ -1610,31 +1640,6 @@ get "/:id/raw" do |env|
             end
 
   content
-end
-
-# Error handling
-error 404 do |env|
-  env.response.content_type = "text/html"
-  <<-HTML
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Not Found - Pasto</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-  </head>
-  <body>
-    <main class="container">
-      <hgroup>
-        <h2>404 - Not Found</h2>
-        <p>The requested paste could not be found.</p>
-      </hgroup>
-      <a href="/">Create a new paste</a>
-    </main>
-  </body>
-  </html>
-  HTML
 end
 
 # Initialize cache directory in the main app
