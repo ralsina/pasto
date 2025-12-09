@@ -163,6 +163,13 @@ module Pasto
     render "src/views/layout.ecr"
   end
 
+# Health check endpoint - returns service status
+get "/health" do |env|
+  env.response.content_type = "text/plain"
+  env.response.status_code = 200
+  "OK"
+end
+
   # Favicon redirect for browsers that request /favicon without extension
   get "/favicon" do |env|
     env.response.status_code = 301
