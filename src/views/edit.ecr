@@ -57,7 +57,7 @@
     const titleSelect = document.getElementById('paste-title');
 
     if (!languageSelect || !titleSelect) {
-      alert('Language or title selector not available');
+      showError('Language or title selector not available');
       return;
     }
 
@@ -65,7 +65,7 @@
     const title = titleSelect.value;
 
     if (!content.trim()) {
-      alert('Please enter some content');
+      showError('Please enter some content');
       return;
     }
 
@@ -110,7 +110,7 @@
     })
     .catch(error => {
       console.error('Error updating paste:', error);
-      alert('Error updating paste: ' + error.message);
+      showError('Error updating paste: ' + error.message);
     });
   }
 

@@ -163,6 +163,12 @@ module Pasto
       lang = language_override || @language || "text"
 
       begin
+        # Handle "Auto" language by using Hansa to detect
+        if lang == "Auto" || lang == "auto"
+          detected = self.class.get_best_supported_language(@content)
+          lang = detected if detected
+        end
+
         puts "DEBUG: Highlighting with language: #{lang}, theme: #{@theme}"
         formatter = Tartrazine::Html.new(theme: Tartrazine.theme(@theme))
         lexer = Tartrazine.lexer(name: lang)
@@ -174,6 +180,31 @@ module Pasto
         puts "DEBUG: Highlighting failed for language '#{lang}' with theme '#{@theme}': #{ex.message}"
         # Fallback: escape HTML and wrap in pre
         {HTML.escape(@content), ""}
+      end
+    end
+
+    # Class method for highlighting without creating a paste object
+    def self.highlight_content(content : String, language : String? = nil, theme : String = "default-dark") : {String, String}
+      lang = language || "text"
+
+      begin
+        # Handle "Auto" language by using Hansa to detect
+        if lang == "Auto" || lang == "auto"
+          detected = get_best_supported_language(content)
+          lang = detected if detected
+        end
+
+        puts "DEBUG: Direct highlighting with language: #{lang}, theme: #{theme}"
+        formatter = Tartrazine::Html.new(theme: Tartrazine.theme(theme))
+        lexer = Tartrazine.lexer(name: lang)
+        result = formatter.format(content, lexer)
+        css = formatter.style_defs
+        puts "DEBUG: Direct highlighting successful"
+        {result, css}
+      rescue ex
+        puts "DEBUG: Direct highlighting failed for language '#{lang}' with theme '#{theme}': #{ex.message}"
+        # Fallback: escape HTML and wrap in pre
+        {HTML.escape(content), ""}
       end
     end
 
@@ -932,17 +963,31 @@ module Pasto
       Time.utc > expires_at
     end
 
-    # Check if paste should be burned after reading (increment view count and check)
+    # Check if paste should be burned after reading
     def should_burn_after_reading? : Bool
-      burn_after_reading? && view_count >= 2
+      burn_after_reading?
     end
 
-    # Increment view count and return if it was burned
-    def increment_view_count! : Bool
-      @view_count += 1
-      should_burn = should_burn_after_reading?
-      save if should_burn # Save the incremented count if it will be burned
-      should_burn
+    # Delete paste completely (for burn-after-reading)
+    def burn_now! : Nil
+      puts "🔥 Burning paste #{@sepia_id} (burn-after-reading) - deleting permanently"
+      delete_completely!
+    end
+
+    # Completely delete this paste and all its versions
+    def delete_completely! : Nil
+      # Invalidate cache for this paste
+      Pasto::Cache.invalidate(@sepia_id)
+
+      # Delete all versions of this paste
+      versions = self.class.versions(@sepia_id)
+      versions.each do |version|
+        Pasto::Cache.invalidate(version.sepia_id)
+        Sepia::Storage.delete(version)
+      end
+
+      # Delete this paste itself
+      Sepia::Storage.delete(self)
     end
 
     private def generate_id : String

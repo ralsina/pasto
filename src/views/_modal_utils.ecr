@@ -1,0 +1,152 @@
+<script>
+// Shared modal utilities for consistent look and feel across the application
+
+// Generic modal function that can be used for different types of dialogs
+function showGenericModal(options = {}) {
+  const modal = document.createElement('dialog');
+  modal.style.cssText = `
+    padding: 2rem;
+    border: 2px solid var(--pico-primary);
+    border-radius: 0.5rem;
+    max-width: 500px;
+    width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  `;
+
+  const defaultOptions = {
+    title: 'Dialog',
+    message: '',
+    icon: 'info',
+    primaryButtonText: 'OK',
+    secondaryButtonText: 'Cancel',
+    showSecondaryButton: false,
+    primaryButtonStyle: 'var(--pico-primary-background)',
+    primaryButtonTextColor: 'var(--pico-primary-inverse)',
+    onPrimaryAction: null,
+    onSecondaryAction: null,
+    closeOnBackdrop: true,
+    customContent: null
+  };
+
+  const opts = { ...defaultOptions, ...options };
+
+  modal.innerHTML = `
+    <h3 style="margin-top: 0; margin-bottom: 1.5rem;">
+      <i data-lucide="${opts.icon}" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+      ${opts.title}
+    </h3>
+
+    ${opts.message ? `<div style="margin-bottom: 1rem;">${opts.message}</div>` : ''}
+
+    ${opts.customContent ? `<div style="margin-bottom: 1rem;">${opts.customContent}</div>` : ''}
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
+      ${opts.showSecondaryButton ? `
+      <button id="modalSecondaryBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+        ${opts.secondaryButtonText}
+      </button>
+      ` : ''}
+      <button id="modalPrimaryBtn" style="background: ${opts.primaryButtonStyle}; color: ${opts.primaryButtonTextColor}; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+        ${opts.primaryButtonText}
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Add event listeners
+  const primaryBtn = modal.querySelector('#modalPrimaryBtn');
+  const secondaryBtn = modal.querySelector('#modalSecondaryBtn');
+
+  primaryBtn.onclick = () => {
+    modal.close();
+    document.body.removeChild(modal);
+    if (opts.onPrimaryAction) opts.onPrimaryAction();
+  };
+
+  if (secondaryBtn) {
+    secondaryBtn.onclick = () => {
+      modal.close();
+      document.body.removeChild(modal);
+      if (opts.onSecondaryAction) opts.onSecondaryAction();
+    };
+  }
+
+  // Close on backdrop click
+  if (opts.closeOnBackdrop) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.close();
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  // Initialize Lucide icons
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+
+  modal.showModal();
+  return modal;
+}
+
+// Confirm dialog replacement
+function showConfirmDialog(message, onConfirm, options = {}) {
+  return showGenericModal({
+    title: 'Confirm Action',
+    message: message,
+    icon: 'alert-triangle',
+    primaryButtonText: 'Confirm',
+    secondaryButtonText: 'Cancel',
+    showSecondaryButton: true,
+    primaryButtonStyle: 'var(--pico-del-background)',
+    primaryButtonTextColor: 'var(--pico-del-inverse)',
+    onPrimaryAction: onConfirm,
+    ...options
+  });
+}
+
+// Alert dialog replacement
+function showAlert(message, options = {}) {
+  return showGenericModal({
+    title: 'Information',
+    message: message,
+    icon: 'info',
+    showSecondaryButton: false,
+    ...options
+  });
+}
+
+// Error dialog replacement
+function showError(message, options = {}) {
+  return showGenericModal({
+    title: 'Error',
+    message: message,
+    icon: 'alert-circle',
+    primaryButtonText: 'OK',
+    primaryButtonStyle: 'var(--pico-del-background)',
+    primaryButtonTextColor: 'var(--pico-del-inverse)',
+    showSecondaryButton: false,
+    ...options
+  });
+}
+
+// Success dialog replacement
+function showSuccess(message, options = {}) {
+  return showGenericModal({
+    title: 'Success',
+    message: message,
+    icon: 'check-circle',
+    primaryButtonText: 'OK',
+    primaryButtonStyle: 'var(--pico-form-element-invalid-border-color)',
+    primaryButtonTextColor: 'var(--pico-primary-inverse)',
+    showSecondaryButton: false,
+    ...options
+  });
+}
+</script>

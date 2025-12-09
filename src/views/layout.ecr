@@ -515,6 +515,16 @@
         transform: translateX(-1px);
       }
     }
+
+    /* Spinner animation for loading states */
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 <body>
@@ -1011,5 +1021,6 @@
         .catch(error => console.error('Error loading themes:', error));
     });
   </script>
+<%= render "src/views/_modal_utils.ecr" %>
 </body>
 </html>

@@ -489,26 +489,41 @@
     // Build QR API URL - just the paste URL, no keys
     const qrApiUrl = `/api/qr/${pasteId}`;
 
-    // Create modal dialog
+    // Create modal dialog with consistent styling
     const modal = document.createElement('dialog');
     modal.style.cssText = `
       padding: 2rem;
       border: 2px solid var(--pico-primary);
       border-radius: 0.5rem;
-      max-width: 90vw;
+      max-width: 500px;
+      width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      gap: 1.5rem;
     `;
 
     modal.innerHTML = `
-      <h3 style="margin-top: 0; margin-bottom: 1.5rem;">QR Code for Paste</h3>
-      <div id="qr-container" style="margin: 0 0 1.5rem 0; display: flex; justify-content: center;">
-        <div style="padding: 2rem; background: #f0f0f0; border-radius: 0.5rem;">
-          Loading QR code...
+      <h3 style="margin-top: 0; margin-bottom: 1.5rem;">
+        <i data-lucide="qr-code" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+        QR Code for Paste
+      </h3>
+
+      <div id="qr-container" style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
+        <div style="padding: 2rem; background: var(--pico-secondary-background); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+          <div style="text-align: center;">
+            <i data-lucide="loader" style="width: 2rem; height: 2rem; animation: spin 1s linear infinite;"></i>
+            <div style="margin-top: 0.5rem; opacity: 0.7;">Loading QR code...</div>
+          </div>
         </div>
       </div>
-      <button id="qr-close-btn" style="margin-right: 0.5rem;">Close</button>
+
+      <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
+        <button id="qr-close-btn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+          Close
+        </button>
+      </div>
     `;
 
     document.body.appendChild(modal);
@@ -519,12 +534,17 @@
       document.body.removeChild(modal);
     };
 
+    // Initialize Lucide icons before showing modal
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
     modal.showModal();
 
     // Display QR code directly using img tag
     const qrContainer = document.getElementById('qr-container');
     qrContainer.innerHTML = `
-      <img src="${qrApiUrl}" alt="QR Code" style="max-width: 300px; width: 100%; height: auto; border-radius: 0.5rem;" onerror="this.parentElement.innerHTML='<div style=\\'color: #d32f2f; text-align: center;\\'>Failed to load QR code</div>'" />
+      <img src="${qrApiUrl}" alt="QR Code" style="max-width: 300px; width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid var(--pico-border-color);" onerror="this.parentElement.innerHTML='<div style=\\'color: var(--pico-del-color); text-align: center; padding: 2rem;\\'><i data-lucide=\\'alert-circle\\' style=\\'width: 2rem; height: 2rem;\\'></i><div style=\\'margin-top: 0.5rem;\\'>Failed to load QR code</div></div>'" />
     `;
   }
 
@@ -552,7 +572,7 @@
   }
 
   function deletePaste() {
-    if (confirm('Are you sure you want to delete this paste? This action cannot be undone.')) {
+    showConfirmDialog('Are you sure you want to delete this paste? This action cannot be undone.', () => {
       fetch('/<%= paste.sepia_id %>/delete', {
         method: 'POST',
         headers: {
@@ -565,14 +585,14 @@
           window.location.href = '/';
         } else {
           // Handle error
-          alert('Failed to delete paste. Please try again.');
+          showError('Failed to delete paste. Please try again.');
         }
       })
       .catch(error => {
         console.error('Error deleting paste:', error);
-        alert('Failed to delete paste. Please try again.');
+        showError('Failed to delete paste. Please try again.');
       });
-    }
+    });
   }
 
   function changeLanguage() {
@@ -710,7 +730,7 @@
     const key = keyInput ? keyInput.value.trim() : '';
 
     if (!key) {
-      alert('Please enter an encryption key');
+      showError('Please enter an encryption key');
       return;
     }
 
@@ -741,7 +761,7 @@
       } else {
         // Validate key format for key-based encryption
         if (!PastoCrypto.validateKey(key)) {
-          alert('Invalid encryption key format. The key should be a valid base64 string.');
+          showError('Invalid encryption key format. The key should be a valid base64 string.');
           if (decryptButton) {
             decryptButton.textContent = 'Decrypt';
             decryptButton.disabled = false;
@@ -813,7 +833,7 @@
       }
 
       // Show error message
-      alert('Failed to decrypt content: ' + error.message);
+      showError('Failed to decrypt content: ' + error.message);
     }
   }
 

@@ -87,21 +87,8 @@ module Pasto
       return AccessResult.new(false, paste: paste, reason: "This paste is private and can only be accessed by the owner", status_code: 403)
     end
 
-    # Handle burn-after-reading functionality
-    if paste.burn_after_reading?
-      # For preview/QR endpoints, we check if it should be burned but don't increment
-      if allow_raw_encrypted
-        if paste.should_burn_after_reading?
-          return AccessResult.new(false, paste: paste, reason: "This paste has been viewed and is no longer available", status_code: 410)
-        end
-      else
-        # For regular views, increment view count and check if it should be burned
-        should_burn = paste.increment_view_count!
-        if should_burn
-          return AccessResult.new(false, paste: paste, reason: "This paste has been viewed and is no longer available", status_code: 410)
-        end
-      end
-    end
+    # No special handling needed for burn-after-reading in middleware
+    # The route handlers will delete the paste after serving content
 
     # For encrypted pastes in raw endpoints, allow access to encrypted content
     if allow_raw_encrypted && paste.is_encrypted? && paste.responds_to?(:encrypted_content) && paste.encrypted_content
@@ -397,6 +384,24 @@ before_all do |env|
       env.response.print "Too many requests. Please slow down. Retry after #{retry_after} seconds."
       env.response.close
       next
+    end
+  end
+end
+
+# Handle burn-after-reading pastes after response is sent
+after_all do |env|
+  # Check if paste needs to be burned after reading
+  if burn_id = env.response.headers["X-Burn-After-Reading"]?
+    # Remove the header so it's not sent to client
+    env.response.headers.delete("X-Burn-After-Reading")
+
+    # Burn the paste (after_all runs after response is sent, so no need for async)
+    begin
+      if paste = Pasto::Paste.from_file(burn_id)
+        paste.burn_now!
+      end
+    rescue ex
+      puts "Error burning paste #{burn_id}: #{ex.message}"
     end
   end
 end
@@ -756,14 +761,19 @@ post "/highlight" do |env|
   end
 
   begin
-    paste = Pasto::Paste.new(content, language, theme)
-    highlighted_content, _css = paste.highlight
+    highlighted_content, _css = Pasto::Paste.highlight_content(content, language, theme)
+
+    # Detect language if not provided
+    detected_language = language
+    if detected_language.nil? || detected_language.empty?
+      detected_language = Pasto::Paste.get_best_supported_language(content)
+    end
 
     # Return JSON with both highlighted content and detected language
     env.response.content_type = "application/json"
     {
       "html"              => highlighted_content,
-      "detected_language" => paste.language,
+      "detected_language" => detected_language,
       "original_language" => language,
     }.to_json
   rescue ex
@@ -917,6 +927,12 @@ get "/:id/edit" do |env|
     next "Paste not found"
   end
 
+  # Prevent editing burn-after-reading pastes
+  if paste.burn_after_reading?
+    env.response.status_code = 403
+    next "Burn-after-reading pastes cannot be edited"
+  end
+
   # Validate session to get current user
   current_user = Pasto.get_current_user(env)
 
@@ -959,6 +975,12 @@ post "/:id/edit" do |env|
   if paste.nil?
     env.response.status_code = 404
     next "Paste not found"
+  end
+
+  # Prevent editing burn-after-reading pastes
+  if paste.burn_after_reading?
+    env.response.status_code = 403
+    next "Burn-after-reading pastes cannot be edited"
   end
 
   # Validate session to get current user
@@ -1333,8 +1355,8 @@ get "/preview/:id" do |env|
   # Handle burn after reading functionality for previews
   # Note: We don't increment view count for previews to avoid accidental burning
   if paste.burn_after_reading? && paste.should_burn_after_reading?
-    placeholder_path = generate_placeholder_file("Paste has been viewed and is no longer available")
-    env.response.status_code = 410
+    placeholder_path = generate_placeholder_file("Paste not found")
+    env.response.status_code = 404
     env.response.headers["Cache-Control"] = "public, max-age=300" # 5 minutes for errors
     next send_file env, placeholder_path
   end
@@ -1417,15 +1439,8 @@ get "/:id" do |env|
     next "This paste is private and can only be accessed by the owner"
   end
 
-  # Handle burn after reading functionality
-  if paste.burn_after_reading?
-    # Increment view count first, then check if it should be burned
-    should_burn = paste.increment_view_count!
-    if should_burn
-      env.response.status_code = 410
-      next "This paste has been viewed and is no longer available"
-    end
-  end
+  # Note: For burn-after-reading pastes, we'll increment the view count AFTER showing the content
+  # This ensures the user can see the paste once before it gets deleted
 
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
@@ -1467,6 +1482,11 @@ get "/:id" do |env|
   host = env.request.headers["Host"]? || "localhost:3000"
   meta_url = "http://#{host}#{env.request.path}"
   meta_image = "http://#{host}/preview/#{paste.sepia_id}.png"
+
+  # Mark paste for burning after response if it's burn-after-reading
+  if paste.burn_after_reading?
+    env.response.headers["X-Burn-After-Reading"] = paste.sepia_id
+  end
 
   content = render "src/views/show.ecr"
   render "src/views/layout.ecr"
@@ -1587,18 +1607,7 @@ get "/:id/raw" do |env|
     next "Paste has expired"
   end
 
-  if paste.burn_after_reading?
-    puts "DEBUG MAIN VIEW: Paste has burn_after_reading=true, view_count=#{paste.view_count}"
-    puts "DEBUG MAIN VIEW: should_burn_after_reading? #{paste.should_burn_after_reading?}"
-
-    if paste.should_burn_after_reading?
-      puts "DEBUG MAIN VIEW: Paste should be burned - returning 410"
-      env.response.status_code = 410
-      next "This paste has been viewed and is no longer available"
-    else
-      puts "DEBUG MAIN VIEW: Paste should NOT be burned yet - view_count=#{paste.view_count}"
-    end
-  end
+  # Note: For burn-after-reading pastes in raw endpoint, we'll increment after sending content
 
   # Validate session to get current user (needed for private paste check)
   current_user = Pasto.get_current_user(env)
@@ -1611,6 +1620,11 @@ get "/:id/raw" do |env|
 
   # Set content type for raw text
   env.response.content_type = "text/plain; charset=utf-8"
+
+  # Mark paste for burning after response if it's burn-after-reading
+  if paste.burn_after_reading?
+    env.response.headers["X-Burn-After-Reading"] = paste.sepia_id
+  end
 
   # For encrypted pastes, return the encrypted content
   # For regular pastes, return the raw content

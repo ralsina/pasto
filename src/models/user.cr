@@ -46,7 +46,8 @@ module Pasto
     def all_pastes : Array(Paste)
       @keys.flat_map(&.pastes).compact_map do |paste|
         begin
-          Paste.from_file(paste.sepia_id)
+          loaded_paste = Paste.from_file(paste.sepia_id)
+          loaded_paste
         rescue
           nil # Skip pastes that can't be loaded
         end
