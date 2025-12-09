@@ -532,6 +532,17 @@
       }, 300);
     });
 
+    // For edit mode, ensure preview is shown immediately after jar is initialized
+    if (mode === "edit" && initialContent && initialContent.trim()) {
+      // Small delay to ensure everything is properly initialized
+      setTimeout(() => {
+        window.updatePreview(window.jar,
+          () => document.getElementById('language')?.value || '',
+          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+        );
+      }, 100);
+    }
+
     // Restore preview visibility preference
     const previewHidden = localStorage.getItem('previewHidden') === 'true';
     const container = document.getElementById('editor-preview-container');
@@ -588,36 +599,8 @@
         // Update currentLanguage to match the selected value
         currentLanguage = languageSelect.value || '';
 
-        // Initialize preview after languages are loaded
-        // For edit mode, use initial content if jar isn't ready yet
-        if (mode === "edit" && initialContent && (!jar || !jar.toString())) {
-          // Use initial content for first preview update
-          const content = initialContent;
-          const languageSelect = document.getElementById('language');
-          const syntaxThemeSelect = document.querySelector('#syntax-theme') || document.getElementById('syntax-theme');
-
-          if (content.trim()) {
-            const formData = new FormData();
-            formData.append('content', content);
-            formData.append('language', languageSelect.value);
-            formData.append('theme', syntaxThemeSelect?.value || 'monokai');
-
-            fetch('/highlight', {
-              method: 'POST',
-              body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-              const previewElement = document.getElementById('preview');
-              if (previewElement) {
-                previewElement.innerHTML = data.html;
-              }
-            })
-            .catch(error => {
-              console.error('Error loading initial preview:', error);
-            });
-          }
-        } else {
+        // Initialize preview after languages are loaded (only needed for create mode or fallback)
+        if (mode === "create") {
           updatePreview();
         }
       })
