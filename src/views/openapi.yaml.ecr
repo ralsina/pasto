@@ -143,6 +143,51 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+    patch:
+      tags:
+        - Pastes
+      summary: Update a paste
+      description: Update the content of one of your existing pastes
+      operationId: updatePaste
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Paste ID
+          schema:
+            type: string
+            example: "paste_abcdef123456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  description: New content for the paste
+                  example: "console.log('Updated content goes here');"
+            example:
+              content: "console.log('Updated content goes here');"
+      responses:
+        '200':
+          description: Paste updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paste'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
     delete:
       tags:
         - Pastes
