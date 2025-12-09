@@ -61,7 +61,7 @@ module Pasto
     # Paths that should skip paste access control
     SKIP_ACCESS_CONTROL = [
       "/help", "/profile", "/", "/api-docs", "/openapi.yaml",
-      "/favicon.ico", "/syntax-theme.css"
+      "/favicon", "/favicon.ico", "/favicon.png", "/syntax-theme.css"
     ]
 
     # Path prefixes that should skip paste access control

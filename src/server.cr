@@ -631,6 +631,15 @@ get "/openapi.yaml" do |env|
   render "src/views/openapi.yaml.ecr"
 end
 
+# Favicon routes - redirect to actual favicon file
+get "/favicon.ico" do |env|
+  env.redirect "/assets/favicon.png"
+end
+
+get "/favicon.png" do |env|
+  env.redirect "/assets/favicon.png"
+end
+
 # Main page - paste creation form
 get "/" do |env|
   # Validate session to get current user
@@ -871,8 +880,7 @@ get "/:id/edit" do |env|
 
   paste = Pasto::Paste.from_file(id)
   if paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   # Prevent editing burn-after-reading pastes
@@ -921,8 +929,7 @@ post "/:id/edit" do |env|
 
   paste = Pasto::Paste.from_file(id)
   if paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   # Prevent editing burn-after-reading pastes
@@ -1019,8 +1026,7 @@ post "/:id/fork" do |env|
 
   original_paste = Pasto::Paste.from_file(id)
   if original_paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   # Create new paste with same content
@@ -1128,8 +1134,7 @@ get "/:id/history" do |env|
   versions = Pasto::Paste.versions(base_id)
 
   if versions.empty?
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   # Get current user for ownership check
@@ -1390,8 +1395,7 @@ get "/:id" do |env|
       next "Paste not found"
     end
   rescue
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   # Validate session to get current user (needed for private paste check)
@@ -1561,8 +1565,7 @@ get "/:id/raw" do |env|
   # Load the paste
   paste = Pasto::Paste.from_file(id)
   if paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   # Note: For burn-after-reading pastes in raw endpoint, we'll increment after sending content
@@ -1886,13 +1889,11 @@ get "/api/v1/pastes/:id/content" do |env|
   begin
     paste = Pasto::Paste.from_file(id)
   rescue
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   if paste.nil?
-    env.response.status_code = 404
-    next "Paste not found"
+    halt env, 404
   end
 
   # Check access permissions
