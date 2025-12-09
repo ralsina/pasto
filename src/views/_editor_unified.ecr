@@ -66,6 +66,46 @@
     .anon-warning a:hover {
       text-decoration: none;
     }
+
+    /* Fix preview content margin and font size */
+    .preview-content {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    /* Match CodeJar editor font size - override syntax highlighting CSS */
+    .editor-pane .codejar-editor,
+    .editor-pane .codejar-editor pre,
+    .editor-pane .codejar-editor code,
+    .editor-pane .codejar-editor .token,
+    .editor-pane .codejar-editor .token.keyword,
+    .editor-pane .codejar-editor .token.string,
+    .editor-pane .codejar-editor .token.comment,
+    .editor-pane .codejar-editor .token.function,
+    .editor-pane .codejar-editor .token.number,
+    .editor-pane .codejar-editor .token.operator,
+    .editor-pane .codejar-editor .token.class-name,
+    .editor-pane .codejar-editor .token.variable,
+    .editor-pane .codejar-editor [class^="token"] {
+      font-size: 16px !important;
+      line-height: 1.5 !important;
+    }
+
+    .preview-content pre,
+    .preview-content code,
+    .preview-content .token,
+    .preview-content .token.keyword,
+    .preview-content .token.string,
+    .preview-content .token.comment,
+    .preview-content .token.function,
+    .preview-content .token.number,
+    .preview-content .token.operator,
+    .preview-content .token.class-name,
+    .preview-content .token.variable,
+    .preview-content [class^="token"] {
+      font-size: 16px !important;
+      line-height: 1.5 !important;
+    }
     </style>
 <% end %>
 
