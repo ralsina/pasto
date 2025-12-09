@@ -408,12 +408,14 @@
         <pre><code>def hello_world():
     """A simple Python function"""
     print("Hello, Pasto! 🎉")
-    return "Live syntax highlighting!"
+    return "Modern pastebin with security!"
 
-# Auto-detected language
-# 321+ syntax themes
-# SSH access supported
-# Real-time preview</code></pre>
+# ✅ End-to-end encryption
+# 🔑 API key authentication
+# 🔒 Private & burn-after-reading
+# 🔑 SSH key management
+# 🌐 321+ syntax themes
+# 📱 Responsive design</code></pre>
       </div>
     </div>
   </section>
@@ -464,6 +466,46 @@
 
       <div class="feature-card">
         <div class="feature-icon">
+          <i data-lucide="shield" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Encrypted Pastes</h3>
+        <p>End-to-end encrypted pastes with client-side encryption and password-based authentication</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="key" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>API Keys</h3>
+        <p>Generate API keys for programmatic paste creation and management</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="lock" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Private Pastes</h3>
+        <p>Create private pastes that only you can access and manage through your profile</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="flame" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Burn After Reading</h3>
+        <p>Self-destructing pastes that are automatically deleted after first viewing</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="clock" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Expiration Control</h3>
+        <p>Set custom expiration times for pastes with flexible scheduling options</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
           <i data-lucide="smartphone" style="width: 32px; height: 32px;"></i>
         </div>
         <h3>Responsive Design</h3>
@@ -474,14 +516,19 @@
 
   <!-- SSH Section -->
   <section id="ssh" class="ssh-section">
-    <h2>SSH Usage</h2>
-    <p>Create pastes directly from your terminal - perfect for quick sharing from the command line</p>
+    <h2>SSH Usage & Key Management</h2>
+    <p>Create pastes directly from your terminal and manage your SSH keys securely</p>
     <div class="code-example">
-      <pre><code># Simple usage
+      <pre><code># Create pastes from terminal
 cat myfile.py | ssh -p 2222 pasto.example.com
-
-# Or with echo
 echo "Hello, World!" | ssh -p 2222 pasto.example.com
+
+# SSH key management (challenge-response)
+ssh -i new_key -p 2222 pasto.example.com add-key
+ssh -i current_key -p 2222 pasto.example.com ssh-key response &lt;code&gt;
+
+# List your SSH keys
+ssh -p 2222 pasto.example.com ssh-key list
 
 # Login to link with web account
 ssh -p 2222 pasto.example.com login</code></pre>
