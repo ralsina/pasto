@@ -46,13 +46,9 @@ module Pasto
 
     # Add an API key to this user
     def add_api_key : ApiKey
-      key_data = ApiKeyData.new("pasto_ak_#{Random::Secure.hex(16)}")
-      api_key = ApiKey.new(@sepia_id, key_data)
-      api_key.save
-
+      api_key = ApiKey.create_for_user(@sepia_id)
       @api_keys << api_key.sepia_id
       save
-
       api_key
     end
 

@@ -1,14 +1,14 @@
 require "sepia"
+require "random/secure"
 
 struct ApiKeyData
   include JSON::Serializable
 
-  property id : String            # "pasto_ak_" + random
   property created_at : Time
   property usage_count : Int32 = 0
   property last_used_at : Time?
 
-  def initialize(@id : String)
+  def initialize
     @created_at = Time.utc
   end
 end
@@ -20,12 +20,29 @@ module Pasto
     property user_id : String
     property key_data : ApiKeyData
 
+    # Override sepia_id to return the API key itself
+    def sepia_id : String
+      # The Sepia ID is the API key itself (generated on creation)
+      @sepia_id ||= self.class.generate_api_key
+    end
+
     def initialize(@user_id : String, @key_data : ApiKeyData)
+      # Generate the API key as the Sepia ID
+      @sepia_id = self.class.generate_api_key
+    end
+
+    # Initialize from existing data with known key
+    def initialize(@user_id : String, @key_data : ApiKeyData, @sepia_id : String)
     end
 
     # Helper methods
     def id : String
-      @key_data.id
+      sepia_id
+    end
+
+    # Generate a new API key
+    def self.generate_api_key : String
+      "pasto_ak_#{Random::Secure.hex(16)}"
     end
 
     def increment_usage
@@ -39,6 +56,7 @@ module Pasto
       {
         user_id: @user_id,
         key_data: @key_data,
+        sepia_id: @sepia_id,  # Store the key in the data too
       }.to_json
     end
 
@@ -46,7 +64,8 @@ module Pasto
       data = Hash(String, JSON::Any).from_json(sepia_string)
       new(
         data["user_id"].as_s,
-        ApiKeyData.from_json(data["key_data"].to_json)
+        ApiKeyData.from_json(data["key_data"].to_json),
+        data["sepia_id"].as_s
       )
     end
 
@@ -57,28 +76,27 @@ module Pasto
       false
     end
 
+    # Find by Sepia ID (standard Sepia pattern)
     def self.find(id : String) : ApiKey?
       Sepia::Storage.load(ApiKey, id)
     rescue
       nil
     end
 
-    # Find API key by the actual key string (pasto_ak_*)
+    # Direct lookup by API key - now O(1) instead of O(n)!
     def self.find_by_key(key_string : String) : ApiKey?
-      # For now, we need to search through all API keys since we don't have an index
-      # This is inefficient but works for the current scale
-      api_key_dir = "data/Pasto::ApiKey"
-      if Dir.exists?(api_key_dir)
-        Dir.children(api_key_dir).each do |file_id|
-          api_key = find(file_id)
-          if api_key && api_key.key_data.id == key_string
-            return api_key
-          end
-        end
-      end
-      nil
+      # Direct lookup using the API key as the Sepia ID
+      find(key_string)
     rescue
       nil
+    end
+
+    # Create a new API key for a user
+    def self.create_for_user(user_id : String) : ApiKey
+      key_data = ApiKeyData.new
+      api_key = new(user_id, key_data)
+      api_key.save
+      api_key
     end
   end
 end
