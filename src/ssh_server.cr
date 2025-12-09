@@ -503,7 +503,7 @@ DOC
   # Handle api-key command - manage API keys for the current user
   private def self.handle_api_key(ctx, fingerprint : String, args : String) : Int32
     # Parse subcommand (create, list, etc.)
-    parts = args.split(/\s+/, 2)
+    parts = args.split(/\s+/)
     subcommand = parts[0]? || ""
 
     case subcommand
@@ -511,10 +511,14 @@ DOC
       handle_api_key_create(ctx, fingerprint)
     when "list"
       handle_api_key_list(ctx, fingerprint)
+    when "revoke"
+      key_to_revoke = parts[1]? || ""
+      handle_api_key_revoke(ctx, fingerprint, key_to_revoke)
     else
       ctx.write_stderr("API key usage:\n")
       ctx.write_stderr("  ssh host api-key create    Create a new API key\n")
       ctx.write_stderr("  ssh host api-key list      List your API keys\n")
+      ctx.write_stderr("  ssh host api-key revoke KEY Revoke an API key\n")
       1
     end
   end
@@ -598,6 +602,73 @@ DOC
       ctx.write("  Usage count: #{usage_count}\n\n")
     end
 
+    0
+  end
+
+  # Handle api-key revoke command
+  private def self.handle_api_key_revoke(ctx, fingerprint : String, key_to_revoke : String) : Int32
+    # Find SSH key and associated user
+    ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
+
+    unless ssh_key.owner_id
+      ctx.write("No user account found. Create one with: ssh host api-key create\n")
+      return 0
+    end
+
+    if owner_id = ssh_key.owner_id
+      user = Pasto::User.find(owner_id)
+    else
+      user = nil
+    end
+    unless user
+      ctx.write("User account not found. Create one with: ssh host api-key create\n")
+      return 0
+    end
+
+    if key_to_revoke.empty?
+      ctx.write("Error: Please specify the API key to revoke.\n")
+      ctx.write("Usage: ssh host api-key revoke <api-key>\n")
+      return 1
+    end
+
+    # Validate key format
+    unless key_to_revoke.starts_with?("pasto_ak_")
+      ctx.write("Error: Invalid API key format. API keys should start with 'pasto_ak_'\n")
+      return 1
+    end
+
+    # Find the API key to revoke
+    api_key_to_revoke = Pasto::ApiKey.find_by_key(key_to_revoke)
+    unless api_key_to_revoke
+      ctx.write("Error: API key '#{key_to_revoke}' not found.\n")
+      return 1
+    end
+
+    # Verify this key belongs to the current user
+    unless api_key_to_revoke.user_id == user.sepia_id
+      ctx.write("Error: This API key does not belong to you.\n")
+      return 1
+    end
+
+    # Remove the API key file
+    api_key_file = "data/Pasto::ApiKey/#{api_key_to_revoke.sepia_id}"
+    begin
+      File.delete(api_key_file)
+    rescue ex
+      ctx.write("Warning: Could not delete API key file: #{ex.message}\n")
+    end
+
+    # Clean up user's API key list - remove broken references AND the revoked key
+    valid_api_keys = user.api_keys.select do |key_id|
+      # Keep the key if it's not the one we're revoking AND the file still exists
+      key_id != api_key_to_revoke.sepia_id && File.exists?("data/Pasto::ApiKey/#{key_id}")
+    end
+
+    # Update user's API key list
+    user.api_keys = valid_api_keys
+    user.save
+
+    ctx.write("✅ API key '#{key_to_revoke}' has been revoked successfully.\n")
     0
   end
 end
