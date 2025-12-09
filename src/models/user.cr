@@ -1,5 +1,6 @@
 require "sepia"
 require "./ssh_key"
+require "./api_key"
 
 module Pasto
   class User < Sepia::Object
@@ -7,6 +8,7 @@ module Pasto
 
     property name : String?
     property keys : Array(SSHKey)
+    property api_keys : Array(String) = [] of String # Stores ApiKey IDs
     property created_at : Time
 
     # Theme preferences
@@ -42,6 +44,42 @@ module Pasto
       add_key(key)
     end
 
+    # Add an API key to this user
+    def add_api_key : ApiKey
+      key_data = ApiKeyData.new("pasto_ak_#{Random::Secure.hex(16)}")
+      api_key = ApiKey.new(@sepia_id, key_data)
+      api_key.save
+
+      @api_keys << api_key.sepia_id
+      save
+
+      api_key
+    end
+
+    # Find an API key by ID
+    def find_api_key(key_id : String) : ApiKey?
+      if @api_keys.includes?(key_id)
+        begin
+          ApiKey.find(key_id)
+        rescue
+          nil
+        end
+      else
+        nil
+      end
+    end
+
+    # Get all API keys for this user
+    def all_api_keys : Array(ApiKey)
+      @api_keys.compact_map do |key_id|
+        begin
+          ApiKey.find(key_id)
+        rescue
+          nil
+        end
+      end
+    end
+
     # Get all pastes for this user (latest versions from storage)
     def all_pastes : Array(Paste)
       @keys.flat_map(&.pastes).compact_map do |paste|
@@ -59,6 +97,7 @@ module Pasto
       {
         name:         @name,
         keys:         @keys.map(&.sepia_id), # Store only key fingerprints
+        api_keys:     @api_keys,             # Store API key IDs
         created_at:   @created_at.to_rfc3339,
         pico_theme:   @pico_theme,
         pico_color:   @pico_color,
@@ -80,6 +119,11 @@ module Pasto
         user.keys = keys_data.compact_map do |fingerprint|
           SSHKey.find_or_create(fingerprint.as_s)
         end
+      end
+
+      # Load API keys by their IDs
+      if api_keys_data = data["api_keys"]?.try(&.as_a?)
+        user.api_keys = api_keys_data.compact_map(&.as_s)
       end
 
       user

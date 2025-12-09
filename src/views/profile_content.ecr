@@ -70,6 +70,47 @@
       <% end %>
     </div>
 
+    <!-- API Keys Section -->
+    <div class="api-keys-section">
+      <h3>🔐 API Keys</h3>
+      <% api_keys = current_user.all_api_keys %>
+      <% if api_keys.empty? %>
+        <p class="no-items">No API keys generated yet.</p>
+        <p>Create API keys via SSH to access the Pasto API programmatically:</p>
+        <code class="command-example">ssh -p <%= ssh_port %> <%= ssh_host %> api-key create</code>
+        <p><small>After creating an API key, you can use it with HTTP Bearer authentication:</small></p>
+        <code class="command-example">curl -H "Authorization: Bearer pasto_ak_your_key" <%= env.request.headers["X-Forwarded-Proto"]? || "http" %>://<%= env.request.host_with_port %>/api/v1/me</code>
+      <% else %>
+        <div class="api-keys-list">
+          <% api_keys.each do |api_key| %>
+            <div class="api-key-item">
+              <div class="api-key-info">
+                <code class="api-key-id"><%= api_key.id %></code>
+                <div class="api-key-meta">
+                  <span class="created-date">Created: <%= api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M") %></span>
+                  <span class="usage-count">Used: <%= api_key.key_data.usage_count %> times</span>
+                  <% if last_used = api_key.key_data.last_used_at %>
+                    <span class="last-used">Last used: <%= last_used.to_s("%Y-%m-%d %H:%M") %></span>
+                  <% end %>
+                </div>
+              </div>
+              <div class="api-key-actions">
+                <button class="copy-btn" onclick="copyToClipboard('<%= api_key.id %>')" title="Copy API Key">
+                  <i data-lucide="copy"></i>
+                </button>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="api-docs-link">
+          <a href="/api-docs" target="_blank" class="docs-btn">
+            <i data-lucide="book-open"></i>
+            View API Documentation
+          </a>
+        </div>
+      <% end %>
+    </div>
+
     <!-- User's Pastes Section -->
     <div class="pastes-section">
       <h3>📋 Your Pastes</h3>
@@ -176,6 +217,34 @@ function confirmDelete(pasteId) {
   });
 }
 
+// Copy to clipboard function
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    // Show success message
+    showSuccess('API key copied to clipboard!');
+  }, function(err) {
+    // Fallback for older browsers
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        showSuccess('API key copied to clipboard!');
+      } else {
+        showError('Failed to copy API key');
+      }
+    } catch (err) {
+      showError('Failed to copy API key');
+    }
+
+    document.body.removeChild(textArea);
+  });
+}
+
 // Reinitialize Lucide icons for the new buttons
 document.addEventListener('DOMContentLoaded', function() {
   if (window.lucide) {
@@ -209,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--pico-del-color);
   }
 
-  .user-info, .not-logged-in, .ssh-keys-section, .pastes-section {
+  .user-info, .not-logged-in, .ssh-keys-section, .api-keys-section, .pastes-section {
     background-color: var(--pico-background-color);
     border: 1px solid var(--pico-border-color);
     border-radius: var(--pico-border-radius);
@@ -267,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-top: 0.25rem;
   }
 
-  .ssh-keys-section h3, .pastes-section h3 {
+  .ssh-keys-section h3, .api-keys-section h3, .pastes-section h3 {
     margin-top: 0;
     margin-bottom: 1.5rem;
   }
@@ -330,6 +399,113 @@ document.addEventListener('DOMContentLoaded', function() {
   .key-meta {
     color: var(--pico-muted-color);
     font-size: 0.85rem;
+  }
+
+  /* API Keys */
+  .api-keys-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .api-key-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    background-color: var(--pico-code-background-color);
+    border-radius: var(--pico-border-radius);
+    border: 1px solid rgba(0, 123, 255, 0.2);
+  }
+
+  .api-key-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .api-key-id {
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: none;
+    padding: 0;
+    color: var(--pico-primary);
+    word-break: break-all;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .api-key-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    color: var(--pico-muted-color);
+    font-size: 0.8rem;
+  }
+
+  .api-key-meta span {
+    white-space: nowrap;
+  }
+
+  .api-key-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: 1rem;
+  }
+
+  .copy-btn {
+    padding: 0.5rem;
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-border-color);
+    background-color: var(--pico-background-color);
+    color: var(--pico-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+  }
+
+  .copy-btn:hover {
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-primary);
+    color: var(--pico-primary);
+  }
+
+  .copy-btn i {
+    width: 16px;
+    height: 16px;
+  }
+
+  .api-docs-link {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  .docs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+    text-decoration: none;
+    border-radius: var(--pico-border-radius);
+    border: 1px solid var(--pico-primary-border);
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .docs-btn:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+  }
+
+  .docs-btn i {
+    width: 18px;
+    height: 18px;
   }
 
   /* Pastes List */
@@ -571,7 +747,7 @@ document.addEventListener('DOMContentLoaded', function() {
       padding: 1rem;
     }
 
-    .user-info, .not-logged-in, .ssh-keys-section, .pastes-section {
+    .user-info, .not-logged-in, .ssh-keys-section, .api-keys-section, .pastes-section {
       padding: 1.5rem;
     }
 
@@ -612,6 +788,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .fingerprint {
       word-break: break-all;
+    }
+
+    .api-key-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .api-key-actions {
+      margin-left: 0;
+      align-self: flex-end;
     }
 
     .paste-link {

@@ -1,0 +1,452 @@
+openapi: 3.0.3
+info:
+  title: Pasto API
+  description: |
+    ## Production-Ready Pastebin API
+
+    Pasto provides a secure REST API for programmatic paste management with the following features:
+
+    - **SSH-based API Key Management**: Generate API keys securely via SSH
+    - **Zero-Knowledge Encryption**: Client-side encrypted pastes
+    - **Rich Paste Options**: Private pastes, expiration, burn-after-reading
+    - **Full Feature Parity**: All web interface features available via API
+    - **Usage Tracking**: Monitor API key usage and statistics
+
+    ### Authentication
+
+    All API endpoints require Bearer token authentication:
+    ```
+    Authorization: Bearer pasto_ak_your_api_key_here
+    ```
+
+    ### Getting API Keys
+
+    API keys are generated securely via SSH:
+    ```bash
+    ssh -p 2222 your-pasto-server.com api-key create
+    ```
+
+    ### Quick Start
+
+    1. Generate an API key via SSH
+    2. Use the Bearer token in your requests
+    3. Start creating and managing pastes programmatically!
+
+  version: 1.0.0
+  contact:
+    name: Pasto API Support
+    url: https://github.com/ralsina/pasto
+  license:
+    name: MIT
+    url: https://github.com/ralsina/pasto/blob/main/LICENSE
+
+servers:
+  - url: <%= base_url %>
+    description: Current Server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/v1/me:
+    get:
+      tags:
+        - User
+      summary: Get current user information
+      description: Retrieve information about the authenticated user including API key statistics
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: "user_1234567890"
+                name: "John Doe"
+                created_at: "2024-01-15T10:30:00Z"
+                api_keys_count: 2
+                pastes_count: 15
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/pastes:
+    get:
+      tags:
+        - Pastes
+      summary: List user's pastes
+      description: Retrieve a paginated list of pastes belonging to the authenticated user
+      operationId: listPastes
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination (1-1000)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: limit
+          in: query
+          description: Number of pastes per page (1-100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of pastes retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Pastes
+      summary: Create a new paste
+      description: Create a new paste with various options including encryption and privacy settings
+      operationId: createPaste
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePasteRequest'
+            example:
+              content: "console.log('Hello, World!');"
+              language: "javascript"
+              title: "My First Paste"
+              filename: "example.js"
+              theme: "monokai"
+              encrypted: false
+              private: false
+              burn_after_reading: false
+      responses:
+        '201':
+          description: Paste created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paste'
+              example:
+                id: "paste_abcdef123456"
+                title: "My First Paste"
+                language: "javascript"
+                created_at: "2024-01-15T10:30:00Z"
+                url: "https://your-pasto-server.com/paste_abcdef123456"
+                raw_url: "https://your-pasto-server.com/paste_abcdef123456/raw"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/pastes/{id}:
+    get:
+      tags:
+        - Pastes
+      summary: Get paste details
+      description: Retrieve detailed information about a specific paste
+      operationId: getPaste
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Paste ID
+          schema:
+            type: string
+            example: "paste_abcdef123456"
+      responses:
+        '200':
+          description: Paste details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paste'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      tags:
+        - Pastes
+      summary: Delete a paste
+      description: Delete a paste (owner only)
+      operationId: deletePaste
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Paste ID
+          schema:
+            type: string
+            example: "paste_abcdef123456"
+      responses:
+        '200':
+          description: Paste deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/pastes/{id}/content:
+    get:
+      tags:
+        - Pastes
+      summary: Get paste content
+      description: Retrieve the raw content of a paste as plain text
+      operationId: getPasteContent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Paste ID
+          schema:
+            type: string
+            example: "paste_abcdef123456"
+      responses:
+        '200':
+          description: Paste content retrieved successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "console.log('Hello, World!');"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: pasto_ak_your_api_key_here
+      description: |
+        API keys are generated via SSH:
+        ```bash
+        ssh -p 2222 your-pasto-server.com api-key create
+        ```
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User unique identifier
+          example: "user_1234567890"
+        name:
+          type: string
+          description: User display name
+          example: "John Doe"
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2024-01-15T10:30:00Z"
+        api_keys_count:
+          type: integer
+          description: Number of API keys associated with the user
+          example: 2
+        pastes_count:
+          type: integer
+          description: Total number of pastes created by the user
+          example: 15
+
+    Paste:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Paste unique identifier
+          example: "paste_abcdef123456"
+        title:
+          type: string
+          description: Paste title (derived from content or filename)
+          example: "My First Paste"
+        language:
+          type: string
+          description: Programming language for syntax highlighting
+          example: "javascript"
+        created_at:
+          type: string
+          format: date-time
+          description: Paste creation timestamp
+          example: "2024-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last modification timestamp
+          example: "2024-01-15T10:30:00Z"
+        url:
+          type: string
+          description: URL to view the paste
+          example: "https://your-pasto-server.com/paste_abcdef123456"
+        raw_url:
+          type: string
+          description: URL to get raw content
+          example: "https://your-pasto-server.com/paste_abcdef123456/raw"
+        size:
+          type: integer
+          description: Size of the paste content in bytes
+          example: 42
+        private:
+          type: boolean
+          description: Whether the paste is private (owner only)
+          example: false
+        encrypted:
+          type: boolean
+          description: Whether the paste is encrypted
+          example: false
+        burn_after_reading:
+          type: boolean
+          description: Whether the paste will be deleted after first access
+          example: false
+        expires_at:
+          type: string
+          format: date-time
+          description: Expiration timestamp (if set)
+          example: "2024-01-16T10:30:00Z"
+
+    PasteList:
+      type: object
+      properties:
+        pastes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Paste'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 20
+            total:
+              type: integer
+              example: 50
+            pages:
+              type: integer
+              example: 3
+
+    CreatePasteRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: The content to be pasted
+          example: "console.log('Hello, World!');"
+        language:
+          type: string
+          description: Programming language for syntax highlighting
+          example: "javascript"
+        filename:
+          type: string
+          description: Optional filename for the paste
+          example: "example.js"
+        title:
+          type: string
+          description: Optional title for the paste
+          example: "My First Paste"
+        theme:
+          type: string
+          description: Syntax highlighting theme
+          example: "monokai"
+        encrypted:
+          type: boolean
+          description: Whether the paste should be encrypted
+          example: false
+        private:
+          type: boolean
+          description: Whether the paste should be private (owner only)
+          example: false
+        burn_after_reading:
+          type: boolean
+          description: Whether the paste should be deleted after first access
+          example: false
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Unauthorized"
+        message:
+          type: string
+          description: Detailed error message
+          example: "Valid API key required. Use: Authorization: Bearer your-api-key"
+
+  responses:
+    Unauthorized:
+      description: Authentication failed or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Unauthorized"
+            message: "Valid API key required. Use: Authorization: Bearer your-api-key"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Not Found"
+            message: "Paste not found"
+
+    Forbidden:
+      description: Access denied (not the paste owner)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Forbidden"
+            message: "You don't have permission to access this paste"
+
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Bad Request"
+            message: "Request body cannot be empty"
+
+tags:
+  - name: User
+    description: User information and account management
+  - name: Pastes
+    description: Paste creation, retrieval, and management

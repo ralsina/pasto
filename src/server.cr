@@ -14,6 +14,7 @@ require "./user_session"
 require "./models/user"
 require "./models/auth_token"
 require "./models/ssh_key"
+require "./models/api_key"
 require "./qr_generator"
 require "baked_file_system"
 require "baked_file_handler"
@@ -36,6 +37,77 @@ module Pasto
 
     # Get user from database
     User.find(user_session.user_id)
+  end
+
+  # Helper to validate API key and get current user via API authentication
+  def self.get_api_user(env) : User?
+    # Extract Authorization header
+    auth_header = env.request.headers["Authorization"]?
+    return nil unless auth_header
+
+    # Parse Bearer token
+    if auth_header.starts_with?("Bearer ")
+      api_key_string = auth_header[7..-1] # Remove "Bearer " prefix
+    else
+      return nil
+    end
+
+    # Validate API key format (pasto_ak_*)
+    return nil unless api_key_string.starts_with?("pasto_ak_")
+
+    # Fast lookup: find API key by its actual key string
+    begin
+      puts "DEBUG: Looking for API key: #{api_key_string}"
+      api_key = ApiKey.find_by_key(api_key_string)
+      puts "DEBUG: API key found: #{api_key ? "YES" : "NO"}"
+      return nil unless api_key
+
+      # Increment usage counter
+      api_key.increment_usage
+
+      # Find the associated user
+      user = User.find(api_key.user_id)
+      user
+    rescue
+      nil
+    end
+  end
+
+  # API authentication result
+  struct AuthResult
+    property? success : Bool
+    property user : User?
+    property error : String?
+    property message : String?
+
+    def initialize(@success : Bool, @user : User?, @error : String?, @message : String?)
+    end
+
+    def self.success(user : User) : AuthResult
+      new(success: true, user: user, error: nil, message: nil)
+    end
+
+    def self.failure(error : String, message : String) : AuthResult
+      new(success: false, user: nil, error: error, message: message)
+    end
+  end
+
+  # API authentication middleware
+  def self.require_api_auth(env) : AuthResult
+    api_user = get_api_user(env)
+    unless api_user
+      return AuthResult.failure("Unauthorized", "Valid API key required. Use: Authorization: Bearer your-api-key")
+    end
+
+    # Store user ID in context for route handlers (Kemal context only supports simple types)
+    env.set("api_user_id", api_user.sepia_id)
+    AuthResult.success(api_user)
+  end
+
+  # Helper to get API user from stored ID
+  def self.get_api_user_from_context(env) : User?
+    user_id = env.get?("api_user_id").try(&.as(String))
+    user_id ? User.find(user_id) : nil
   end
 
   # Unified access control result
@@ -428,6 +500,9 @@ end
 before_get do |env|
   path = env.request.path
 
+  # Skip access control for OpenAPI specification
+  next if path == "/openapi.yaml"
+
   # Check if this path needs access control
   unless needs_paste_access_control?(path)
     next
@@ -676,6 +751,30 @@ get "/profile" do |env|
 
   content = render "src/views/profile_content.ecr"
   render "src/views/layout.ecr"
+end
+
+# API documentation page
+get "/api-docs" do |env|
+  env.redirect "/assets/api-docs.html"
+end
+
+# Dynamic OpenAPI specification
+get "/openapi.yaml" do |env|
+  # Determine the base URL from the current request
+  host = env.request.headers["Host"]? || "localhost:5000"
+
+  # Check if we're behind a reverse proxy with HTTPS
+  scheme = "http"
+  if proto = env.request.headers["X-Forwarded-Proto"]?
+    scheme = proto
+  elsif env.request.headers["X-Forwarded-SSL"]? == "on"
+    scheme = "https"
+  end
+
+  base_url = "#{scheme}://#{host}"
+
+  env.response.content_type = "application/x-yaml"
+  render "src/views/openapi.yaml.ecr"
 end
 
 # Main page - paste creation form
@@ -1640,6 +1739,429 @@ get "/:id/raw" do |env|
             end
 
   content
+end
+
+# ============================================================================
+# PASTO REST API v1
+# ============================================================================
+
+# API v1 base path - require authentication for all endpoints
+before_all "/api/v1/*" do |env|
+  unless Pasto.require_api_auth(env)
+    halt env, env.response.status_code
+  end
+end
+
+# GET /api/v1/me - Get current user information
+get "/api/v1/me" do |env|
+  env.response.content_type = "application/json"
+
+  auth_result = Pasto.require_api_auth(env)
+  unless auth_result.success?
+    env.response.status_code = 401
+    next {
+      "error"   => auth_result.error,
+      "message" => auth_result.message,
+    }.to_json
+  end
+
+  api_user = auth_result.user
+  unless api_user
+    env.response.status_code = 401
+    next {
+      "error"   => "Unauthorized",
+      "message" => "Authentication failed",
+    }.to_json
+  end
+
+  {
+    "id"             => api_user.sepia_id,
+    "name"           => api_user.name,
+    "display_name"   => api_user.display_name,
+    "created_at"     => api_user.created_at.to_rfc3339,
+    "pico_theme"     => api_user.pico_theme,
+    "pico_color"     => api_user.pico_color,
+    "syntax_theme"   => api_user.syntax_theme,
+    "api_keys_count" => api_user.api_keys.size,
+    "pastes_count"   => api_user.all_pastes.size,
+  }.to_json
+end
+
+# GET /api/v1/pastes - List user's pastes
+get "/api/v1/pastes" do |env|
+  env.response.content_type = "application/json"
+
+  auth_result = Pasto.require_api_auth(env)
+  unless auth_result.success?
+    env.response.status_code = 401
+    next {
+      "error"   => auth_result.error,
+      "message" => auth_result.message,
+    }.to_json
+  end
+
+  api_user = auth_result.user
+  unless api_user
+    env.response.status_code = 401
+    next {
+      "error"   => "Unauthorized",
+      "message" => "Authentication failed",
+    }.to_json
+  end
+
+  # Pagination parameters
+  page = (env.params.query["page"]?.try(&.to_i) || 1).clamp(1, 1000)
+  limit = (env.params.query["limit"]?.try(&.to_i) || 20).clamp(1, 100)
+  offset = (page - 1) * limit
+
+  pastes = api_user.all_pastes
+  total = pastes.size
+
+  # Apply pagination
+  paginated_pastes = pastes[offset, limit] || [] of Pasto::Paste
+
+  {
+    "pastes" => paginated_pastes.map do |paste|
+      {
+        "id"                 => paste.sepia_id,
+        "title"              => paste.display_title,
+        "language"           => paste.language,
+        "created_at"         => paste.created_at.to_rfc3339,
+        "private"            => paste.private?,
+        "encrypted"          => paste.is_encrypted?,
+        "burn_after_reading" => paste.burn_after_reading?,
+        "size"               => paste.content.bytesize,
+      }
+    end,
+    "pagination" => {
+      "page"  => page,
+      "limit" => limit,
+      "total" => total,
+      "pages" => (total.to_f / limit).ceil.to_i,
+    },
+  }.to_json
+end
+
+# POST /api/v1/pastes - Create a new paste
+post "/api/v1/pastes" do |env|
+  env.response.content_type = "application/json"
+
+  auth_result = Pasto.require_api_auth(env)
+  unless auth_result.success?
+    env.response.status_code = 401
+    next {
+      "error"   => auth_result.error,
+      "message" => auth_result.message,
+    }.to_json
+  end
+
+  api_user = auth_result.user
+  unless api_user
+    env.response.status_code = 401
+    next {
+      "error"   => "Unauthorized",
+      "message" => "Authentication failed",
+    }.to_json
+  end
+
+  # Parse request body
+  begin
+    body = env.request.body.as(IO).gets_to_end
+    if body.empty?
+      env.response.status_code = 400
+      next {
+        "error"   => "Bad Request",
+        "message" => "Request body cannot be empty",
+      }.to_json
+    end
+
+    data = Hash(String, JSON::Any).from_json(body)
+  rescue ex : JSON::ParseException
+    env.response.status_code = 400
+    next {
+      "error"   => "Bad Request",
+      "message" => "Invalid JSON: #{ex.message}",
+    }.to_json
+  rescue ex
+    env.response.status_code = 400
+    next {
+      "error"   => "Bad Request",
+      "message" => "Failed to read request body",
+    }.to_json
+  end
+
+  # Extract paste data
+  content = data["content"]?.try(&.as_s) || ""
+  if content.empty?
+    env.response.status_code = 400
+    next {
+      "error"   => "Bad Request",
+      "message" => "Content is required",
+    }.to_json
+  end
+
+  title = data["title"]?.try(&.as_s)
+  language = data["language"]?.try(&.as_s)
+  filename = data["filename"]?.try(&.as_s)
+  is_private = data["private"]?.try(&.as_bool) || false
+  is_encrypted = data["encrypted"]?.try(&.as_bool) || false
+  burn_after_reading = data["burn_after_reading"]?.try(&.as_bool) || false
+
+  # Validate content size
+  max_size = 1024 * 1024 # 1MB
+  if content.bytesize > max_size
+    env.response.status_code = 413
+    next {
+      "error"   => "Content Too Large",
+      "message" => "Maximum content size is #{max_size} bytes",
+    }.to_json
+  end
+
+  # Create paste using API user's SSH key
+  ssh_key = api_user.keys.first?
+  unless ssh_key
+    env.response.status_code = 403
+    next {
+      "error"   => "Forbidden",
+      "message" => "You need an SSH key to create pastes",
+    }.to_json
+  end
+
+  begin
+    paste = ssh_key.create_paste(
+      content: content,
+      theme: api_user.syntax_theme || "monokai",
+      language: language,
+      filename: filename,
+      title: title,
+      encrypted: is_encrypted
+    )
+
+    # Set additional properties
+    paste.private = is_private
+    paste.burn_after_reading = burn_after_reading
+    paste.user_id = api_user.sepia_id
+
+    # Save paste
+    unless paste.save
+      env.response.status_code = 500
+      next {
+        "error"   => "Internal Server Error",
+        "message" => "Failed to save paste",
+      }.to_json
+    end
+
+    # Build URL
+    host = env.request.headers["Host"]? || "localhost:3000"
+    scheme = env.request.headers["X-Forwarded-Proto"]? || "http"
+    paste_url = "#{scheme}://#{host}/#{paste.sepia_id}"
+
+    env.response.status_code = 201
+    {
+      "id"                 => paste.sepia_id,
+      "title"              => paste.display_title,
+      "language"           => paste.language,
+      "created_at"         => paste.created_at.to_rfc3339,
+      "private"            => paste.private?,
+      "encrypted"          => paste.is_encrypted?,
+      "burn_after_reading" => paste.burn_after_reading?,
+      "url"                => paste_url,
+      "raw_url"            => "#{paste_url}/raw",
+    }.to_json
+  rescue ex
+    puts "API: Failed to create paste: #{ex.message}"
+    env.response.status_code = 500
+    {
+      "error"   => "Internal Server Error",
+      "message" => "Failed to create paste",
+    }.to_json
+  end
+end
+
+# GET /api/v1/pastes/:id - Get specific paste details
+get "/api/v1/pastes/:id" do |env|
+  env.response.content_type = "application/json"
+
+  auth_result = Pasto.require_api_auth(env)
+  unless auth_result.success?
+    env.response.status_code = 401
+    next {
+      "error"   => auth_result.error,
+      "message" => auth_result.message,
+    }.to_json
+  end
+
+  api_user = auth_result.user
+  unless api_user
+    env.response.status_code = 401
+    next {
+      "error"   => "Unauthorized",
+      "message" => "Authentication failed",
+    }.to_json
+  end
+
+  id = env.params.url["id"]
+
+  # Load paste
+  begin
+    paste = Pasto::Paste.from_file(id)
+  rescue
+    env.response.status_code = 404
+    next {
+      "error"   => "Not Found",
+      "message" => "Paste not found",
+    }.to_json
+  end
+
+  if paste.nil?
+    env.response.status_code = 404
+    next {
+      "error"   => "Not Found",
+      "message" => "Paste not found",
+    }.to_json
+  end
+
+  # Check access permissions
+  if paste.private? && paste.user_id != api_user.sepia_id
+    env.response.status_code = 403
+    next {
+      "error"   => "Forbidden",
+      "message" => "This paste is private",
+    }.to_json
+  end
+
+  {
+    "id"                 => paste.sepia_id,
+    "title"              => paste.display_title,
+    "language"           => paste.language,
+    "created_at"         => paste.created_at.to_rfc3339,
+    "private"            => paste.private?,
+    "encrypted"          => paste.is_encrypted?,
+    "burn_after_reading" => paste.burn_after_reading?,
+    "size"               => paste.content.bytesize,
+    "is_owner"           => paste.user_id == api_user.sepia_id,
+    "url"                => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}",
+    "raw_url"            => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}/raw",
+  }.to_json
+end
+
+# GET /api/v1/pastes/:id/content - Get paste content
+get "/api/v1/pastes/:id/content" do |env|
+  env.response.content_type = "text/plain"
+
+  auth_result = Pasto.require_api_auth(env)
+  unless auth_result.success?
+    env.response.status_code = 401
+    next {
+      "error"   => auth_result.error,
+      "message" => auth_result.message,
+    }.to_json
+  end
+
+  api_user = auth_result.user
+  unless api_user
+    env.response.status_code = 401
+    next {
+      "error"   => "Unauthorized",
+      "message" => "Authentication failed",
+    }.to_json
+  end
+
+  id = env.params.url["id"]
+
+  # Load paste
+  begin
+    paste = Pasto::Paste.from_file(id)
+  rescue
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  if paste.nil?
+    env.response.status_code = 404
+    next "Paste not found"
+  end
+
+  # Check access permissions
+  if paste.private? && paste.user_id != api_user.sepia_id
+    env.response.status_code = 403
+    next "This paste is private"
+  end
+
+  # Return content (encrypted or regular)
+  if paste.is_encrypted? && paste.responds_to?(:encrypted_content) && paste.encrypted_content
+    paste.encrypted_content
+  else
+    paste.content
+  end
+end
+
+# DELETE /api/v1/pastes/:id - Delete a paste (owner only)
+delete "/api/v1/pastes/:id" do |env|
+  env.response.content_type = "application/json"
+
+  auth_result = Pasto.require_api_auth(env)
+  unless auth_result.success?
+    env.response.status_code = 401
+    next {
+      "error"   => auth_result.error,
+      "message" => auth_result.message,
+    }.to_json
+  end
+
+  api_user = auth_result.user
+  unless api_user
+    env.response.status_code = 401
+    next {
+      "error"   => "Unauthorized",
+      "message" => "Authentication failed",
+    }.to_json
+  end
+
+  id = env.params.url["id"]
+
+  # Load paste
+  begin
+    paste = Pasto::Paste.from_file(id)
+  rescue
+    env.response.status_code = 404
+    next {
+      "error"   => "Not Found",
+      "message" => "Paste not found",
+    }.to_json
+  end
+
+  if paste.nil?
+    env.response.status_code = 404
+    next {
+      "error"   => "Not Found",
+      "message" => "Paste not found",
+    }.to_json
+  end
+
+  # Check ownership
+  if paste.user_id != api_user.sepia_id
+    env.response.status_code = 403
+    next {
+      "error"   => "Forbidden",
+      "message" => "Only paste owners can delete pastes",
+    }.to_json
+  end
+
+  # Delete the paste
+  begin
+    paste.delete
+    {
+      "message" => "Paste deleted successfully",
+    }.to_json
+  rescue ex
+    puts "API: Failed to delete paste: #{ex.message}"
+    env.response.status_code = 500
+    {
+      "error"   => "Internal Server Error",
+      "message" => "Failed to delete paste",
+    }.to_json
+  end
 end
 
 # Initialize cache directory in the main app

@@ -1,5 +1,7 @@
 require "../src/models/ssh_key"
 require "../src/models/auth_token"
+require "../src/models/user"
+require "../src/models/api_key"
 require "shirk"
 require "sepia"
 require "uri"
@@ -153,6 +155,8 @@ module PastoSSH
         handle_login(ctx, @@current_fingerprint, @@base_url)
       when "list"
         handle_list(ctx, @@current_fingerprint, @@base_url)
+      when "api-key"
+        handle_api_key(ctx, @@current_fingerprint, args)
       when "help"
         handle_help(ctx, @@base_url)
       else
@@ -447,6 +451,9 @@ DOC
     ctx.write("  echo 'secret' | ssh #{host} paste --encrypted\n\n")
     ctx.write("List your pastes:\n")
     ctx.write("  ssh #{host} list\n\n")
+    ctx.write("API key management:\n")
+    ctx.write("  ssh #{host} api-key create    Create a new API key\n")
+    ctx.write("  ssh #{host} api-key list      List your API keys\n\n")
     ctx.write("Login to associate pastes with your account:\n")
     ctx.write("  ssh #{host} login\n\n")
     ctx.write("Show this help:\n")
@@ -488,6 +495,107 @@ DOC
       ctx.write("#{base_url}/#{paste.sepia_id}\n")
       ctx.write("  Created: #{created}#{lang}\n")
       ctx.write("  Preview: #{preview}\n\n")
+    end
+
+    0
+  end
+
+  # Handle api-key command - manage API keys for the current user
+  private def self.handle_api_key(ctx, fingerprint : String, args : String) : Int32
+    # Parse subcommand (create, list, etc.)
+    parts = args.split(/\s+/, 2)
+    subcommand = parts[0]? || ""
+
+    case subcommand
+    when "create"
+      handle_api_key_create(ctx, fingerprint)
+    when "list"
+      handle_api_key_list(ctx, fingerprint)
+    else
+      ctx.write_stderr("API key usage:\n")
+      ctx.write_stderr("  ssh host api-key create    Create a new API key\n")
+      ctx.write_stderr("  ssh host api-key list      List your API keys\n")
+      1
+    end
+  end
+
+  # Handle api-key create command
+  private def self.handle_api_key_create(ctx, fingerprint : String) : Int32
+    # Find or create SSH key and user
+    ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
+
+    # Find or create user for this SSH key
+    user = if owner_id = ssh_key.owner_id
+             Pasto::User.find(owner_id)
+           else
+             # Create a new user for this SSH key
+             new_user = Pasto::User.new
+             new_user.save
+             ssh_key.owner_id = new_user.sepia_id
+             ssh_key.save
+             new_user
+           end
+
+    unless user
+      ctx.write_stderr("Failed to create or find user account\n")
+      return 1
+    end
+
+    # Create API key through user
+    api_key = user.add_api_key
+
+    ctx.write("✅ API key created successfully!\n")
+    ctx.write("Key: #{api_key.id}\n")
+    ctx.write("Created: #{api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M UTC")}\n\n")
+    ctx.write("⚠️  Save this key securely - it cannot be recovered!\n")
+    ctx.write("📋 Use it for API authentication: Authorization: Bearer #{api_key.id}\n")
+
+    puts "SSH: created API key #{api_key.id} for user #{user.sepia_id} (SSH key: #{fingerprint})"
+    0
+  rescue ex
+    ctx.write_stderr("Failed to create API key: #{ex.message}\n")
+    puts "SSH: API key creation failed: #{ex.message}"
+    1
+  end
+
+  # Handle api-key list command
+  private def self.handle_api_key_list(ctx, fingerprint : String) : Int32
+    # Find SSH key and associated user
+    ssh_key = Pasto::SSHKey.find(Pasto::SSHKey.sanitize_fingerprint(fingerprint))
+
+    unless ssh_key && ssh_key.owner_id
+      ctx.write("No API keys found. Create one with: ssh host api-key create\n")
+      return 0
+    end
+
+    if owner_id = ssh_key.owner_id
+      user = Pasto::User.find(owner_id)
+    else
+      user = nil
+    end
+    unless user
+      ctx.write("User account not found. Create one with: ssh host api-key create\n")
+      return 0
+    end
+
+    api_keys = user.all_api_keys
+    if api_keys.empty?
+      ctx.write("No API keys found. Create one with: ssh host api-key create\n")
+      return 0
+    end
+
+    ctx.write("Your API keys (#{api_keys.size} total):\n")
+    ctx.write("=" * 50 + "\n\n")
+
+    api_keys.each do |api_key|
+      created = api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M UTC")
+      last_used = api_key.key_data.last_used_at.try(&.to_s("%Y-%m-%d %H:%M UTC")) || "Never"
+      usage_count = api_key.key_data.usage_count
+
+      ctx.write("Key: #{api_key.id}\n")
+      ctx.write("  Created: #{created}\n")
+      ctx.write("  Last used: #{last_used}\n")
+      ctx.write("  Usage count: #{usage_count}\n\n")
     end
 
     0
