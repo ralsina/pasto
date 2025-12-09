@@ -1,36 +1,7 @@
 openapi: 3.0.3
 info:
   title: Pasto API
-  description: |
-    ## Production-Ready Pastebin API
-
-    Pasto provides a secure REST API for programmatic paste management with the following features:
-
-    - **SSH-based API Key Management**: Generate API keys securely via SSH
-    - **Zero-Knowledge Encryption**: Client-side encrypted pastes
-    - **Rich Paste Options**: Private pastes, expiration, burn-after-reading
-    - **Full Feature Parity**: All web interface features available via API
-    - **Usage Tracking**: Monitor API key usage and statistics
-
-    ### Authentication
-
-    All API endpoints require Bearer token authentication:
-    ```
-    Authorization: Bearer pasto_ak_your_api_key_here
-    ```
-
-    ### Getting API Keys
-
-    API keys are generated securely via SSH:
-    ```bash
-    ssh -p 2222 your-pasto-server.com api-key create
-    ```
-
-    ### Quick Start
-
-    1. Generate an API key via SSH
-    2. Use the Bearer token in your requests
-    3. Start creating and managing pastes programmatically!
+  description: Secure REST API for programmatic paste management
 
   version: 1.0.0
   contact:

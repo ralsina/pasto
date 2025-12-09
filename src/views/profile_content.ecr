@@ -79,7 +79,7 @@
         <p>Create API keys via SSH to access the Pasto API programmatically:</p>
         <code class="command-example">ssh -p <%= ssh_port %> <%= ssh_host %> api-key create</code>
         <p><small>After creating an API key, you can use it with HTTP Bearer authentication:</small></p>
-        <code class="command-example">curl -H "Authorization: Bearer pasto_ak_your_key" <%= env.request.headers["X-Forwarded-Proto"]? || "http" %>://<%= env.request.host_with_port %>/api/v1/me</code>
+        <code class="command-example">curl -H "Authorization: Bearer pasto_ak_your_key" <%= env.request.headers["X-Forwarded-Proto"]? || "http" %>://<%= env.request.headers["Host"]? || "localhost:3000" %>/api/v1/me</code>
       <% else %>
         <div class="api-keys-list">
           <% api_keys.each do |api_key| %>

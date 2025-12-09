@@ -550,8 +550,7 @@ DOC
 
     ctx.write("✅ API key created successfully!\n")
     ctx.write("Key: #{api_key.id}\n")
-    ctx.write("Created: #{api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M UTC")}\n\n")
-    ctx.write("⚠️  Save this key securely - it cannot be recovered!\n")
+    ctx.write("Created: #{api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M UTC")}\n")
     ctx.write("📋 Use it for API authentication: Authorization: Bearer #{api_key.id}\n")
 
     puts "SSH: created API key #{api_key.id} for user #{user.sepia_id} (SSH key: #{fingerprint})"
