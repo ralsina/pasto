@@ -393,15 +393,23 @@ before_post do |env|
     # Validate the original paste exists and is accessible
     access_result = Pasto.validate_paste_access(env, require_owner: false)
     unless access_result.success?
-      env.response.status_code = access_result.status_code
-      next access_result.reason || "Access denied"
+      if access_result.status_code == 404
+        halt env, 404
+      else
+        env.response.status_code = access_result.status_code
+        next access_result.reason || "Access denied"
+      end
     end
   else
     # edit and delete require ownership
     access_result = Pasto.validate_paste_access(env, require_owner: true)
     unless access_result.success?
-      env.response.status_code = access_result.status_code
-      next access_result.reason || "Access denied"
+      if access_result.status_code == 404
+        halt env, 404
+      else
+        env.response.status_code = access_result.status_code
+        next access_result.reason || "Access denied"
+      end
     end
   end
 end
@@ -1374,12 +1382,10 @@ get "/:id" do |env|
       begin
         paste = Pasto::Paste.from_file(paste_id)
         if paste.nil?
-          env.response.status_code = 404
-          next "Paste not found"
+          halt env, 404
         end
       rescue
-        env.response.status_code = 404
-        next "Paste not found"
+        halt env, 404
       end
 
       # Map extension to language
@@ -1391,8 +1397,7 @@ get "/:id" do |env|
   begin
     paste = Pasto::Paste.from_file(id)
     if paste.nil?
-      env.response.status_code = 404
-      next "Paste not found"
+      halt env, 404
     end
   rescue
     halt env, 404

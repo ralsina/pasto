@@ -1,4 +1,5 @@
 require "../src/paste"
+require "kemal"
 
 # ============================================================================
 # Request Filters and Middleware
@@ -106,11 +107,15 @@ module Pasto
 
       access_result = Pasto.validate_paste_access(env, require_owner: require_owner, allow_raw_encrypted: allow_raw_encrypted)
       unless access_result.success?
-        env.response.status_code = access_result.status_code
-        env.response.content_type = "text/plain"
-        env.response.print access_result.reason || "Access denied"
-        env.response.close
-        return false
+        if access_result.status_code == 404
+          raise Kemal::Exceptions::RouteNotFound.new(env)
+        else
+          env.response.status_code = access_result.status_code
+          env.response.content_type = "text/plain"
+          env.response.print access_result.reason || "Access denied"
+          env.response.close
+          return false
+        end
       end
 
       true
