@@ -1,5 +1,6 @@
 require "sepia"
 require "../paste"
+require "../ssh_utils"
 
 module Pasto
   class SSHKey < Sepia::Object
@@ -7,9 +8,11 @@ module Pasto
 
     property owner_id : String?
     property pastes : Array(Paste)
+    property fingerprint : String
     property created_at : Time
 
     def initialize(fingerprint : String)
+      @fingerprint = fingerprint
       @sepia_id = self.class.sanitize_fingerprint(fingerprint)
       @owner_id = nil
       @pastes = [] of Paste
@@ -55,16 +58,18 @@ module Pasto
     # Sepia serialization methods
     def to_sepia : String
       {
-        owner_id:   @owner_id,
-        pastes:     @pastes.map { |paste_item| {id: paste_item.sepia_id, content: paste_item.content, language: paste_item.language, theme: paste_item.theme, title: paste_item.title, filename: paste_item.filename, created_at: paste_item.created_at.to_rfc3339, updated_at: paste_item.updated_at.to_rfc3339} },
-        created_at: @created_at.to_rfc3339,
+        owner_id:    @owner_id,
+        fingerprint: @fingerprint,
+        pastes:      @pastes.map { |paste_item| {id: paste_item.sepia_id, content: paste_item.content, language: paste_item.language, theme: paste_item.theme, title: paste_item.title, filename: paste_item.filename, created_at: paste_item.created_at.to_rfc3339, updated_at: paste_item.updated_at.to_rfc3339} },
+        created_at:  @created_at.to_rfc3339,
       }.to_json
     end
 
     def self.from_sepia(sepia_string : String) : SSHKey
       data = Hash(String, JSON::Any).from_json(sepia_string)
 
-      key = new("") # Placeholder, sepia_id set by Sepia
+      fingerprint = data["fingerprint"]?.try(&.as_s) || ""
+      key = new(fingerprint) # sepia_id set by Sepia
       key.owner_id = data["owner_id"]?.try(&.as_s?)
       key.created_at = Time.parse_rfc3339(data["created_at"].as_s)
 

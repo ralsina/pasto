@@ -143,7 +143,7 @@
                     </div>
                   </div>
                   <div class="api-key-actions">
-                    <button class="copy-btn" onclick="copyToClipboard('<%= api_key.id %>')" title="Copy API Key">
+                    <button class="copy-btn" onclick="copyToClipboard('<%= api_key.id %>', 'api')" title="Copy API Key">
                       <i data-lucide="copy"></i>
                     </button>
                     <button class="revoke-btn" onclick="confirmRevokeKey('<%= api_key.id %>')" title="Revoke API Key">
@@ -176,7 +176,17 @@
             <div class="keys-list">
               <% current_user.keys.each do |ssh_key| %>
                 <div class="key-item">
-                  <code class="fingerprint"><%= ssh_key.sepia_id.gsub("_", "/") %></code>
+                  <div class="key-info">
+                    <code class="fingerprint"><%= ssh_key.sepia_id.gsub("_", "/") %></code>
+                    <div class="key-meta">
+                      <span class="created-date">Added: <%= ssh_key.created_at.to_s("%Y-%m-%d %H:%M") %></span>
+                    </div>
+                  </div>
+                  <div class="key-actions">
+                    <button class="revoke-btn" onclick="confirmRevokeSSHKey('<%= ssh_key.sepia_id %>', 'SSH Key')" title="Revoke SSH Key">
+                      <i data-lucide="trash-2"></i>
+                    </button>
+                  </div>
                 </div>
               <% end %>
             </div>
@@ -265,11 +275,38 @@ function confirmRevokeKey(apiKeyId) {
   });
 }
 
+function confirmRevokeSSHKey(fingerprint, keyType) {
+  showConfirmDialog(`Are you sure you want to revoke SSH key "${keyType}"? This action cannot be undone and will immediately invalidate the key.`, () => {
+    fetch('/profile/ssh-keys/revoke', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `fingerprint=${encodeURIComponent(fingerprint)}`
+    })
+    .then(response => {
+      if (response.ok) {
+        // Reload the page to show updated SSH key list
+        window.location.reload();
+      } else {
+        // Handle error
+        showError('Failed to revoke SSH key. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error revoking SSH key:', error);
+      showError('Failed to revoke SSH key. Please try again.');
+    });
+  });
+}
+
 // Copy to clipboard function
-function copyToClipboard(text) {
+function copyToClipboard(text, type = 'api') {
+  const itemType = type === 'ssh' ? 'SSH key fingerprint' : 'API key';
+
   navigator.clipboard.writeText(text).then(function() {
     // Show success message
-    showSuccess('API key copied to clipboard!');
+    showSuccess(`${itemType} copied to clipboard!`);
   }, function(err) {
     // Fallback for older browsers
     const textArea = document.createElement("textarea");
@@ -281,12 +318,12 @@ function copyToClipboard(text) {
     try {
       const successful = document.execCommand('copy');
       if (successful) {
-        showSuccess('API key copied to clipboard!');
+        showSuccess(`${itemType} copied to clipboard!`);
       } else {
-        showError('Failed to copy API key');
+        showError(`Failed to copy ${itemType}`);
       }
     } catch (err) {
-      showError('Failed to copy API key');
+      showError(`Failed to copy ${itemType}`);
     }
 
     document.body.removeChild(textArea);

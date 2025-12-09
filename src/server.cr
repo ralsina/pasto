@@ -40,7 +40,6 @@ module Pasto
     User.find(user_session.user_id)
   end
 
-  
   # Unified access control result
   struct AccessResult
     property? allowed : Bool
@@ -163,12 +162,12 @@ module Pasto
     render "src/views/layout.ecr"
   end
 
-# Health check endpoint - returns service status
-get "/health" do |env|
-  env.response.content_type = "text/plain"
-  env.response.status_code = 200
-  "OK"
-end
+  # Health check endpoint - returns service status
+  get "/health" do |env|
+    env.response.content_type = "text/plain"
+    env.response.status_code = 200
+    "OK"
+  end
 
   # Favicon redirect for browsers that request /favicon without extension
   get "/favicon" do |env|
@@ -369,7 +368,7 @@ before_all do |env|
     # Handle preflight OPTIONS requests
     continue = Pasto::Filters.handle_cors_preflight(env)
     unless continue
-      next  # Skip further processing for OPTIONS requests
+      next # Skip further processing for OPTIONS requests
     end
 
     # Add CORS headers to all API responses
@@ -556,6 +555,77 @@ post "/profile/api-keys/revoke" do |env|
     if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
       env.response.content_type = "application/json"
       {"status" => "error", "message" => "Failed to revoke API key"}.to_json
+    else
+      env.redirect "/profile?error=save_failed"
+    end
+  end
+end
+
+# SSH Key revocation route
+post "/profile/ssh-keys/revoke" do |env|
+  current_user = Pasto.get_current_user(env)
+  unless current_user
+    env.response.status_code = 401
+    next "Unauthorized"
+  end
+
+  fingerprint = env.params.body["fingerprint"]?
+  if fingerprint.nil? || fingerprint.empty?
+    env.response.status_code = 400
+    next "SSH key fingerprint is required"
+  end
+
+  # Convert URL-safe fingerprint back to file-safe format
+  file_safe_fingerprint = fingerprint.gsub("/", "_")
+
+  # Find the SSH key
+  ssh_key = Pasto::SSHKey.find(file_safe_fingerprint)
+  if ssh_key.nil?
+    env.response.status_code = 404
+    next "SSH key not found"
+  end
+
+  # Verify the key belongs to the current user
+  if ssh_key.owner_id != current_user.sepia_id
+    env.response.status_code = 403
+    next "You can only revoke your own SSH keys"
+  end
+
+  # Prevent revoking the last SSH key (user needs at least one for SSH access)
+  if current_user.keys.size <= 1
+    env.response.status_code = 400
+    next "You cannot revoke your last SSH key. You must have at least one SSH key for access."
+  end
+
+  # Remove the SSH key from user's key list
+  current_user.keys.delete(ssh_key)
+
+  # Save user changes
+  if current_user.save
+    # Delete the SSH key file
+    begin
+      ssh_key_file_path = "data/Pasto::SSHKey/#{file_safe_fingerprint}"
+      if File.exists?(ssh_key_file_path)
+        File.delete(ssh_key_file_path)
+      end
+    rescue ex
+      puts "Error deleting SSH key file #{file_safe_fingerprint}: #{ex.message}"
+    end
+
+    puts "User #{current_user.sepia_id} revoked SSH key #{file_safe_fingerprint}"
+
+    # Check if this is an AJAX request
+    if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+      env.response.content_type = "application/json"
+      {"status" => "success", "message" => "SSH key revoked successfully"}.to_json
+    else
+      env.redirect "/profile?updated=true"
+    end
+  else
+    env.response.status_code = 500
+    if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+      env.response.content_type = "application/json"
+      {"status" => "error", "message" => "Failed to revoke SSH key"}.to_json
     else
       env.redirect "/profile?error=save_failed"
     end
@@ -1737,7 +1807,6 @@ get "/api/v1/pastes" do |env|
     }.to_json
   end
 
-    
   # Pagination parameters
   page = (env.params.query["page"]?.try(&.to_i) || 1).clamp(1, 1000)
   limit = (env.params.query["limit"]?.try(&.to_i) || 20).clamp(1, 100)
@@ -1784,7 +1853,6 @@ post "/api/v1/pastes" do |env|
     }.to_json
   end
 
-    
   # Parse request body
   begin
     body = env.request.body.as(IO).gets_to_end
@@ -1912,7 +1980,6 @@ get "/api/v1/pastes/:id" do |env|
     }.to_json
   end
 
-    
   id = env.params.url["id"]
 
   # Load paste
@@ -1971,7 +2038,6 @@ get "/api/v1/pastes/:id/content" do |env|
     }.to_json
   end
 
-    
   id = env.params.url["id"]
 
   # Load paste
@@ -2113,21 +2179,20 @@ patch "/api/v1/pastes/:id" do |env|
       }.to_json
     else
       env.response.status_code = 500
-      next {
+      {
         "error"   => "Internal Server Error",
         "message" => "Failed to update paste",
       }.to_json
     end
-
   rescue JSON::ParseException
     env.response.status_code = 400
-    next {
+    {
       "error"   => "Bad Request",
       "message" => "Invalid JSON in request body",
     }.to_json
   rescue ex
     env.response.status_code = 500
-    next {
+    {
       "error"   => "Internal Server Error",
       "message" => "An unexpected error occurred: #{ex.message}",
     }.to_json
@@ -2147,7 +2212,6 @@ delete "/api/v1/pastes/:id" do |env|
     }.to_json
   end
 
-    
   id = env.params.url["id"]
 
   # Load paste

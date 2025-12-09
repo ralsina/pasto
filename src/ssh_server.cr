@@ -2,6 +2,7 @@ require "../src/models/ssh_key"
 require "../src/models/auth_token"
 require "../src/models/user"
 require "../src/models/api_key"
+require "../src/models/ssh_key_challenge"
 require "shirk"
 require "sepia"
 require "uri"
@@ -52,6 +53,7 @@ module PastoSSH
   @@paste_limiter : RateLimiter?
   @@login_limiter : RateLimiter?
   @@conn_limiter : RateLimiter?
+  @@ssh_key_limiter : RateLimiter?
   @@rate_mutex = Mutex.new
 
   def self.storage_dir=(dir : String)
@@ -65,11 +67,13 @@ module PastoSSH
 
   def self.init_rate_limiters(paste_limit : Int32, paste_window : Int32,
                               login_limit : Int32, login_window : Int32,
-                              conn_limit : Int32, conn_window : Int32)
+                              conn_limit : Int32, conn_window : Int32,
+                              ssh_key_limit : Int32, ssh_key_window : Int32)
     @@rate_mutex.synchronize do
       @@paste_limiter = RateLimiter.new(paste_limit, paste_window)
       @@login_limiter = RateLimiter.new(login_limit, login_window)
       @@conn_limiter = RateLimiter.new(conn_limit, conn_window)
+      @@ssh_key_limiter = RateLimiter.new(ssh_key_limit, ssh_key_window)
     end
   end
 
@@ -118,6 +122,21 @@ module PastoSSH
     end
   end
 
+  # Check SSH key operation rate limit
+  private def self.allow_ssh_key_operation?(fingerprint : String) : Bool
+    @@rate_mutex.synchronize do
+      if limiter = @@ssh_key_limiter
+        allowed = limiter.allow?(fingerprint)
+        unless allowed
+          puts "⚠️  SSH rate limit hit: SSH key operation limit (Key: #{fingerprint})"
+        end
+        allowed
+      else
+        true
+      end
+    end
+  end
+
   def self.create_server(host_key : String, port : Int32, bind_address : String)
     server = Shirk::Server.new(
       host: bind_address,
@@ -128,6 +147,7 @@ module PastoSSH
     # Accept all public keys and store the fingerprint (with rate limiting)
     server.on_auth_pubkey do |user, fingerprint|
       puts "SSH auth: user '#{user}' with key #{fingerprint}"
+      puts "SSH DEBUG: Fingerprint received by SSH server: #{fingerprint}"
 
       # Check connection rate limit
       unless allow_connection?(fingerprint)
@@ -159,6 +179,10 @@ module PastoSSH
         handle_api_key(ctx, @@current_fingerprint, args)
       when "help"
         handle_help(ctx, @@base_url)
+      when "add-key"
+        handle_add_key(ctx, @@current_fingerprint, args)
+      when "ssh-key"
+        handle_ssh_key(ctx, @@current_fingerprint, args)
       else
         ctx.write_stderr("Unknown command: #{ctx.command}\n")
         ctx.write_stderr("Use 'help' for usage information.\n")
@@ -454,6 +478,10 @@ DOC
     ctx.write("API key management:\n")
     ctx.write("  ssh #{host} api-key create    Create a new API key\n")
     ctx.write("  ssh #{host} api-key list      List your API keys\n\n")
+    ctx.write("SSH key management:\n")
+    ctx.write("  ssh #{host} add-key \"PUBLIC_KEY\"    Add a new SSH key (creates challenge)\n")
+    ctx.write("  ssh #{host} ssh-key list             List your SSH keys\n")
+    ctx.write("  ssh #{host} ssh-key response CODE     Complete key addition challenge\n\n")
     ctx.write("Login to associate pastes with your account:\n")
     ctx.write("  ssh #{host} login\n\n")
     ctx.write("Show this help:\n")
@@ -669,5 +697,225 @@ DOC
 
     ctx.write("✅ API key '#{key_to_revoke}' has been revoked successfully.\n")
     0
+  end
+
+  # Handle add-key command - create a challenge for adding a new SSH key
+  private def self.handle_add_key(ctx, fingerprint : String, args : String) : Int32
+    puts "SSH: add-key called with fingerprint=#{fingerprint}, args=#{args.inspect}"
+
+    # Check SSH key operation rate limit
+    unless allow_ssh_key_operation?(fingerprint)
+      ctx.write_stderr("Rate limit exceeded. Please wait before adding another SSH key.\n")
+      return 1
+    end
+
+    # Find current user for this SSH key
+    ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
+    current_user = if owner_id = ssh_key.owner_id
+                     Pasto::User.find(owner_id)
+                   else
+                     ctx.write_stderr("Error: You must have a user account to add SSH keys.\n")
+                     ctx.write_stderr("Create one with: ssh host login\n")
+                     return 1
+                   end
+
+    unless current_user
+      ctx.write_stderr("Error: User account not found.\n")
+      return 1
+    end
+
+    # Extract the public key from args
+    if args.strip.empty?
+      ctx.write_stderr("Error: Please provide a public key.\n")
+      ctx.write_stderr("Usage: ssh host add-key \"ssh-rsa AAAAB3NzaC1yc2E...\"\n")
+      return 1
+    end
+
+    public_key = args.strip
+
+    # Validate the SSH key format
+    begin
+      # Normalize and validate the key
+      normalized_key = Pasto::SSHUtils.normalize_key(public_key)
+
+      # Additional sanity checks
+      unless Pasto::SSHUtils.sanity_check_key(normalized_key)
+        ctx.write_stderr("Error: Invalid SSH key format.\n")
+        return 1
+      end
+
+      # Extract fingerprint
+      new_fingerprint = Pasto::SSHUtils.extract_fingerprint(normalized_key)
+
+      # Check if key is already associated with any user
+      if Pasto::SSHUtils.key_already_associated?(new_fingerprint)
+        ctx.write_stderr("Error: This SSH key is already associated with another user.\n")
+        return 1
+      end
+
+      # Create challenge
+      challenge = Pasto::SSHKeyChallenge.create_for_key(current_user.sepia_id, normalized_key)
+
+      ctx.write("✅ SSH key challenge created!\n")
+      ctx.write("Challenge Code: #{challenge.sepia_id}\n")
+      ctx.write("Fingerprint: #{new_fingerprint}\n\n")
+      ctx.write("To complete the key addition, authenticate with the new key and run:\n")
+      ctx.write("ssh -i path/to/new/key -p 2222 #{URI.parse(@@base_url).host} ssh-key response #{challenge.sepia_id}\n\n")
+      ctx.write("⏰ This challenge expires in 30 minutes.\n")
+
+      puts "SSH: created challenge #{challenge.sepia_id} for user #{current_user.sepia_id} (new key fingerprint: #{new_fingerprint})"
+      0
+    rescue ex
+      ctx.write_stderr("Error processing SSH key: #{ex.message}\n")
+      puts "SSH: add-key failed: #{ex.message}"
+      1
+    end
+  end
+
+  # Handle ssh-key command - manage existing SSH keys and respond to challenges
+  private def self.handle_ssh_key(ctx, fingerprint : String, args : String) : Int32
+    # Parse subcommand (list, response, etc.)
+    parts = args.split(/\s+/)
+    subcommand = parts[0]? || ""
+
+    case subcommand
+    when "list"
+      handle_ssh_key_list(ctx, fingerprint)
+    when "response"
+      challenge_code = parts[1]? || ""
+      handle_ssh_key_response(ctx, fingerprint, challenge_code)
+    else
+      ctx.write_stderr("SSH key management:\n")
+      ctx.write_stderr("  ssh host ssh-key list                 List your SSH keys\n")
+      ctx.write_stderr("  ssh host ssh-key response <code>      Complete key addition challenge\n")
+      1
+    end
+  end
+
+  # Handle ssh-key list command
+  private def self.handle_ssh_key_list(ctx, fingerprint : String) : Int32
+    # Find current user for this SSH key
+    puts "SSH DEBUG: Looking up SSH key with fingerprint: #{fingerprint}"
+    ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
+    puts "SSH DEBUG: Found SSH key: #{ssh_key.inspect}"
+
+    current_user = if owner_id = ssh_key.owner_id
+                     puts "SSH DEBUG: SSH key has owner_id: #{owner_id}"
+                     user = Pasto::User.find(owner_id)
+                     puts "SSH DEBUG: Found user: #{user.inspect}"
+                     user
+                   else
+                     puts "SSH DEBUG: SSH key has no owner_id"
+                     ctx.write("No SSH keys found. Create an account first: ssh host login\n")
+                     return 0
+                   end
+
+    unless current_user
+      ctx.write("User account not found.\n")
+      return 0
+    end
+
+    user_keys = current_user.keys
+    if user_keys.empty?
+      ctx.write("No SSH keys found for your account.\n")
+      return 0
+    end
+
+    ctx.write("Your SSH keys (#{user_keys.size} total):\n")
+    ctx.write("=" * 50 + "\n\n")
+
+    user_keys.each do |key|
+      created = key.created_at.to_s("%Y-%m-%d %H:%M UTC")
+      # Compare the full fingerprints, not sanitized ones
+      is_current = key.fingerprint == fingerprint
+      current_marker = is_current ? " ← CURRENT KEY" : ""
+
+      ctx.write("Fingerprint: #{key.fingerprint}#{current_marker}\n")
+      ctx.write("  Created: #{created}\n")
+      ctx.write("  Has owner: #{key.owner_id ? "Yes" : "No"}\n\n")
+    end
+
+    0
+  end
+
+  # Handle ssh-key response command - validate challenge and add key
+  private def self.handle_ssh_key_response(ctx, fingerprint : String, challenge_code : String) : Int32
+    # Check SSH key operation rate limit
+    unless allow_ssh_key_operation?(fingerprint)
+      ctx.write_stderr("Rate limit exceeded. Please wait before completing another challenge.\n")
+      return 1
+    end
+
+    if challenge_code.empty?
+      ctx.write_stderr("Error: Please provide a challenge code.\n")
+      ctx.write_stderr("Usage: ssh host ssh-key response <challenge-code>\n")
+      return 1
+    end
+
+    # Find the challenge
+    challenge = Pasto::SSHKeyChallenge.find_by_code(challenge_code)
+    unless challenge
+      ctx.write_stderr("Error: Challenge code not found or expired.\n")
+      return 1
+    end
+
+    # Extract fingerprint of the key being used for this connection
+    current_fingerprint = Pasto::SSHUtils.extract_fingerprint_from_pubkey(fingerprint)
+
+    # Verify the challenge matches the key being used (both should have SHA256: prefix)
+    unless challenge.fingerprint == current_fingerprint
+      ctx.write_stderr("Error: Challenge fingerprint doesn't match the key you're using.\n")
+      ctx.write_stderr("Expected fingerprint: #{challenge.fingerprint}\n")
+      ctx.write_stderr("Current key fingerprint: #{current_fingerprint}\n")
+      return 1
+    end
+
+    # Find the user
+    user = Pasto::User.find(challenge.user_id)
+    unless user
+      ctx.write_stderr("Error: User account not found.\n")
+      return 1
+    end
+
+    # Validate and delete the challenge (atomic operation)
+    unless Pasto::SSHKeyChallenge.validate_and_delete(challenge_code, user.sepia_id, challenge.fingerprint)
+      ctx.write_stderr("Error: Challenge validation failed.\n")
+      return 1
+    end
+
+    # Use the fingerprint from the challenge directly (already has SHA256: prefix)
+    # Create or find the SSH key - the SSHKey constructor will sanitize the fingerprint for storage
+    new_ssh_key = Pasto::SSHKey.find_or_create(challenge.fingerprint)
+
+    # Check if key is already associated with a different user (race condition check)
+    if new_ssh_key.owner_id && new_ssh_key.owner_id != user.sepia_id
+      ctx.write_stderr("Error: This SSH key is already associated with another user.\n")
+      return 1
+    end
+
+    # Associate the key with the user
+    new_ssh_key.owner_id = user.sepia_id
+    unless new_ssh_key.save
+      ctx.write_stderr("Error: Failed to save SSH key association.\n")
+      return 1
+    end
+
+    # Add the key to the user's key list
+    existing_key = user.keys.find { |k| k.fingerprint == challenge.fingerprint }
+    unless existing_key
+      user.add_key(new_ssh_key)
+    end
+
+    ctx.write("✅ SSH key added successfully!\n")
+    ctx.write("Fingerprint: #{challenge.fingerprint}\n")
+    ctx.write("User: #{user.display_name}\n")
+    ctx.write("You can now use this SSH key to create pastes and manage your account.\n")
+
+    puts "SSH: successfully added key #{challenge.fingerprint} to user #{user.sepia_id}"
+    0
+  rescue ex
+    ctx.write_stderr("Error completing challenge: #{ex.message}\n")
+    puts "SSH: ssh-key response failed: #{ex.message}"
+    1
   end
 end

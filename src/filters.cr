@@ -21,26 +21,26 @@ module Pasto
 
       # Determine allowed origin
       allowed_origin = if origin
-                        # Get the server's base URL for comparison
-                        config = Pasto.config
-                        server_origin = if config && !config.base_url.empty?
-                                         begin
-                                           uri = URI.parse(config.base_url)
-                                           "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != 80 && uri.port != 443 ? ":#{uri.port}" : ""}"
-                                         rescue
-                                           nil
+                         # Get the server's base URL for comparison
+                         config = Pasto.config
+                         server_origin = if config && !config.base_url.empty?
+                                           begin
+                                             uri = URI.parse(config.base_url)
+                                             "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != 80 && uri.port != 443 ? ":#{uri.port}" : ""}"
+                                           rescue
+                                             nil
+                                           end
                                          end
-                                       end
 
-                        # Allow the origin if it matches our server or is localhost (for development)
-                        if server_origin && origin == server_origin
-                          origin
-                        elsif origin.matches?(/https?:\/\/localhost(:\d+)?/) || origin.matches?(/https?:\/\/127\.0\.0\.1(:\d+)?/)
-                          origin
-                        else
-                          nil
-                        end
-                      end
+                         # Allow the origin if it matches our server or is localhost (for development)
+                         if server_origin && origin == server_origin
+                           origin
+                         elsif origin.matches?(/https?:\/\/localhost(:\d+)?/) || origin.matches?(/https?:\/\/127\.0\.0\.1(:\d+)?/)
+                           origin
+                         else
+                           nil
+                         end
+                       end
 
       # Set CORS headers if origin is allowed
       if allowed_origin
@@ -48,7 +48,7 @@ module Pasto
         env.response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS, HEAD"
         env.response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, X-Requested-With"
         env.response.headers["Access-Control-Allow-Credentials"] = "false"
-        env.response.headers["Access-Control-Max-Age"] = "86400"  # 24 hours
+        env.response.headers["Access-Control-Max-Age"] = "86400" # 24 hours
       end
     end
 
@@ -59,7 +59,7 @@ module Pasto
         env.response.content_type = "text/plain"
         env.response.headers["Content-Length"] = "0"
         add_cors_headers(env)
-        return false  # Signal that request is handled
+        return false # Signal that request is handled
       end
       true
     end
@@ -112,13 +112,13 @@ module Pasto
     # Paths that should skip paste access control
     SKIP_ACCESS_CONTROL = [
       "/help", "/profile", "/", "/api-docs", "/openapi.yaml",
-      "/favicon", "/favicon.ico", "/favicon.png", "/syntax-theme.css"
+      "/favicon", "/favicon.ico", "/favicon.png", "/syntax-theme.css",
     ]
 
     # Path prefixes that should skip paste access control
     SKIP_ACCESS_CONTROL_PREFIXES = [
       "/auth/", "/api/", "/assets/", "/cache/", "/preview/",
-      "/api/qr/", "/api/languages", "/api/themes"
+      "/api/qr/", "/api/languages", "/api/themes",
     ]
 
     # Check if path needs paste access control
@@ -247,8 +247,8 @@ module Pasto
         env.response.status_code = 401
         env.response.content_type = "application/json"
         env.response.print({
-          error: auth_result.error,
-          message: auth_result.message
+          error:   auth_result.error,
+          message: auth_result.message,
         }.to_json)
         env.response.close
         return false

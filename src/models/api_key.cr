@@ -54,9 +54,9 @@ module Pasto
     # Sepia serialization methods
     def to_sepia : String
       {
-        user_id: @user_id,
+        user_id:  @user_id,
         key_data: @key_data,
-        sepia_id: @sepia_id,  # Store the key in the data too
+        sepia_id: @sepia_id, # Store the key in the data too
       }.to_json
     end
 

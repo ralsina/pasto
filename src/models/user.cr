@@ -35,6 +35,7 @@ module Pasto
       key.owner_id = @sepia_id
       @keys << key
       key.save # Save the key with updated owner_id
+      save     # Save the user with updated keys array
       key
     end
 
