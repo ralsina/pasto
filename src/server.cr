@@ -500,6 +500,68 @@ post "/profile" do |env|
   end
 end
 
+# API Key revocation route
+post "/profile/api-keys/revoke" do |env|
+  current_user = Pasto.get_current_user(env)
+  unless current_user
+    env.response.status_code = 401
+    next "Unauthorized"
+  end
+
+  api_key_id = env.params.body["api_key_id"]?
+  if api_key_id.nil? || api_key_id.empty?
+    env.response.status_code = 400
+    next "API key ID is required"
+  end
+
+  # Find the API key
+  api_key = Pasto::ApiKey.find(api_key_id)
+  if api_key.nil?
+    env.response.status_code = 404
+    next "API key not found"
+  end
+
+  # Verify the key belongs to the current user
+  if api_key.user_id != current_user.sepia_id
+    env.response.status_code = 403
+    next "You can only revoke your own API keys"
+  end
+
+  # Remove the API key from user's key list
+  current_user.api_keys.delete(api_key_id)
+
+  # Save user changes
+  if current_user.save
+    # Delete the API key file
+    begin
+      api_key_file_path = "data/Pasto::ApiKey/#{api_key_id}"
+      if File.exists?(api_key_file_path)
+        File.delete(api_key_file_path)
+      end
+    rescue ex
+      puts "Error deleting API key file #{api_key_id}: #{ex.message}"
+    end
+
+    puts "User #{current_user.sepia_id} revoked API key #{api_key_id}"
+
+    # Check if this is an AJAX request
+    if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+      env.response.content_type = "application/json"
+      {"status" => "success", "message" => "API key revoked successfully"}.to_json
+    else
+      env.redirect "/profile?updated=true"
+    end
+  else
+    env.response.status_code = 500
+    if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+      env.response.content_type = "application/json"
+      {"status" => "error", "message" => "Failed to revoke API key"}.to_json
+    else
+      env.redirect "/profile?error=save_failed"
+    end
+  end
+end
+
 # SSH Auth token route - validate token and create session
 get "/auth/:token" do |env|
   token_id = env.params.url["token"]

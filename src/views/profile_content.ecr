@@ -146,6 +146,9 @@
                     <button class="copy-btn" onclick="copyToClipboard('<%= api_key.id %>')" title="Copy API Key">
                       <i data-lucide="copy"></i>
                     </button>
+                    <button class="revoke-btn" onclick="confirmRevokeKey('<%= api_key.id %>')" title="Revoke API Key">
+                      <i data-lucide="trash-2"></i>
+                    </button>
                   </div>
                 </div>
               <% end %>
@@ -233,6 +236,31 @@ function confirmDelete(pasteId) {
     .catch(error => {
       console.error('Error deleting paste:', error);
       showError('Failed to delete paste. Please try again.');
+    });
+  });
+}
+
+function confirmRevokeKey(apiKeyId) {
+  showConfirmDialog('Are you sure you want to revoke this API key? This action cannot be undone and will immediately invalidate the key.', () => {
+    fetch(`/profile/api-keys/revoke`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `api_key_id=${encodeURIComponent(apiKeyId)}`
+    })
+    .then(response => {
+      if (response.ok) {
+        // Reload the page to show updated API key list
+        window.location.reload();
+      } else {
+        // Handle error
+        showError('Failed to revoke API key. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error revoking API key:', error);
+      showError('Failed to revoke API key. Please try again.');
     });
   });
 }
@@ -550,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-left: 1rem;
   }
 
-  .copy-btn {
+  .copy-btn, .revoke-btn {
     padding: 0.5rem;
     border-radius: var(--pico-border-radius);
     border: 1px solid var(--pico-border-color);
@@ -571,7 +599,13 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--pico-primary);
   }
 
-  .copy-btn i {
+  .revoke-btn:hover {
+    background-color: var(--pico-del-background);
+    border-color: var(--pico-del-border);
+    color: var(--pico-del-color);
+  }
+
+  .copy-btn i, .revoke-btn i {
     width: 16px;
     height: 16px;
   }
