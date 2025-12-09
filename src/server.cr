@@ -840,7 +840,15 @@ get "/" do |env|
   meta_url = ""
   meta_image = ""
 
-  content = render "src/views/index.ecr"
+  # Set variables for unified template
+  mode = "create"
+  paste = nil
+  initial_content = ""
+  initial_language = nil
+  initial_title = nil
+  paste_id = nil
+
+  content = render "src/views/_editor_unified.ecr"
   render "src/views/layout.ecr"
 end
 
@@ -1083,7 +1091,14 @@ get "/:id/edit" do |env|
   meta_url = ""
   meta_image = ""
 
-  content = render "src/views/edit.ecr"
+  # Set variables for unified template
+  mode = "edit"
+  initial_content = paste.content
+  initial_language = paste.language
+  initial_title = paste.title
+  paste_id = paste.sepia_id
+
+  content = render "src/views/_editor_unified.ecr"
   render "src/views/layout.ecr"
 end
 

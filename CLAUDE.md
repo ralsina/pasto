@@ -57,8 +57,8 @@ docker compose down           # Stop services
 #### Main Source Files
 - `src/pasto.cr`: Web server entry point and configuration
 - `src/pasto_ssh.cr`: SSH server entry point
-- `src/server.cr`: Kemal routes and middleware
-- `src/paste.cr`: Core paste functionality, highlighting, themes
+- `src/server.cr`: Kemal routes and middleware (2333 lines)
+- `src/paste.cr`: Core paste functionality, highlighting, themes (1015 lines)
 - `src/user_session.cr`: Session management
 
 #### Views (`src/views/`)
@@ -136,4 +136,3 @@ Comprehensive rate limiting is configured:
 - Static assets are baked into the binary using BakedFileHandler
 - Assets include CSS themes, JavaScript for live preview
 - Cache directory stores rendered HTML for performance
-- only I the user can authorize marking a task in that list as completed

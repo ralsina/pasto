@@ -50,7 +50,7 @@ module Pasto
         )
 
         unless status.success?
-          raise "ssh-keygen failed with exit code #{status.exit_code}. Error: #{error.to_s}"
+          raise "ssh-keygen failed with exit code #{status.exit_code}. Error: #{error}"
         end
 
         output_str = output.to_s.strip
@@ -58,7 +58,7 @@ module Pasto
         if match = output_str.match(/SHA256:(\S+)/)
           match[1]
         else
-          raise "Failed to extract SSH key fingerprint from output: #{output_str}. Error: #{error.to_s}"
+          raise "Failed to extract SSH key fingerprint from output: #{output_str}. Error: #{error}"
         end
       ensure
         File.delete(temp_file) if File.exists?(temp_file)

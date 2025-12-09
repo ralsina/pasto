@@ -1,0 +1,602 @@
+<%# Parameters:
+# - mode: "create" | "edit"
+# - paste: Paste? (nil for create mode, Paste object for edit mode)
+# - initial_content: string
+# - initial_language: string?
+# - initial_title: string?
+# - paste_id: string? (only for edit mode)
+# - current_user: User?
+%>
+
+<%# Anonymous user warning - only in create mode %>
+<% if mode == "create" && !current_user %>
+  <div id="anon-warning" class="anon-warning" style="display:none; margin: 1rem;">
+    <i data-lucide="info"></i>
+    You are not logged in. Pastes created will not be associated with an account and cannot be edited later.
+    <a href="/profile" style="margin-left:0.5em;">Log in to enable editing</a>
+    <button id="anon-warning-dismiss" title="Dismiss" aria-label="Dismiss anonymous user warning" style="background:none;border:none;color:inherit;cursor:pointer;margin-left:0.5em;font-size:1.1em;vertical-align:middle;">&times;</button>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!localStorage.getItem('pasto_hide_anon_warning')) {
+        document.getElementById('anon-warning').style.display = '';
+      }
+      document.getElementById('anon-warning-dismiss').onclick = function() {
+        document.getElementById('anon-warning').style.display = 'none';
+        localStorage.setItem('pasto_hide_anon_warning', 'true');
+      };
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+  <style>
+    .anon-warning {
+      background: none;
+      color: var(--pico-color);
+      border: 1px solid var(--pico-primary, #0074d9);
+      border-radius: 6px;
+      padding: 0.75em 1em;
+      font-size: 0.97em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      box-shadow: none;
+    }
+    .anon-warning i[data-lucide] {
+      width: 20px;
+      height: 20px;
+      color: var(--pico-primary, #0074d9);
+      flex-shrink: 0;
+    }
+    .anon-warning button {
+      font-weight: bold;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      margin-left: 0.5em;
+      font-size: 1.1em;
+      line-height: 1;
+      padding: 0 0.25em;
+    }
+    .anon-warning a {
+      color: var(--pico-primary, #0074d9);
+      text-decoration: underline;
+      margin-left: 0.5em;
+    }
+    .anon-warning a:hover {
+      text-decoration: none;
+    }
+    </style>
+<% end %>
+
+<%= render "src/views/_editor_container.ecr" %>
+<%= render "src/views/_security_modal.ecr" %>
+
+<script>
+  let jar;
+  let debounceTimer;
+  let currentLanguage = <%= initial_language ? "\"#{initial_language}\"" : "\"\"" %>;
+  const pasteId = <%= paste_id ? "\"#{paste_id}\"" : "null" %>;
+  const initialContent = <%= initial_content.to_json %>;
+  const mode = "<%= mode %>";
+
+  // Security settings object - different defaults for create vs edit
+  let securitySettings = {
+  <% if mode == "create" %>
+    accessControl: 'public',
+    expiration: '',
+    burnAfterReading: false,
+    encryptionEnabled: false,
+    encryptionPassword: null
+  <% else %>
+    accessControl: '<%= paste && paste.private? ? "private" : "public" %>',
+    expiration: '<%= paste && paste.expires_at.year != 9999 ? paste.expires_at.to_s("%Y-%m-%d") : "" %>',
+    burnAfterReading: <%= paste && paste.burn_after_reading? ? "true" : "false" %>,
+    encryptionEnabled: <%= paste && paste.is_encrypted? ? "true" : "false" %>,
+    encryptionPassword: null
+  <% end %>
+  };
+
+  // Mode-specific functions
+  function updateLanguage() {
+    window.updateLanguage(jar, currentLanguage);
+    currentLanguage = document.getElementById('language').value;
+  }
+
+  function togglePreview() {
+    window.togglePreview(jar, window.getLanguageGetter, window.getThemeGetter);
+  }
+
+  function updatePreview() {
+    window.updatePreview(jar, window.getLanguageGetter, window.getThemeGetter);
+
+    // Update currentLanguage if auto-detect is active and language was detected
+    const languageSelect = document.getElementById('language');
+    const isAutoDetect = (languageSelect?.value === 'Auto' || languageSelect?.value === '');
+    if (isAutoDetect && languageSelect?.options) {
+      const autoDetectOption = Array.from(languageSelect.options).find(
+        option => option.value === 'Auto' || option.value === ''
+      );
+      if (autoDetectOption && autoDetectOption.textContent.includes('(')) {
+        const match = autoDetectOption.textContent.match(/\(([^)]+)\)/);
+        if (match) {
+          currentLanguage = match[1];
+        }
+      }
+    }
+  }
+
+<% if mode == "edit" %>
+  function updatePaste() {
+    const content = jar ? jar.toString() : '';
+    const languageSelect = document.getElementById('language');
+    const titleSelect = document.getElementById('paste-title');
+
+    if (!languageSelect || !titleSelect) {
+      showError('Language or title selector not available');
+      return;
+    }
+
+    const language = languageSelect.value;
+    const title = titleSelect.value;
+
+    if (!content.trim()) {
+      showError('Please enter some content');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('language', language);
+    formData.append('title', title);
+
+    // Add security settings to form data
+    formData.append('access_control', securitySettings.accessControl);
+
+    if (securitySettings.expiration) {
+      formData.append('expiration', securitySettings.expiration);
+    }
+
+    if (securitySettings.burnAfterReading) {
+      formData.append('burn_after_reading', 'true');
+    }
+
+    if (securitySettings.accessControl === 'private') {
+      formData.append('private', 'true');
+    }
+
+    if (securitySettings.password) {
+      formData.append('password', securitySettings.password);
+    }
+
+    fetch('/' + pasteId + '/edit', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else if (response.ok) {
+        window.location.href = '/' + pasteId;
+      } else {
+        return response.text().then(text => {
+          throw new Error(text);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error updating paste:', error);
+      showError('Error updating paste: ' + error.message);
+    });
+  }
+
+  // Edit mode security settings dialog
+  function showSecuritySettingsDialog() {
+    window.showSharedSecurityModal(securitySettings, {
+      showEncryptionOptions: false, // Edit doesn't support changing encryption
+      showPasswordOptions: false,   // Edit doesn't support changing password protection
+      primaryButtonStyle: 'var(--pico-primary-background)',
+      primaryButtonTextColor: 'var(--pico-primary-inverse)',
+      onSave: (updatedSettings) => {
+        Object.assign(securitySettings, updatedSettings);
+        updateSecuritySettingsButton();
+      }
+    });
+  }
+
+<% else %>
+  // Create mode functions
+  let isEncryptionEnabled = false;
+
+  function toggleEncryption() {
+    const btn = document.getElementById('encryption-toggle-btn');
+    if (!btn) return;
+
+    const icon = btn.querySelector('svg.lucide');
+    if (!icon) return;
+
+    isEncryptionEnabled = !isEncryptionEnabled;
+    console.log('toggleEncryption called, new state:', isEncryptionEnabled);
+
+    if (isEncryptionEnabled) {
+      btn.title = 'Disable Encryption';
+      btn.setAttribute('aria-label', 'Disable encryption');
+      btn.style.background = 'var(--pico-primary)';
+      btn.style.borderColor = 'var(--pico-primary)';
+      btn.style.color = 'white';
+      icon.setAttribute('data-lucide', 'lock');
+    } else {
+      btn.title = 'Enable Encryption';
+      btn.setAttribute('aria-label', 'Enable encryption');
+      btn.style.background = 'transparent';
+      btn.style.borderColor = 'var(--pico-primary)';
+      btn.style.color = 'var(--pico-primary)';
+      icon.setAttribute('data-lucide', 'unlock');
+    }
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
+
+  async function createPaste(event) {
+    if (event) {
+      event.preventDefault();
+    }
+    const content = jar ? jar.toString() : '';
+    const languageSelect = document.getElementById('language');
+
+    if (!languageSelect) {
+      alert('Language selector not available');
+      return;
+    }
+
+    const language = languageSelect.value;
+
+    if (!content.trim()) {
+      alert('Please enter some content');
+      return;
+    }
+
+    try {
+      let finalContent = content;
+      let encryptionIv = '';
+      let encryptionKey = '';
+      let encryptionSalt = '';
+      let isPasswordBased = false;
+      let isEncrypted = false;
+      let encryptionOptions = null;
+
+      // Handle encryption if enabled
+      if (isEncryptionEnabled) {
+        if (typeof PastoCrypto === 'undefined') {
+          alert('Encryption module not loaded. Please refresh the page and try again.');
+          return;
+        }
+
+        try {
+          encryptionOptions = await showEncryptionOptionsDialog();
+          isEncrypted = true;
+        } catch (error) {
+          console.log('Encryption cancelled:', error.message);
+          return;
+        }
+      }
+
+      if (isEncrypted && encryptionOptions) {
+        let encryptionResult;
+        if (encryptionOptions.type === 'custom') {
+          encryptionResult = await PastoCrypto.encryptWithPassword(content, encryptionOptions.password);
+          encryptionSalt = encryptionResult.salt;
+          isPasswordBased = true;
+          encryptionKey = encryptionOptions.password;
+        } else {
+          encryptionResult = await PastoCrypto.encrypt(content);
+          encryptionKey = encryptionResult.key;
+        }
+
+        finalContent = encryptionResult.encrypted;
+        encryptionIv = encryptionResult.iv;
+      }
+
+      const formData = new FormData();
+      formData.append('content', finalContent);
+      formData.append('language', language);
+
+      // Add security settings
+      if (securitySettings.expiration) {
+        formData.append('expiration', securitySettings.expiration);
+      }
+
+      if (securitySettings.burnAfterReading) {
+        formData.append('burn_after_reading', 'true');
+      }
+
+      if (securitySettings.accessControl === 'private') {
+        formData.append('private', 'true');
+      }
+
+      if (isEncrypted) {
+        formData.append('is_encrypted', 'true');
+        formData.append('encryption_iv', encryptionIv);
+        if (isPasswordBased) {
+          formData.append('password_based', 'true');
+          formData.append('encryption_salt', encryptionSalt);
+          formData.append('encryption_iterations', '100000');
+        }
+      }
+
+      // For encrypted pastes, handle the redirect differently
+      if (isEncrypted && encryptionKey) {
+        const pasteId = 'pending_' + Date.now();
+        PastoCrypto.storeKeyInSession(pasteId, encryptionKey);
+        formData.append('pending_paste_id', pasteId);
+      }
+
+      const response = await fetch('/', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        if (isEncrypted && encryptionKey) {
+          const pasteId = result.id;
+          const pendingId = 'pending_' + Date.now();
+          const storedKey = PastoCrypto.getKeyFromSession(pendingId);
+          if (storedKey) {
+            PastoCrypto.removeKeyFromSession(pendingId);
+            PastoCrypto.storeKeyInSession(pasteId, storedKey);
+          }
+
+          if (isPasswordBased) {
+            showPasswordDialog(encryptionKey, pasteId, result.url);
+          } else {
+            showEncryptionKeyDialog(encryptionKey, result.url);
+          }
+        } else {
+          if (result.is_view_once) {
+            showPasteCreatedModal(result.url, true);
+          } else {
+            window.location.href = result.url;
+          }
+        }
+      } else {
+        const text = await response.text();
+        throw new Error(text);
+      }
+    } catch (error) {
+      console.error('Error creating paste:', error);
+      alert('Error creating paste: ' + error.message);
+    }
+  }
+
+  // Create mode security settings dialog
+  function showSecuritySettingsDialog() {
+    window.showSharedSecurityModal(securitySettings, {
+      onSave: (updatedSettings) => {
+        Object.assign(securitySettings, updatedSettings);
+        if (securitySettings.encryptionEnabled && securitySettings.encryptionPassword === 'auto') {
+          securitySettings.encryptionPassword = generateSecurePassword();
+        }
+        window.encryptionPassword = securitySettings.encryptionPassword;
+        window.isEncryptionEnabled = securitySettings.encryptionEnabled;
+        updateSecuritySettingsButton();
+        showSecurityStatus();
+      }
+    });
+  }
+
+<% end %>
+
+  // Update security settings button appearance
+  function updateSecuritySettingsButton() {
+    const securityBtn = document.getElementById('security-settings-btn');
+    if (!securityBtn) return;
+
+    let activeFeatures = [];
+
+<% if mode == "edit" %>
+    if (securitySettings.expiration) {
+      activeFeatures.push('Expiration');
+    }
+    if (securitySettings.burnAfterReading) {
+      activeFeatures.push('Burn');
+    }
+    if (securitySettings.encryptionEnabled) {
+      activeFeatures.push('Encrypted');
+    }
+<% else %>
+    if (securitySettings.accessControl === 'password') {
+      activeFeatures.push('Password');
+    }
+    if (securitySettings.accessControl === 'private') {
+      activeFeatures.push('Private');
+    }
+    if (securitySettings.expiration) {
+      activeFeatures.push('Expiration');
+    }
+    if (securitySettings.burnAfterReading) {
+      activeFeatures.push('Burn');
+    }
+    if (securitySettings.encryptionEnabled) {
+      activeFeatures.push('Encrypted');
+    }
+<% end %>
+
+    if (activeFeatures.length > 0) {
+      securityBtn.style.background = 'var(--pico-primary)';
+      securityBtn.style.color = 'var(--pico-primary-inverse)';
+      securityBtn.title = `Security Settings: ${activeFeatures.join(', ')}`;
+      const icon = securityBtn.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', 'shield-check');
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }
+    } else {
+      securityBtn.style.background = 'transparent';
+      securityBtn.style.color = 'var(--pico-primary)';
+      securityBtn.title = 'Security Settings';
+      const icon = securityBtn.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', 'shield');
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }
+    }
+  }
+
+  // Initialize CodeJar and setup the page
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Inject controls using inline HTML
+    const controlsGroup = document.getElementById('controls-group');
+    if (controlsGroup) {
+      let controlsHTML = '';
+
+      // Title input - appears in both modes
+      controlsHTML += `<input type="text" id="paste-title" value="<%= initial_title || "" %>" placeholder="Title (optional)" class="controls-input">`;
+
+      // Language selector - appears in both modes
+      controlsHTML += `<select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language"><option value="">Auto</option></select>`;
+
+      // Security Settings button - appears in both modes
+      controlsHTML += `<button onclick="showSecuritySettingsDialog()" class="controls-button" id="security-settings-btn" title="Security Settings" aria-label="Security Settings" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);"><i data-lucide="shield" style="width: 20px; height: 20px;"></i></button>`;
+
+<% if mode == "edit" %>
+      // Edit mode buttons
+      controlsHTML += `<button onclick="updatePaste()" class="controls-button" title="Save Changes" aria-label="Save Changes"><i data-lucide="save" style="width: 20px; height: 20px;"></i></button>`;
+
+      // Navigation buttons - only in edit mode
+      controlsHTML += `<a href="/" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="plus" style="width: 20px; height: 20px;"></i></a>`;
+      controlsHTML += `<a href="/<%= paste_id %>" class="controls-button" title="Cancel" aria-label="Cancel" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i data-lucide="x" style="width: 20px; height: 20px;"></i></a>`;
+<% else %>
+      // Create mode buttons
+      controlsHTML += `<button onclick="createPaste(event)" class="controls-button" title="Create Paste" aria-label="Create Paste"><i data-lucide="save" style="width: 20px; height: 20px;"></i></button>`;
+<% end %>
+
+      // Preview toggle - appears in both modes
+      controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai')" class="controls-button" title="Show Preview" id="controls-show-preview-button" aria-label="Show Preview" style="display: none;"><i data-lucide="eye" style="width: 20px; height: 20px;"></i></button>`;
+      controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" aria-label="Hide Preview" style="display: flex;"><i data-lucide="eye-off" style="width: 20px; height: 20px;"></i></button>`;
+
+      // Shared help and profile buttons
+      controlsHTML += `<%= render "src/views/_controls_help_profile.ecr" %>`;
+
+      controlsGroup.innerHTML = controlsHTML;
+    }
+
+    // Dynamically import CodeJar as ES module
+    const { CodeJar } = await import('/assets/codejar.min.js');
+
+    const editorElement = document.getElementById('editor');
+
+    // Use shared highlight function
+    jar = CodeJar(editorElement, (editor) => {
+      if (typeof window.highlight === 'function') {
+        window.highlight(editor, currentLanguage);
+      }
+    }, {
+      tab: '  ',
+      indentOn: /[{[(]$/,
+      moveToNewLine: /^[}\])]$/,
+      spellcheck: false,
+      catchTab: true,
+      preserveIdent: true,
+      addClosing: true,
+      history: true
+    });
+
+    // Force Chivo Mono font application
+    editorElement.style.fontFamily = "'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace";
+
+    // Set keyboard focus on the editor
+    editorElement.focus();
+
+    // Set initial content
+    jar.updateCode(initialContent);
+
+    // Export jar to window for external functions
+    window.jar = jar;
+
+    // Update preview on content change using debounced function
+    jar.onUpdate(() => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        window.updatePreview(window.jar,
+          () => document.getElementById('language')?.value || '',
+          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+        );
+      }, 300);
+    });
+
+    // Restore preview visibility preference
+    const previewHidden = localStorage.getItem('previewHidden') === 'true';
+    const container = document.getElementById('editor-preview-container');
+    const showButton = document.getElementById('controls-show-preview-button');
+    const hideButton = document.getElementById('controls-hide-preview-button');
+
+    if (previewHidden) {
+      container.classList.add('preview-hidden');
+      if (showButton) showButton.style.display = 'flex';
+      if (hideButton) hideButton.style.display = 'none';
+    } else {
+      container.classList.remove('preview-hidden');
+      if (showButton) showButton.style.display = 'none';
+      if (hideButton) hideButton.style.display = 'flex';
+    }
+
+    // Initialize Lucide icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
+    // Initialize language options via API
+    fetch('/api/languages')
+      .then(response => response.json())
+      .then(languages => {
+        const languageSelect = document.getElementById('language');
+        if (!languageSelect) {
+          console.error('Language selector not found when loading languages');
+          return;
+        }
+
+        const currentValue = languageSelect.value;
+        const pasteLanguage = '<%= (initial_language || "").downcase %>';
+
+        languageSelect.innerHTML = '<option value="">Auto</option>';
+
+        // Add all available languages
+        languages.forEach(langObj => {
+          if (langObj && langObj.name && langObj.value) {
+            const option = document.createElement('option');
+            option.value = langObj.value;
+            option.textContent = langObj.name;
+
+            // Select the current language if it matches
+            if (langObj.value.toLowerCase() === pasteLanguage) {
+              option.selected = true;
+              currentLanguage = pasteLanguage;
+            }
+
+            languageSelect.appendChild(option);
+          }
+        });
+
+        // Update currentLanguage to match the selected value
+        currentLanguage = languageSelect.value || '';
+
+        // Initialize preview after languages are loaded
+        updatePreview();
+      })
+      .catch(error => {
+        console.error('Error loading languages:', error);
+        updatePreview();
+      });
+
+    // Initialize security settings button appearance
+    updateSecuritySettingsButton();
+  });
+</script>
