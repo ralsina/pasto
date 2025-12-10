@@ -870,9 +870,11 @@ post "/highlight" do |env|
   content = env.params.body["content"]?.to_s
   language = env.params.body["language"]?.to_s
   theme = env.params.body["theme"]?.to_s
+  line_numbers_str = env.params.body["line_numbers"]?.to_s
 
   content = "" if content.nil? || content.empty?
   theme = "default-dark" if theme.empty?
+  line_numbers = line_numbers_str == "true"
 
   # Normalize line endings from \r\n and \r to \n
   content = content.gsub("\r\n", "\n").gsub("\r", "\n")
@@ -896,7 +898,7 @@ post "/highlight" do |env|
 
     # Use detected language for highlighting
     highlight_language = detected_language || language
-    highlighted_content, _css = Pasto::Paste.highlight_content(content, highlight_language, theme)
+    highlighted_content, _css = Pasto::Paste.highlight_content(content, highlight_language, theme, line_numbers)
 
     # Return JSON with both highlighted content and detected language
     env.response.content_type = "application/json"
@@ -1755,8 +1757,15 @@ get "/:id/raw" do |env|
     next "This paste is private and can only be accessed by the owner"
   end
 
-  # Set content type for raw text
-  env.response.content_type = "text/plain; charset=utf-8"
+  # Get appropriate MIME type and filename
+  mime_type = Pasto::MimeTypes.get_mime_type(paste.language)
+  filename = Pasto::MimeTypes.generate_filename(paste)
+
+  # Set content type based on language
+  env.response.content_type = mime_type
+
+  # Set content disposition to trigger download with proper filename
+  env.response.headers["Content-Disposition"] = "attachment; filename=\"#{filename}\""
 
   # Mark paste for burning after response if it's burn-after-reading
   if paste.burn_after_reading?
