@@ -106,7 +106,8 @@
       font-size: 16px !important;
       line-height: 1.5 !important;
     }
-    </style>
+
+        </style>
 <% end %>
 
 <%= render "src/views/_editor_container.ecr" %>
@@ -651,5 +652,20 @@
 
     // Initialize security settings button appearance
     updateSecuritySettingsButton();
+
+    // Setup keyboard shortcuts
+    if (window.setupKeyboardShortcuts) {
+      const saveFunction = mode === "create" ?
+        (event) => createPaste(event) :
+        () => updatePaste();
+
+      window.setupKeyboardShortcuts(
+        saveFunction,
+        togglePreview,
+        jar,
+        window.getLanguageGetter,
+        window.getThemeGetter
+      );
+    }
   });
 </script>

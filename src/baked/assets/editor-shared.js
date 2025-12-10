@@ -146,6 +146,35 @@ function togglePreview(jar, getLanguageValue, getSyntaxThemeValue) {
   localStorage.setItem('previewHidden', isHidden);
 }
 
+// Common keyboard shortcuts functionality
+function setupKeyboardShortcuts(saveCallback, togglePreviewCallback, jar, getLanguageValue, getSyntaxThemeValue) {
+  document.addEventListener('keydown', function(event) {
+    // Check for Ctrl key on Windows/Linux or Cmd key on Mac
+    const ctrlOrCmd = event.ctrlKey || event.metaKey;
+
+    // Don't trigger shortcuts when typing in input fields
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    // Ctrl+S or Cmd+S - Save
+    if (ctrlOrCmd && event.key === 's') {
+      event.preventDefault();
+      if (saveCallback) {
+        saveCallback();
+      }
+    }
+
+    // Ctrl+P or Cmd+P - Toggle Preview
+    if (ctrlOrCmd && event.key === 'p') {
+      event.preventDefault();
+      if (togglePreviewCallback) {
+        togglePreviewCallback(jar, getLanguageValue, getSyntaxThemeValue);
+      }
+    }
+  });
+}
+
 // Export functions for use in templates
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -153,6 +182,7 @@ if (typeof module !== 'undefined' && module.exports) {
     highlight,
     debouncedUpdatePreview,
     updatePreview,
-    togglePreview
+    togglePreview,
+    setupKeyboardShortcuts
   };
 }
