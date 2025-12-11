@@ -43,13 +43,13 @@
 
   <!-- Async CSS loading with correct themes from server -->
   <link rel="preload" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" as="style" onload="loadCSS(this, 'pico-css-link')">
-  <link rel="preload" href="/syntax-theme.css?theme=<%= syntax_theme %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
+  <link rel="preload" href="/syntax/<%= syntax_theme %>/<%= pico_theme == "dark" ? "dark" : "light" %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
   <link rel="preload" href="/assets/<%= pico_theme == "dark" ? "atom-one-dark.min.css" : "atom-one-light.min.css" %>" as="style" onload="loadCSS(this, 'codejar-theme-link')">
 
   <!-- Fallback for browsers that don't support preload/JavaScript -->
   <noscript>
     <link rel="stylesheet" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" id="pico-css-link">
-    <link rel="stylesheet" href="/syntax-theme.css?theme=<%= syntax_theme %>" id="highlight-css-link">
+    <link rel="stylesheet" href="/syntax/<%= syntax_theme %>/<%= pico_theme == "dark" ? "dark" : "light" %>" id="highlight-css-link">
     <link rel="stylesheet" href="/assets/<%= pico_theme == "dark" ? "atom-one-dark.min.css" : "atom-one-light.min.css" %>" id="codejar-theme-link">
   </noscript>
 
@@ -374,6 +374,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      height: 100%;
     }
 
     .editor-wrapper {
@@ -390,6 +391,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      height: 100%;
     }
 
   
@@ -433,12 +435,15 @@
       background: transparent;
       border: none;
       outline: none;
+      box-sizing: border-box;
     }
 
     .preview-content code {
       display: block;
       padding: 0.75rem;
       font-weight: 400;
+      height: 100%;
+      box-sizing: border-box;
     }
 
     /* Show/Hide states */
@@ -889,10 +894,8 @@
       const picoColor = document.getElementById('pico-color').value;
       const syntaxTheme = document.getElementById('syntax-theme').value;
 
-      // Detect if user is logged in (same logic as in DOMContentLoaded)
-      const hasServerThemes = <%= pico_theme != "auto" || pico_color != "slate" || syntax_theme != "monokai" ? "true" : "false" %>;
-      const isDefaultServerValues = <%= pico_theme == "auto" && pico_color == "slate" && syntax_theme == "monokai" ? "true" : "false" %>;
-      const isUserLoggedIn = hasServerThemes && !isDefaultServerValues;
+      // Check if user is logged in using current_user variable
+      const isUserLoggedIn = <%= current_user ? "true" : "false" %>;
 
       // Update Pico CSS
       const picoLink = document.getElementById('pico-css-link');
@@ -903,7 +906,7 @@
       // Update syntax theme
       const syntaxLink = document.getElementById('highlight-css-link');
       if (syntaxLink) {
-        syntaxLink.href = `/syntax-theme.css?theme=${syntaxTheme}`;
+        syntaxLink.href = `/syntax/${syntaxTheme}/${picoTheme === 'dark' ? 'dark' : 'light'}`;
       }
 
       // Update CodeJar theme
@@ -961,17 +964,14 @@
 
     // Load saved theme preferences
     document.addEventListener('DOMContentLoaded', function() {
-      // Detect if user is logged in by checking if server provided specific theme values
-      // For logged-in users, server-side themes are definitive - don't override them
-      const hasServerThemes = <%= pico_theme != "auto" || pico_color != "slate" || syntax_theme != "monokai" ? "true" : "false" %>;
-      const isDefaultServerValues = <%= pico_theme == "auto" && pico_color == "slate" && syntax_theme == "monokai" ? "true" : "false" %>;
+      // Check if user is logged in
+      const isUserLoggedIn = <%= current_user ? "true" : "false" %>;
 
-      if (hasServerThemes && !isDefaultServerValues) {
+      if (isUserLoggedIn) {
         // For logged-in users, server has provided specific theme preferences
         // Set select elements to show server preferences
         document.getElementById('pico-theme').value = '<%= pico_theme %>';
         document.getElementById('pico-color').value = '<%= pico_color %>';
-        document.getElementById('syntax-theme').value = '<%= syntax_theme %>';
 
         // Don't call updateThemes() - server already set the correct theme
         console.log('Logged-in user detected: using server-side themes', {
@@ -983,13 +983,11 @@
         // For anonymous users, use localStorage preferences
         const savedPicoTheme = localStorage.getItem('picoTheme') || 'auto';
         const savedPicoColor = localStorage.getItem('picoColor') || 'slate';
-        const savedSyntaxTheme = localStorage.getItem('syntaxTheme') || 'monokai';
+        const savedSyntaxTheme = localStorage.getItem('syntaxTheme') || 'default';
 
         document.getElementById('pico-theme').value = savedPicoTheme;
         document.getElementById('pico-color').value = savedPicoColor;
-        document.getElementById('syntax-theme').value = savedSyntaxTheme;
-
-        updateThemes();
+        // Don't set syntax theme value yet - will be set after themes load
 
         console.log('Anonymous user detected: using localStorage themes', {
           pico_theme: savedPicoTheme,
@@ -1004,18 +1002,29 @@
         .then(themes => {
           const syntaxSelect = document.getElementById('syntax-theme');
           syntaxSelect.innerHTML = '';
+
+          // Determine the current theme at runtime
+          let currentTheme;
+          const isUserLoggedIn = <%= current_user ? "true" : "false" %>;
+
+          if (isUserLoggedIn) {
+            // Logged-in user with server-provided theme
+            currentTheme = '<%= syntax_theme %>';
+          } else {
+            // Anonymous user, use localStorage or default
+            currentTheme = localStorage.getItem('syntaxTheme') || 'default';
+          }
+
           themes.forEach(theme => {
             const option = document.createElement('option');
-            option.value = theme;
-            option.textContent = theme;
-            // Select the current theme based on whether it's server-provided or from localStorage
-            <% if pico_theme != "auto" || pico_color != "slate" || syntax_theme != "monokai" %>
-              option.selected = theme === '<%= syntax_theme %>';
-            <% else %>
-              option.selected = theme === (localStorage.getItem('syntaxTheme') || 'monokai');
-            <% end %>
+            option.value = theme.name;
+            option.textContent = theme.name;
+            option.selected = theme.name === currentTheme;
             syntaxSelect.appendChild(option);
           });
+
+          // Now that themes are loaded and selected, update the themes
+          updateThemes();
         })
         .catch(error => console.error('Error loading themes:', error));
     });

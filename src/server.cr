@@ -144,7 +144,7 @@ module Pasto
     # Get theme preferences with priority: user config > cookie > defaults
     saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
     saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
     page_title = "Help & Usage Guide"
     is_home_page = false
     pico_theme = saved_pico_theme
@@ -747,7 +747,7 @@ get "/profile" do |env|
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
 
   # Resolve "auto" theme to prevent flashing - default to dark for server-side
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -810,7 +810,7 @@ get "/" do |env|
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
 
   # Resolve "auto" theme to prevent flashing - default to dark for server-side
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -1075,7 +1075,7 @@ get "/:id/edit" do |env|
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
 
   # Resolve "auto" theme to prevent flashing - default to dark for server-side
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -1331,7 +1331,7 @@ get "/:id/history" do |env|
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
 
   # Resolve "auto" theme to prevent flashing - default to dark for server-side
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -1377,7 +1377,7 @@ get "/:id/version/:gen" do |env|
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
 
   # Resolve "auto" theme to prevent flashing - default to dark for server-side
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -1428,7 +1428,7 @@ get "/404" do |env|
   current_user = Pasto.get_current_user(env)
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
   page_title = "404 - Not Found"
   is_home_page = false
   pico_theme = saved_pico_theme
@@ -1456,7 +1456,7 @@ error 404 do |env|
   current_user = Pasto.get_current_user(env)
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
   page_title = "404 - Not Found"
   is_home_page = false
   pico_theme = saved_pico_theme
@@ -1591,7 +1591,7 @@ get "/:id" do |env|
   # Get theme preferences with priority: user config > cookie > defaults
   saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
   saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
+  saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
 
   # Resolve "auto" theme to prevent flashing - default to dark for server-side
   resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -1642,29 +1642,24 @@ end
 public_dir = "#{Dir.current}/public"
 Kemal.config.public_folder = public_dir
 
-# Serve syntax highlighting CSS for Tartrazine themes
-get "/syntax-theme.css" do |env|
-  theme = env.params.query["theme"]?
 
-  # If no theme specified, use user's configured theme or default
-  if theme.nil? || theme.empty?
-    current_user = Pasto.get_current_user(env)
-    theme = current_user.try(&.syntax_theme) || "monokai"
-  end
+# Serve syntax highlighting CSS for specific theme family and variant
+get "/syntax/:family/:variant" do |env|
+  family = env.params.url["family"].gsub(/-dark$/, "").gsub(/-light$/, "")
+  variant = env.params.url["variant"]
+  theme_name = "#{family}/#{variant}"
 
-  # Fallback to cookie if no user and no query parameter
-  theme ||= env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "monokai"
   begin
-    # Get Tartrazine theme CSS using the HTML formatter
-    formatter = Tartrazine::Html.new(theme: Tartrazine.theme(theme))
+    # Use Tartrazine theme CSS for the specified theme and variant
+    formatter = Tartrazine::Html.new(theme: Tartrazine.theme(family, variant))
     css = formatter.style_defs
+
     env.response.content_type = "text/css"
-    env.response.headers["Cache-Control"] = "public, max-age=31536000" # 1 year
     css
   rescue ex
     env.response.status_code = 404
     env.response.content_type = "text/plain"
-    "Theme not found: #{theme}"
+    "Theme not found: #{theme_name}"
   end
 end
 
@@ -1698,8 +1693,15 @@ end
 get "/api/themes" do |env|
   env.response.content_type = "application/json"
 
-  # Get all available themes from Tartrazine
-  Tartrazine.themes.sort.to_json
+  # Get only themes that have light/dark variants from Tartrazine
+  themes = Tartrazine.themes_with_variants_only.map do |theme|
+    {
+      name: theme[:name],
+      has_light: theme[:has_light],
+      has_dark: theme[:has_dark]
+    }
+  end
+  themes.sort_by { |t| t[:name] }.to_json
 end
 
 # Generate QR code for a paste (returns PNG image)
@@ -1945,7 +1947,7 @@ post "/api/v1/pastes" do |env|
   begin
     paste = ssh_key.create_paste(
       content: content,
-      theme: api_user.syntax_theme || "monokai",
+      theme: api_user.syntax_theme || "default",
       language: language,
       filename: filename,
       title: title,

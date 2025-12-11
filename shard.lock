@@ -1,6 +1,10 @@
 # NOTICE: This lockfile contains some overrides from shard.override.yml
 version: 2.0
 shards:
+  ameba:
+    git: https://github.com/crystal-ameba/ameba.git
+    version: 1.6.4
+
   backtracer:
     git: https://github.com/sija/backtracer.cr.git
     version: 1.2.4
@@ -79,7 +83,7 @@ shards:
 
   sixteen:
     git: https://github.com/ralsina/sixteen.git
-    version: 0.5.4
+    version: 0.6.2
 
   stumpy_core:
     git: https://github.com/stumpycr/stumpy_core.git
@@ -95,5 +99,5 @@ shards:
 
   tartrazine:
     git: https://github.com/ralsina/tartrazine.git
-    version: 0.15.0
+    version: 0.16.0
 
