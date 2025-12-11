@@ -44,13 +44,11 @@
   <!-- Async CSS loading with correct themes from server -->
   <link rel="preload" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" as="style" onload="loadCSS(this, 'pico-css-link')">
   <link rel="preload" href="/syntax/<%= syntax_theme %>/<%= pico_theme == "dark" ? "dark" : "light" %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
-  <link rel="preload" href="/assets/<%= pico_theme == "dark" ? "atom-one-dark.min.css" : "atom-one-light.min.css" %>" as="style" onload="loadCSS(this, 'codejar-theme-link')">
 
   <!-- Fallback for browsers that don't support preload/JavaScript -->
   <noscript>
     <link rel="stylesheet" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" id="pico-css-link">
     <link rel="stylesheet" href="/syntax/<%= syntax_theme %>/<%= pico_theme == "dark" ? "dark" : "light" %>" id="highlight-css-link">
-    <link rel="stylesheet" href="/assets/<%= pico_theme == "dark" ? "atom-one-dark.min.css" : "atom-one-light.min.css" %>" id="codejar-theme-link">
   </noscript>
 
   <script>
@@ -909,15 +907,12 @@
         syntaxLink.href = `/syntax/${syntaxTheme}/${picoTheme === 'dark' ? 'dark' : 'light'}`;
       }
 
-      // Update CodeJar theme
-      const codejarLink = document.getElementById('codejar-theme-link');
+      // CodeJar theme is now handled by the enhanced /syntax endpoint
+
+      // Calculate resolved theme for data-theme attribute
       const resolvedTheme = picoTheme === 'auto' ?
         (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') :
         picoTheme;
-
-      if (codejarLink) {
-        codejarLink.href = `/assets/${resolvedTheme === 'dark' ? 'atom-one-dark.min.css' : 'atom-one-light.min.css'}`;
-      }
 
       // Save to server for logged-in users
       if (isUserLoggedIn) {

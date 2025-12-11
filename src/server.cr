@@ -1141,8 +1141,11 @@ module Pasto
       formatter = Tartrazine::Html.new(theme: Tartrazine.theme(family, variant))
       css = formatter.style_defs
 
+      # Add highlight.js classes for compatibility with CodeJar editor
+      enhanced_css = Pasto.add_highlightjs_classes(css)
+
       env.response.content_type = "text/css"
-      css
+      enhanced_css
     rescue ex
       env.response.status_code = 404
       env.response.content_type = "text/plain"

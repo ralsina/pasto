@@ -138,6 +138,31 @@
   <% end %>
   };
 
+  // Get the current language, handling Auto (detected) format
+  function getCurrentLanguage() {
+    const languageSelect = document.getElementById('language');
+    if (!languageSelect) return currentLanguage || '';
+
+    const selectValue = languageSelect.value;
+
+    // If explicit language is selected, use it
+    if (selectValue && selectValue !== '' && selectValue !== 'Auto') {
+      return selectValue;
+    }
+
+    // Try to extract detected language from "Auto (language)" format
+    const autoOption = languageSelect.options[0];
+    if (autoOption?.textContent?.includes('(')) {
+      const match = autoOption.textContent.match(/\(([^)]+)\)/);
+      if (match) {
+        return match[1];
+      }
+    }
+
+    // Fallback to currentLanguage or empty string
+    return currentLanguage || '';
+  }
+
   // Mode-specific functions
   function updateLanguage() {
     currentLanguage = document.getElementById('language').value;
@@ -543,7 +568,7 @@
     // Use shared highlight function
     jar = CodeJar(editorElement, (editor) => {
       if (typeof window.highlight === 'function') {
-        window.highlight(editor, currentLanguage);
+        window.highlight(editor, getCurrentLanguage());
       }
     }, {
       tab: '  ',
@@ -590,8 +615,8 @@
       }, 100);
     }
 
-    // Restore preview visibility preference
-    const previewHidden = localStorage.getItem('previewHidden') === 'true';
+    // Restore preview visibility preference (default to hidden)
+    const previewHidden = localStorage.getItem('previewHidden') !== 'false'; // Default to true (hidden)
     const container = document.getElementById('editor-preview-container');
     const showButton = document.getElementById('controls-show-preview-button');
     const hideButton = document.getElementById('controls-hide-preview-button');

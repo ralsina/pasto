@@ -59,10 +59,29 @@ function updatePreview(jar, getLanguage, getTheme) {
   }
 }
 
-// Get language value from select element
+// Get language value from select element, handling Auto (detected) format
 function getLanguageGetter() {
   const languageSelect = document.getElementById('language');
-  return languageSelect ? languageSelect.value : '';
+  if (!languageSelect) return '';
+
+  const selectValue = languageSelect.value;
+
+  // If explicit language is selected, use it
+  if (selectValue && selectValue !== '' && selectValue !== 'Auto') {
+    return selectValue;
+  }
+
+  // Try to extract detected language from "Auto (language)" format
+  const autoOption = languageSelect.options[0];
+  if (autoOption?.textContent?.includes('(')) {
+    const match = autoOption.textContent.match(/\(([^)]+)\)/);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  // Fallback to raw value
+  return selectValue || '';
 }
 
 // Get theme value from select element

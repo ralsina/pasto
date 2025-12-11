@@ -4,8 +4,66 @@ require "hansa"
 require "tartrazine"
 require "html"
 require "./mimetypes"
+require "./data/tartrazine_hljs_mapping"
 
 module Pasto
+  # Add highlight.js classes to Tartrazine CSS for compatibility
+  def self.add_highlightjs_classes(css : String) : String
+    # Tartrazine returns minified CSS, so we need to parse it differently
+    # Group selectors by highlight.js class to avoid duplicates
+    hljs_to_selectors = Hash(String, Array(String)).new
+    original_rules = Hash(String, String).new
+    unmapped_rules = [] of String
+
+    css.split("}").each do |rule|
+      # Remove any leading/trailing whitespace and skip empty rules
+      rule = rule.strip
+      next if rule.empty?
+
+      # Look for CSS selectors like ".k { color: #ff79c6; " or ".k {color: #ff79c6;"
+      if match = rule.match(/^([a-z.]+)\s*\{\s*([^}]+)$/)
+        tartrazine_selector = match[1]
+        properties = match[2]
+
+        # Store the original rule for this selector
+        original_rules[tartrazine_selector] = properties
+
+        # Find the corresponding highlight.js class
+        if hljs_class = TARTRAZINE_TO_HLJS_MAPPING[tartrazine_selector]?
+          # Group selectors by highlight.js class
+          hljs_to_selectors[hljs_class] ||= [] of String
+          hljs_to_selectors[hljs_class] << tartrazine_selector
+        else
+          # No mapping found, keep original
+          unmapped_rules << "#{tartrazine_selector} { #{properties} }"
+        end
+      else
+        # Not a CSS rule, keep as-is (add back the closing brace if it was removed)
+        unmapped_rules << (rule.includes?("{") ? "#{rule}}" : rule)
+      end
+    end
+
+    # Build consolidated CSS
+    result = [] of String
+
+    # Add consolidated rules for each highlight.js class
+    hljs_to_selectors.each do |hljs_class, selectors|
+      # Find the most generic selector (shortest, usually the base one)
+      # For comments, this will be ".c" instead of ".ch", ".cp", etc.
+      generic_selector = selectors.min_by(&.size)
+
+      if properties = original_rules[generic_selector]?
+        # Use only the generic selector with the hljs class
+        result << "#{generic_selector}, #{hljs_class} { #{properties} }"
+      end
+    end
+
+    # Add unmapped rules
+    result.concat(unmapped_rules)
+
+    result.join("")
+  end
+
   class Paste < Sepia::Object
     include JSON::Serializable
     include Sepia::Serializable
