@@ -1,4 +1,5 @@
 require "../src/paste"
+require "../src/ratelimit"
 require "kemal"
 require "uri"
 
@@ -119,7 +120,7 @@ module Pasto
     SKIP_ACCESS_CONTROL_PREFIXES = [
       "/auth/", "/api/", "/assets/", "/cache/", "/preview/",
       "/api/qr/", "/api/languages", "/api/themes",
-      "/syntax"
+      "/syntax",
     ]
 
     # Check if path needs paste access control

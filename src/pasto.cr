@@ -4,6 +4,7 @@ require "kemal"
 require "./paste"
 require "./preview_generator"
 require "./server"
+require "./cache"
 require "./models/user"
 require "kemal-session"
 
