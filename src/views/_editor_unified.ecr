@@ -140,8 +140,14 @@
 
   // Mode-specific functions
   function updateLanguage() {
-    window.updateLanguage(jar, currentLanguage);
     currentLanguage = document.getElementById('language').value;
+    if (jar) {
+      jar.updateCode(jar.toString());
+    }
+    // Update preview
+    if (typeof window.updatePreview === 'function') {
+      window.updatePreview(jar, window.getLanguageGetter, window.getThemeGetter);
+    }
   }
 
   function togglePreview() {
