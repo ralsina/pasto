@@ -1,0 +1,439 @@
+<%# Shared Styles Component - Consolidated common CSS patterns %>
+<%# This partial consolidates common styles used across multiple templates %>
+
+<style>
+/* =============================================================================
+/* CONTROLS BUTTON STYLES - Consolidated from layout.ecr, 404.ecr, profile_content.ecr
+/* ============================================================================= */
+
+.controls-button {
+  background: transparent;
+  border: 2px solid var(--pico-primary, #0074d9);
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  height: 3rem;
+  width: 3rem;
+  color: var(--pico-primary, #0074d9);
+  gap: 0.25rem;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.controls-button:hover {
+  background: var(--pico-primary, #0074d9);
+  color: var(--pico-primary-inverse, white);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 116, 217, 0.3);
+}
+
+.controls-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 116, 217, 0.3);
+}
+
+.controls-button i,
+.controls-button svg {
+  color: inherit;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+  transition: transform 0.2s ease;
+}
+
+.controls-button:hover i,
+.controls-button:hover svg {
+  transform: scale(1.1);
+}
+
+/* Controls button variations */
+.controls-button.primary {
+  background: var(--pico-primary, #0074d9);
+  color: var(--pico-primary-inverse, white);
+}
+
+.controls-button.primary:hover {
+  background: color-mix(in srgb, var(--pico-primary, #0074d9) 85%, black);
+}
+
+.controls-button.secondary {
+  border-color: var(--pico-secondary, #6c757d);
+  color: var(--pico-secondary, #6c757d);
+}
+
+.controls-button.secondary:hover {
+  background: var(--pico-secondary, #6c757d);
+  color: var(--pico-secondary-inverse, white);
+}
+
+.controls-button.danger {
+  border-color: var(--pico-del-color, #dc3545);
+  color: var(--pico-del-color, #dc3545);
+}
+
+.controls-button.danger:hover {
+  background: var(--pico-del-color, #dc3545);
+  color: var(--pico-del-inverse, white);
+}
+
+.controls-button.success {
+  border-color: var(--pico-ins-color, #28a745);
+  color: var(--pico-ins-color, #28a745);
+}
+
+.controls-button.success:hover {
+  background: var(--pico-ins-color, #28a745);
+  color: var(--pico-ins-inverse, white);
+}
+
+/* =============================================================================
+/* SHARED CONTAINER STYLES
+/* ============================================================================= */
+
+.shared-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.shared-controls.vertical {
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.shared-controls.center {
+  justify-content: center;
+}
+
+.shared-controls.right {
+  justify-content: flex-end;
+}
+
+/* =============================================================================
+/* MODAL STYLES - Enhanced from _modal_utils.ecr
+/* ============================================================================= */
+
+.dialog-modal {
+  padding: 2rem;
+  border: 2px solid var(--pico-primary);
+  border-radius: 0.5rem;
+  max-width: 500px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--pico-background-color);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: modal-slide-in 0.3s ease-out;
+}
+
+@keyframes modal-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dialog-modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.dialog-modal h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--pico-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dialog-modal .modal-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: flex-end;
+}
+
+.dialog-modal .modal-buttons.center {
+  justify-content: center;
+}
+
+.dialog-modal .modal-buttons.spread {
+  justify-content: space-between;
+}
+
+/* =============================================================================
+/* BUTTON STYLES - Consolidated from multiple templates
+/* ============================================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn:focus {
+  outline: 2px solid var(--pico-primary);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--pico-primary-background, var(--pico-primary));
+  color: var(--pico-primary-inverse, white);
+}
+
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--pico-primary-background, var(--pico-primary)) 85%, black);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 116, 217, 0.3);
+}
+
+.btn-secondary {
+  background: var(--pico-secondary-background);
+  color: var(--pico-secondary-color);
+  border: 1px solid var(--pico-border-color);
+}
+
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--pico-secondary-background) 90%, black);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: var(--pico-del-background);
+  color: var(--pico-del-inverse);
+}
+
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--pico-del-background) 90%, black);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-success {
+  background: var(--pico-ins-background);
+  color: var(--pico-ins-inverse);
+}
+
+.btn-success:hover {
+  background: color-mix(in srgb, var(--pico-ins-background) 90%, black);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--pico-primary);
+  color: var(--pico-primary);
+}
+
+.btn-outline:hover {
+  background: var(--pico-primary);
+  color: var(--pico-primary-inverse);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--pico-color);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--pico-background-color);
+  border-color: var(--pico-border-color);
+}
+
+/* =============================================================================
+/* RESPONSIVE DESIGN - Consolidated from multiple files
+/* ============================================================================= */
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .controls-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    font-size: 1rem;
+  }
+
+  .controls-button i,
+  .controls-button svg {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+  }
+
+  .shared-controls {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .shared-controls:not(.vertical) {
+    flex-wrap: wrap;
+  }
+
+  .dialog-modal {
+    width: 95vw;
+    max-width: none;
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls-button {
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+  }
+
+  .shared-controls {
+    gap: 0.25rem;
+  }
+
+  .dialog-modal {
+    padding: 1rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .dialog-modal .modal-buttons {
+    flex-direction: column;
+  }
+}
+
+/* =============================================================================
+/* UTILITY CLASSES
+/* ============================================================================= */
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block !important;
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+/* ACCESSIBILITY IMPROVEMENTS
+/* ============================================================================= */
+
+/* Better focus indicators */
+.controls-button:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--pico-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .controls-button {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .controls-button,
+  .btn,
+  .dialog-modal {
+    transition: none;
+    animation: none;
+  }
+
+  .controls-button:hover,
+  .btn:hover {
+    transform: none;
+  }
+}
+</style>

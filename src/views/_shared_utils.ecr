@@ -1,0 +1,330 @@
+<%# Shared JavaScript Utilities Module %>
+<%# This file consolidates common utility functions used across multiple templates %>
+
+<script>
+// =============================================================================
+// CLIPBOARD UTILITIES - Consolidated from multiple templates
+// =============================================================================
+
+window.SharedClipboard = {
+  // Main copy function with consistent behavior
+  copy: function(text, options = {}) {
+    const opts = {
+      successMessage: 'Copied!',
+      errorMessage: 'Copy failed',
+      button: null,
+      onSuccess: null,
+      onError: null,
+      ...options
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showSuccess(opts);
+        if (opts.onSuccess) opts.onSuccess();
+      }).catch(() => {
+        this.fallbackCopy(text, opts);
+      });
+    } else {
+      this.fallbackCopy(text, opts);
+    }
+  },
+
+  // Fallback method for older browsers
+  fallbackCopy: function(text, options) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-999999px';
+    textarea.style.top = '-999999px';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+
+    textarea.select();
+
+    try {
+      document.execCommand('copy');
+      this.showSuccess(options);
+      if (options.onSuccess) options.onSuccess();
+    } catch (err) {
+      this.showError(options);
+      if (options.onError) options.onError(err);
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  },
+
+  // Show success feedback
+  showSuccess: function(options) {
+    if (options.button) {
+      const originalContent = options.button.innerHTML;
+      options.button.classList.add('copied');
+      options.button.innerHTML = '<i data-lucide="check"></i>';
+
+      // Re-initialize Lucide icons
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      setTimeout(() => {
+        options.button.classList.remove('copied');
+        options.button.innerHTML = originalContent;
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, 2000);
+    }
+
+    // Show success message if modal utils available
+    if (window.showSuccess) {
+      window.showSuccess(options.successMessage);
+    } else {
+      console.log(options.successMessage);
+    }
+  },
+
+  // Show error feedback
+  showError: function(options) {
+    if (window.showError) {
+      window.showError(options.errorMessage);
+    } else {
+      console.error(options.errorMessage);
+    }
+  }
+};
+
+// =============================================================================
+// LUCIDE ICON UTILITIES
+// =============================================================================
+
+window.SharedIcons = {
+  // Initialize Lucide icons in a specific container or globally
+  init: function(container = null) {
+    if (!window.lucide) return;
+
+    if (container) {
+      const icons = container.querySelectorAll('[data-lucide]');
+      if (icons.length > 0) {
+        window.lucide.createIcons();
+      }
+    } else {
+      window.lucide.createIcons();
+    }
+  },
+
+  // Wait for DOM and initialize icons
+  initOnReady: function() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.init());
+    } else {
+      this.init();
+    }
+  }
+};
+
+// =============================================================================
+// LANGUAGE DETECTION UTILITIES
+// =============================================================================
+
+window.SharedLanguage = {
+  // Get current language from select element, handling various formats
+  getCurrentLanguage: function(selectElementId = 'language') {
+    const select = document.getElementById(selectElementId);
+    if (!select) return '';
+
+    const selectValue = select.value;
+
+    // If explicit language is selected, use it
+    if (selectValue && selectValue !== '' && selectValue !== 'Auto') {
+      return selectValue;
+    }
+
+    // Try to extract detected language from "Auto (language)" format
+    const autoOption = select.options[0];
+    if (autoOption?.textContent?.includes('(')) {
+      const match = autoOption.textContent.match(/\(([^)]+)\)/);
+      if (match) {
+        return match[1];
+      }
+    }
+
+    // Fallback to raw value
+    return selectValue || '';
+  },
+
+  // Update language select with detected language
+  updateLanguageDisplay: function(detectedLanguage, selectElementId = 'language') {
+    const select = document.getElementById(selectElementId);
+    if (!select) return;
+
+    const autoOption = select.options[0];
+    if (autoOption && (autoOption.value === 'Auto' || autoOption.value === '')) {
+      if (detectedLanguage) {
+        autoOption.textContent = `Auto (${detectedLanguage})`;
+      } else {
+        autoOption.textContent = 'Auto';
+      }
+    }
+  }
+};
+
+// =============================================================================
+// FORM UTILITIES
+// =============================================================================
+
+window.SharedForms = {
+  // Validate common form fields
+  validateRequired: function(formData, requiredFields) {
+    const errors = [];
+
+    requiredFields.forEach(field => {
+      if (!formData[field] || formData[field].trim() === '') {
+        errors.push(`${field} is required`);
+      }
+    });
+
+    return errors;
+  },
+
+  // Serialize form data
+  serializeForm: function(formElement) {
+    const formData = new FormData(formElement);
+    const result = {};
+
+    for (let [key, value] of formData.entries()) {
+      result[key] = value;
+    }
+
+    return result;
+  },
+
+  // Show form validation errors
+  showErrors: function(errors, containerSelector = '.form-errors') {
+    const errorContainer = document.querySelector(containerSelector);
+    if (!errorContainer) return;
+
+    errorContainer.innerHTML = errors.map(error =>
+      `<div style="color: var(--pico-del-color); margin: 0.5rem 0;">${error}</div>`
+    ).join('');
+
+    errorContainer.style.display = 'block';
+  },
+
+  // Clear form errors
+  clearErrors: function(containerSelector = '.form-errors') {
+    const errorContainer = document.querySelector(containerSelector);
+    if (errorContainer) {
+      errorContainer.innerHTML = '';
+      errorContainer.style.display = 'none';
+    }
+  }
+};
+
+// =============================================================================
+// URL UTILITIES
+// =============================================================================
+
+window.SharedURL = {
+  // Get current page URL
+  getCurrentURL: function() {
+    return window.location.href;
+  },
+
+  // Get paste ID from current URL
+  getPasteId: function() {
+    return window.location.pathname.substring(1).replace(/\/.*$/, '');
+  },
+
+  // Copy current page URL
+  copyCurrentURL: function(button = null) {
+    const url = this.getCurrentURL();
+    SharedClipboard.copy(url, {
+      button: button,
+      successMessage: 'Link copied!'
+    });
+  }
+};
+
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
+
+// Auto-initialize when DOM is ready
+SharedIcons.initOnReady();
+
+// Export functions for backward compatibility
+window.copyToClipboard = SharedClipboard.copy.bind(SharedClipboard);
+window.copyLink = SharedURL.copyCurrentURL.bind(SharedURL);
+window.getCurrentLanguage = SharedLanguage.getCurrentLanguage.bind(SharedLanguage);
+
+console.log('Shared utilities loaded');
+</script>
+
+<style>
+/* Shared utility styles */
+
+/* Copy button success animation */
+.copied {
+  background: var(--pico-form-element-valid-border-color) !important;
+  border-color: var(--pico-form-element-valid-border-color) !important;
+  color: white !important;
+  transform: scale(1.05);
+}
+
+.copied i {
+  animation: checkmark-pulse 0.3s ease-in-out;
+}
+
+@keyframes checkmark-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Form error styles */
+.form-errors {
+  background: var(--pico-del-background);
+  color: var(--pico-del-inverse);
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  display: none;
+}
+
+.form-errors div {
+  margin: 0.25rem 0;
+}
+
+/* Loading state */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--pico-primary);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .form-errors {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+}
+</style>

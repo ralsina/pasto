@@ -1,0 +1,149 @@
+<%# Shared Controls Component - Reusable button patterns %>
+<%#
+  Usage examples:
+    <%= render "_shared_controls.ecr", locals: {
+      buttons: [
+        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
+        {type: "button", onclick: "showSecuritySettingsDialog()", icon: "shield", title: "Security Settings", style: "background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);"},
+        {type: "button", onclick: "updatePaste()", icon: "save", title: "Save Changes"},
+        {type: "button", onclick: "deletePaste()", icon: "trash-2", title: "Delete", style: "color: var(--pico-del-color);"}
+      ]
+    } %>
+%>
+
+<%
+  # Default values
+  buttons ||= [] of Hash(String, String)
+  button_class ||= "controls-button"
+  icon_size ||= "20px"
+
+  # Helper function to render individual button
+  def render_button(button)
+    type = button["type"]?
+    onclick = button["onclick"]?
+    href = button["href"]?
+    icon = button["icon"]?
+    title = button["title"]? || ""
+    style = button["style"]? || ""
+    aria_label = button["aria_label"]? || title
+
+    html_classes = "#{button_class} #{button["class"]? || ""}"
+
+    case type
+    when "link"
+      if href
+        return %(<a href="#{href}" class="#{html_classes}" title="#{title}" aria-label="#{aria_label}" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem; #{style}">#{render_icon(icon)}</a>)
+      else
+        return "" # Invalid link without href
+      end
+    when "button"
+      if onclick
+        return %(<button onclick="#{onclick}" class="#{html_classes}" title="#{title}" aria-label="#{aria_label}" style="#{style}">#{render_icon(icon)}</button>)
+      else
+        return "" # Invalid button without onclick
+      end
+    else
+      return "" # Unknown button type
+    end
+  end
+
+  # Helper function to render Lucide icon
+  def render_icon(icon_name)
+    return %(<i data-lucide="#{icon_name}" style="width: #{icon_size}; height: #{icon_size};"></i>) if icon_name
+    return ""
+  end
+%>
+
+<div class="shared-controls" style="display: flex; gap: 0.5rem; align-items: center;">
+  <% buttons.each do |button| %>
+    <%= render_button(button) %>
+  <% end %>
+</div>
+
+<script>
+// Initialize Lucide icons for shared controls
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) {
+    // Find and initialize icons within shared controls
+    const sharedControls = document.querySelectorAll('.shared-controls');
+    sharedControls.forEach(function(control) {
+      const icons = control.querySelectorAll('[data-lucide]');
+      if (icons.length > 0) {
+        window.lucide.createIcons();
+      }
+    });
+  }
+});
+</script>
+
+<style>
+/* Shared Controls Base Styles */
+.shared-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.controls-button {
+  background: transparent;
+  border: 2px solid var(--pico-primary, #0074d9);
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: background 0.2s, color 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  height: 3rem;
+  width: 3rem;
+  color: var(--pico-primary, #0074d9);
+  gap: 0.25rem;
+  box-sizing: border-box;
+}
+
+.controls-button:hover {
+  background: var(--pico-primary, #0074d9);
+  color: var(--pico-primary-inverse, white);
+}
+
+.controls-button i,
+.controls-button svg {
+  color: inherit;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .shared-controls {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .controls-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  .controls-button i,
+  .controls-button svg {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+  }
+}
+</style>
