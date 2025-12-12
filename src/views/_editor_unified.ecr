@@ -742,7 +742,7 @@ async function createPaste(event) {
       controlsHTML += `<select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language"><option value="">Auto</option></select>`;
 
       // Security Settings button - appears in both modes
-      controlsHTML += `<button onclick="showSecuritySettingsDialog()" class="controls-button" id="security-settings-btn" title="Security Settings" aria-label="Security Settings" style="background: transparent; border: 1px solid var(--pico-primary); color: var(--pico-primary);"><i data-lucide="shield" style="width: 20px; height: 20px;"></i></button>`;
+      controlsHTML += `<button onclick="showSecuritySettingsDialog()" class="controls-button" id="security-settings-btn" title="Security Settings" aria-label="Security Settings"><i data-lucide="shield" style="width: 20px; height: 20px;"></i></button>`;
 
 <% if mode == "edit" %>
       // Edit mode buttons
