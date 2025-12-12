@@ -30,8 +30,8 @@ module Pasto
       paste
     end
 
-    # Create a paste and add it to this key
-    def create_paste(content : String, theme : String = "default-dark", language : String? = nil, filename : String? = nil, title : String? = nil, encrypted : Bool = false) : Paste
+    # Create a paste and add it to this key with modern security features
+    def create_paste(content : String, theme : String = "default-dark", language : String? = nil, filename : String? = nil, title : String? = nil, encrypted : Bool = false, expires_at : Time? = nil, burn_after_reading : Bool = false, private_paste : Bool = false, encryption_password : String? = nil) : Paste
       paste = Paste.new(
         content: content,
         theme: theme,
@@ -41,14 +41,27 @@ module Pasto
         title: title
       )
 
-      # Set encryption flag if requested
+      # Set security features
+      paste.expires_at = expires_at if expires_at
+      paste.burn_after_reading = burn_after_reading
+      paste.private = private_paste
+
+      # Handle encryption
       if encrypted
         paste.is_encrypted = true
         paste.encrypted_content = content
-        # For SSH server, we'll use key-based encryption
-        # The actual encryption happens elsewhere or this is a placeholder
-        # for future client-side encryption implementation
-        paste.content = "" # Clear plain content for encrypted pastes
+        paste.password_based = !encryption_password.nil?
+
+        # For password-based encryption, the server should handle encryption
+        # For key-based encryption (SSH), this is handled in ssh_server.cr
+        if encryption_password
+          # This would be handled by password-based encryption logic
+          # For now, mark as password-based but don't encrypt here
+          paste.content = "" # Clear plain content for encrypted pastes
+        else
+          # SSH key-based encryption - handled in ssh_server.cr
+          paste.content = "" # Clear plain content for encrypted pastes
+        end
       end
 
       add_paste(paste)

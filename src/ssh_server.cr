@@ -203,25 +203,31 @@ module PastoSSH
 Create a paste.
 
 Usage:
-  paste [-l LANG] [-f FILE] [-t TITLE] [-e] [--iv IV]
+  paste [-l LANG] [-f FILE] [-t TITLE] [-e] [--iv IV] [--expire TIME] [--burn] [--private]
 
 Options:
-  -l LANG, --language LANG   Set the language for syntax highlighting
-  -f FILE, --filename FILE   Set a filename (used for language detection)
-  -t TITLE, --title TITLE    Set a title for the paste
-  -e, --encrypted           Create an encrypted paste (server encrypts)
-  --iv IV                    Pre-encrypted content with IV (base64). Content must be Web Crypto API compatible.
+  -l LANG, --language LANG         Set the language for syntax highlighting
+  -f FILE, --filename FILE         Set a filename (used for language detection)
+  -t TITLE, --title TITLE          Set a title for the paste
+  -e, --encrypted                  Create an encrypted paste (server encrypts)
+  --iv IV                          Pre-encrypted content with IV (base64). Content must be Web Crypto API compatible.
+  --expire TIME                    Set expiration time (10m, 1h, 1d, 1w, 1M, view-once)
+  --burn                           Burn after reading (delete after first view)
+  --private                        Create a private paste (not listed in public feeds)
 
 DOC
 
   # ameba:disable Metrics/CyclomaticComplexity
-  private def self.parse_paste_args(args : String, ctx) : {String?, String?, String?, Bool, Bool, String?}
+  private def self.parse_paste_args(args : String, ctx) : {String?, String?, String?, Bool, Bool, String?, Time?, Bool, Bool}
     language = nil
     filename = nil
     title = nil
     encrypted = false
     pre_encrypted = false
     iv = nil
+    expires_at = nil
+    burn_after_reading = false
+    private_paste = false
 
     unless args.empty?
       begin
@@ -247,7 +253,19 @@ DOC
         # If --iv is provided, this is pre-encrypted content (true zero-trust)
         pre_encrypted = !iv.nil?
 
-        puts "SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}"
+        # Handle expiration time
+        expire_str = opts["--expire"]?.try(&.to_s)
+        if expire_str && expire_str != "false" && expire_str != "" && expire_str != "nil"
+          expires_at = Pasto::Paste.parse_expiration(expire_str)
+        end
+
+        # Handle burn after reading
+        burn_after_reading = !!opts["--burn"]
+
+        # Handle private paste
+        private_paste = !!opts["--private"]
+
+        puts "SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}, expires_at=#{expires_at.inspect}, burn_after_reading=#{burn_after_reading}, private_paste=#{private_paste}"
       rescue ex : Docopt::DocoptException
         ctx.write_stderr("Invalid options: #{ex.message}\n")
         ctx.write_stderr(PASTE_DOC)
@@ -255,7 +273,7 @@ DOC
       end
     end
 
-    {language, filename, title, encrypted, pre_encrypted, iv}
+    {language, filename, title, encrypted, pre_encrypted, iv, expires_at, burn_after_reading, private_paste}
   end
 
   # ameba:disable Metrics/CyclomaticComplexity
@@ -277,7 +295,7 @@ DOC
 
     # Parse options with docopt
     begin
-      language, filename, title, encrypted, pre_encrypted, iv = parse_paste_args(args, ctx)
+      language, filename, title, encrypted, pre_encrypted, iv, expires_at, burn_after_reading, private_paste = parse_paste_args(args, ctx)
     rescue ex : Docopt::DocoptException
       return 1
     end
@@ -360,7 +378,10 @@ DOC
       language: language,
       filename: filename,
       title: title,
-      encrypted: (encrypted || is_pre_encrypted).as(Bool)
+      encrypted: (encrypted || is_pre_encrypted).as(Bool),
+      expires_at: expires_at,
+      burn_after_reading: burn_after_reading,
+      private_paste: private_paste
     )
 
     # Set encryption metadata if encrypted (server or pre-encrypted)
@@ -467,12 +488,18 @@ DOC
     ctx.write("  -l LANG      Set language (e.g., -l python)\n")
     ctx.write("  -f FILE      Set filename (used for language detection)\n")
     ctx.write("  -t TITLE     Set title\n")
-    ctx.write("  -e, --encrypted  Create an encrypted paste\n\n")
+    ctx.write("  -e, --encrypted  Create an encrypted paste\n")
+    ctx.write("  --expire TIME    Set expiration (10m, 1h, 1d, 1w, 1M, view-once)\n")
+    ctx.write("  --burn         Burn after reading (delete after first view)\n")
+    ctx.write("  --private      Create a private paste\n\n")
     ctx.write("Examples with options:\n")
     ctx.write("  cat code.py | ssh #{host} paste -l python\n")
     ctx.write("  cat code | ssh #{host} paste -f script.rb\n")
     ctx.write("  echo 'test' | ssh #{host} paste -t 'My Test'\n")
-    ctx.write("  echo 'secret' | ssh #{host} paste --encrypted\n\n")
+    ctx.write("  echo 'secret' | ssh #{host} paste --encrypted\n")
+    ctx.write("  echo 'temp' | ssh #{host} paste --expire 10m\n")
+    ctx.write("  echo 'sensitive' | ssh #{host} paste --burn --encrypted\n")
+    ctx.write("  echo 'private' | ssh #{host} paste --private\n\n")
     ctx.write("List your pastes:\n")
     ctx.write("  ssh #{host} list\n\n")
     ctx.write("API key management:\n")
