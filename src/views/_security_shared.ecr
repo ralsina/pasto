@@ -1,0 +1,484 @@
+<%# Shared Security Components - Consolidated encryption and security handling %>
+<%# This partial consolidates encryption dialogs, security settings, and related utilities %>
+
+<script>
+// =============================================================================
+// SECURITY UTILITIES - Consolidated from show.ecr and _editor_unified.ecr
+// =============================================================================
+
+window.SharedSecurity = {
+  // Security settings management
+  settings: {
+    accessControl: 'public',
+    encryptionEnabled: false,
+    encryptionPassword: null,
+    expiration: null,
+    burnAfterReading: false
+  },
+
+  // Initialize security settings from paste data
+  initialize: function(pasteData = null) {
+    if (pasteData && pasteData.is_encrypted) {
+      this.settings.encryptionEnabled = true;
+      this.settings.encryptionPassword = null;
+    } else {
+      this.settings.encryptionEnabled = false;
+      this.settings.encryptionPassword = null;
+    }
+
+    // Export settings to global scope for backward compatibility
+    window.securitySettings = this.settings;
+  },
+
+  // Get current security settings
+  getSettings: function() {
+    return this.settings;
+  },
+
+  // Update security settings
+  updateSettings: function(updates) {
+    Object.assign(this.settings, updates);
+    window.securitySettings = this.settings;
+  },
+
+  // Check if encryption is enabled
+  isEncryptionEnabled: function() {
+    return this.settings.encryptionEnabled === true;
+  },
+
+  // Show encryption dialog for content access
+  showEncryptionDialog: function(options = {}) {
+    const opts = {
+      isPasswordBased: false,
+      iv: null,
+      onSuccess: null,
+      onCancel: null,
+      title: 'Encrypted Content',
+      ...options
+    };
+
+    const dialogHTML = `
+      <div id="encryption-dialog" class="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
+        <h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--pico-primary);">
+          <i data-lucide="lock" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+          ${opts.title}
+        </h3>
+
+        <p style="margin-bottom: 1.5rem;">Enter the ${opts.isPasswordBased ? "password" : "encryption key"} to decrypt this content:</p>
+
+        <div style="margin-bottom: 1.5rem;">
+          <input
+            type="password"
+            id="encryption-key-input"
+            placeholder="Enter ${opts.isPasswordBased ? "password" : "encryption key"}"
+            style="width: 100%; max-width: 400px; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem;"
+            autocomplete="off"
+          >
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+          <button id="decrypt-btn" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+            <i data-lucide="unlock" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+            Decrypt
+          </button>
+          <button id="cancel-decrypt-btn" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
+            Cancel
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Create modal using existing modal utilities if available
+    if (window.showGenericModal) {
+      return window.showGenericModal({
+        title: opts.title,
+        customContent: dialogHTML,
+        primaryButtonText: '',
+        secondaryButtonText: '',
+        showSecondaryButton: false,
+        onPrimaryAction: () => {
+          this.attemptDecryption(opts);
+        },
+        onSecondaryAction: () => {
+          if (opts.onCancel) opts.onCancel();
+        }
+      });
+    } else {
+      // Fallback: create simple dialog
+      this.showSimpleDialog(dialogHTML, opts);
+    }
+  },
+
+  // Show simple dialog (fallback)
+  showSimpleDialog: function(html, options) {
+    // Simple modal implementation
+    const modal = document.createElement('dialog');
+    modal.className = 'dialog-modal';
+    modal.innerHTML = html;
+
+    document.body.appendChild(modal);
+
+    // Add event listeners
+    const decryptBtn = modal.querySelector('#decrypt-btn');
+    const cancelBtn = modal.querySelector('#cancel-decrypt-btn');
+
+    if (decryptBtn) {
+      decryptBtn.onclick = () => {
+        this.attemptDecryption(options);
+      };
+    }
+
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        modal.close();
+        document.body.removeChild(modal);
+        if (options.onCancel) options.onCancel();
+      };
+    }
+
+    // Initialize icons
+    if (window.SharedIcons) {
+      window.SharedIcons.init(modal);
+    }
+
+    modal.showModal();
+    return modal;
+  },
+
+  // Attempt decryption with user-provided key
+  attemptDecryption: function(options = {}) {
+    const input = document.getElementById('encryption-key-input');
+    if (!input) return;
+
+    const key = input.value.trim();
+    if (!key) {
+      this.showError('Please enter a valid encryption key');
+      return;
+    }
+
+    // Call the provided success callback with the key
+    if (options.onSuccess) {
+      options.onSuccess(key, options);
+    }
+
+    // Close the dialog
+    const dialog = document.getElementById('encryption-dialog');
+    if (dialog && dialog.parentElement) {
+      dialog.parentElement.close();
+      dialog.parentElement.remove();
+    }
+  },
+
+  // Show encryption info dialog
+  showEncryptionInfo: function() {
+    const infoHTML = `
+      <div id="encryption-info" style="padding: 2rem; text-align: center; color: var(--pico-color);">
+        <h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--pico-primary);">
+          <i data-lucide="shield" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+          Encrypted Content
+        </h3>
+
+        <p style="margin-bottom: 1.5rem;">This content is protected with AES-256-GCM encryption.</p>
+
+        <div style="text-align: left; background: var(--pico-background-color); padding: 1rem; border-radius: 4px; border: 1px solid var(--pico-border-color); margin: 1.5rem 0;">
+          <h4 style="margin-top: 0; color: var(--pico-primary);">About this encryption:</h4>
+          <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+            <li>Military-grade AES-256-GCM encryption</li>
+            <li>Content is encrypted before storage</li>
+            <li>Only someone with the correct key can decrypt</li>
+            <li>The encryption key is never stored on the server</li>
+          </ul>
+        </div>
+
+        <div style="background: var(--pico-code-background-color); padding: 1rem; border-radius: 4px; margin: 1.5rem 0;">
+          <p style="margin: 0; font-family: monospace; font-size: 0.9rem;">
+            <strong>Important:</strong> Keep your encryption key safe. Without it, the content cannot be recovered.
+          </p>
+        </div>
+
+        <div style="display: flex; justify-content: center; margin-top: 2rem;">
+          <button class="btn btn-primary" onclick="this.closest('dialog').close()">
+            I Understand
+          </button>
+        </div>
+      </div>
+    `;
+
+    if (window.showGenericModal) {
+      return window.showGenericModal({
+        title: 'Encryption Information',
+        customContent: infoHTML,
+        primaryButtonText: 'I Understand',
+        showSecondaryButton: false
+      });
+    } else {
+      return this.showSimpleDialog(infoHTML, {});
+    }
+  },
+
+  // Form data preparation for paste submission
+  prepareFormData: function(formData = null) {
+    const data = formData || new FormData();
+
+    // Add security settings to form data
+    data.append('access_control', this.settings.accessControl);
+
+    if (this.settings.expiration) {
+      data.append('expiration', this.settings.expiration);
+    }
+
+    if (this.settings.burnAfterReading) {
+      data.append('burn_after_reading', 'true');
+    }
+
+    if (this.settings.accessControl === 'private') {
+      data.append('private', 'true');
+    }
+
+    return data;
+  },
+
+  // Show error message
+  showError: function(message, title = 'Error') {
+    if (window.showError) {
+      window.showError(message);
+    } else if (window.showGenericModal) {
+      window.showGenericModal({
+        title: title,
+        message: message,
+        icon: 'alert-circle',
+        primaryButtonStyle: 'var(--pico-del-background)',
+        primaryButtonTextColor: 'var(--pico-del-inverse)'
+      });
+    } else {
+      alert(`Error: ${message}`);
+    }
+  },
+
+  // Show success message
+  showSuccess: function(message, title = 'Success') {
+    if (window.showSuccess) {
+      window.showSuccess(message);
+    } else if (window.showGenericModal) {
+      window.showGenericModal({
+        title: title,
+        message: message,
+        icon: 'check-circle'
+      });
+    } else {
+      alert(`Success: ${message}`);
+    }
+  },
+
+  // Validate security settings
+  validateSettings: function() {
+    const errors = [];
+
+    if (this.settings.encryptionEnabled && !this.settings.encryptionPassword && this.settings.accessControl === 'encrypted') {
+      errors.push('Encryption password is required when access control is set to encrypted');
+    }
+
+    return errors;
+  },
+
+  // Reset security settings to defaults
+  reset: function() {
+    this.settings = {
+      accessControl: 'public',
+      encryptionEnabled: false,
+      encryptionPassword: null,
+      expiration: null,
+      burnAfterReading: false
+    };
+    window.securitySettings = this.settings;
+  }
+};
+
+// =============================================================================
+// ENCRYPTION DIALOG COMPONENT - Reusable encryption dialog
+// =============================================================================
+
+window.EncryptionDialog = {
+  // Show encryption key generation dialog
+  showKeyGeneration: function(onSuccess = null) {
+    const keyHTML = `
+      <div style="padding: 2rem; text-align: center;">
+        <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--pico-primary);">
+          <i data-lucide="key" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+          Encryption Key Generated
+        </h3>
+
+        <div style="background: var(--pico-code-background-color); padding: 1rem; border-radius: 4px; margin: 1.5rem 0; border: 1px solid var(--pico-border-color);">
+          <p style="margin: 0 0 0.5rem 0; font-weight: bold;">Your Encryption Key:</p>
+          <div id="encryption-key-display" style="font-family: monospace; font-size: 0.9rem; word-break: break-all; padding: 0.5rem; background: var(--pico-background-color); border-radius: 2px;"></div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+          <button id="copy-key-btn" class="btn btn-primary">
+            <i data-lucide="copy" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+            Copy Key
+          </button>
+          <button id="key-done-btn" class="btn btn-secondary">
+            Done
+          </button>
+        </div>
+
+        <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--pico-muted-color);">
+          <strong>Save this key securely!</strong> You'll need it to decrypt this content later.
+        </p>
+      </div>
+    `;
+
+    if (window.showGenericModal) {
+      const modal = window.showGenericModal({
+        title: 'Encryption Key',
+        customContent: keyHTML,
+        primaryButtonText: '',
+        secondaryButtonText: '',
+        showSecondaryButton: false,
+        onPrimaryAction: () => {
+          if (onSuccess) onSuccess();
+        }
+      });
+
+      // Set up copy button
+      setTimeout(() => {
+        const copyBtn = document.getElementById('copy-key-btn');
+        if (copyBtn) {
+          copyBtn.onclick = () => {
+            const keyDisplay = document.getElementById('encryption-key-display');
+            if (keyDisplay && keyDisplay.textContent) {
+              window.SharedClipboard.copy(keyDisplay.textContent, {
+                button: copyBtn,
+                successMessage: 'Encryption key copied!'
+              });
+            }
+          };
+        }
+      }, 100);
+
+      return modal;
+    }
+  }
+};
+
+// Initialize security utilities on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize security settings if not already done
+  if (!window.securitySettings) {
+    window.SharedSecurity.initialize();
+  }
+});
+
+console.log('Security utilities loaded');
+</script>
+
+<style>
+/* =============================================================================
+/* SECURITY DIALOG STYLES
+/* ============================================================================= */
+
+.encryption-dialog {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.encryption-dialog input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.encryption-dialog input:focus {
+  border-color: var(--pico-primary);
+  box-shadow: 0 0 0 2px rgba(var(--pico-primary-rgb), 0.2);
+}
+
+.encryption-dialog .btn {
+  transition: all 0.2s ease;
+}
+
+.encryption-dialog .btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Encryption info sections */
+.encryption-info {
+  line-height: 1.6;
+}
+
+.encryption-info ul {
+  text-align: left;
+}
+
+.encryption-info li {
+  margin-bottom: 0.5rem;
+}
+
+/* Key display styling */
+#encryption-key-display {
+  user-select: all;
+  cursor: text;
+  border: 1px solid var(--pico-border-color);
+  transition: all 0.2s ease;
+}
+
+#encryption-key-display:hover {
+  border-color: var(--pico-primary);
+}
+
+#encryption-key-display:active {
+  background: color-mix(in srgb, var(--pico-background-color) 95%, var(--pico-primary));
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .encryption-dialog {
+    margin: 1rem;
+    padding: 1.5rem !important;
+  }
+
+  .encryption-dialog .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .encryption-dialog .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Loading states for encryption */
+.encrypting {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.encrypting::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--pico-primary);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success/error states for encryption */
+.encryption-success {
+  border-color: var(--pico-ins-color) !important;
+  box-shadow: 0 0 10px rgba(var(--pico-ins-rgb), 0.3);
+}
+
+.encryption-error {
+  border-color: var(--pico-del-color) !important;
+  box-shadow: 0 0 10px rgba(var(--pico-del-rgb), 0.3);
+}
+</style>

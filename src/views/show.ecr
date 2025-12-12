@@ -126,11 +126,25 @@
   }
 </style>
 
+<%# Include shared utilities, styles, and security components %>
+<%= render "src/views/_shared_utils.ecr" %>
+<%= render "src/views/_shared_styles.ecr" %>
+<%= render "src/views/_security_shared.ecr" %>
+<%= render "src/views/_modal_utils.ecr" %>
+
 <script>
   // Store raw content for copying
   const rawContent = <%= paste.content.to_json %>;
   const pasteFilename = <%= (paste.filename || paste.sepia_id).to_json %>;
   const pasteLanguage = <%= (paste.language || "text").to_json %>;
+
+  // Initialize shared security utilities
+  const pasteData = {
+    is_encrypted: <%= paste.is_encrypted? %>,
+    password_based: <%= paste.password_based? %>,
+    encryption_iv: <%= paste.responds_to?(:encryption_iv) && paste.encryption_iv ? paste.encryption_iv.to_json : "null" %>
+  };
+  SharedSecurity.initialize(pasteData);
 
   // Function to apply syntax highlighting to a content element
   function applySyntaxHighlighting(contentElement, code, language) {
@@ -419,52 +433,19 @@
     return pasteFilename + ext;
   }
   
+  // Copy to clipboard using shared utility
   function copyToClipboard() {
     const btn = document.querySelector('.copy-btn');
-
-    // Use the potentially decrypted content
     const contentToCopy = window.rawContent || rawContent;
 
-    // Try modern clipboard API first, fall back to execCommand
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(contentToCopy).then(() => {
-        showCopySuccess(btn);
-      }).catch(() => {
-        fallbackCopy(btn, contentToCopy);
-      });
-    } else {
-      fallbackCopy(btn, contentToCopy);
-    }
-  }
-  
-  function fallbackCopy(btn, content) {
-    // Fallback for non-HTTPS or older browsers
-    const textarea = document.createElement('textarea');
-    textarea.value = content;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      document.execCommand('copy');
-      showCopySuccess(btn);
-    } catch (e) {
-      console.error('Copy failed:', e);
-    }
-    document.body.removeChild(textarea);
-  }
-  
-  function showCopySuccess(btn, successMessage = 'Copied!') {
-    const originalContent = btn.innerHTML;
-    btn.classList.add('copied');
-    btn.innerHTML = '<i data-lucide="check"></i>';
-    lucide.createIcons();
-
-    setTimeout(() => {
-      btn.classList.remove('copied');
-      btn.innerHTML = originalContent;
-      lucide.createIcons();
-    }, 2000);
+    // Use shared clipboard utility
+    SharedClipboard.copy(contentToCopy, {
+      button: btn,
+      successMessage: 'Content copied!',
+      onSuccess: () => {
+        console.log('Content copied successfully');
+      }
+    });
   }
 
   // Show QR Code for paste sharing (URL only - key management is user concern)
@@ -483,43 +464,10 @@
   // Copy link to the paste
   function copyLink() {
     const btn = document.querySelector('.copy-link-btn');
-
-    // Get the current page URL
-    const urlToCopy = window.location.href;
-
-    // Try modern clipboard API first, fall back to execCommand
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(urlToCopy).then(() => {
-        showCopySuccess(btn, 'Link copied!');
-      }).catch(() => {
-        fallbackCopyTextToClipboard(urlToCopy, btn, 'Link copied!');
-      });
-    } else {
-      fallbackCopyTextToClipboard(urlToCopy, btn, 'Link copied!');
-    }
+    SharedURL.copyCurrentURL(btn);
   }
 
-  // Fallback method for copying text to clipboard
-  function fallbackCopyTextToClipboard(text, btn, successMessage = 'Copied!') {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-
-    textArea.select();
-
-    try {
-      document.execCommand('copy');
-      showCopySuccess(btn, successMessage);
-    } catch (err) {
-      showCopyError(btn);
-    }
-
-    document.body.removeChild(textArea);
-  }
-
+  
   function generateQRDialog(pasteId) {
     // Build QR API URL - just the paste URL, no keys
     const qrApiUrl = `/api/qr/${pasteId}`;
@@ -645,12 +593,12 @@
 
   // Show password dialog for encrypted content
   function showPasswordDialog() {
-    const pasteContent = document.getElementById('paste-content');
     const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
 
     // Check Web Crypto API availability first
     if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle !== 'object') {
-      // Show error for insecure environment
+      // Show error for insecure environment using shared security utilities
+      const pasteContent = document.getElementById('paste-content');
       pasteContent.innerHTML = `
         <div id="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
           <div style="background: #ff6b6b; color: white; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
@@ -674,105 +622,29 @@
       return; // Don't proceed with encryption dialog
     }
 
-    // Create and show the dialog
-    pasteContent.innerHTML = `
-      <div id="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
-        <h3 style="color: var(--pico-primary);">🔒 This paste is encrypted</h3>
-        <p style="margin-bottom: 1.5rem;">Enter the ${isPasswordBased === "true" ? "password" : "encryption key"} to decrypt this content:</p>
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 400px; margin: 0 auto;">
-          <input
-            type="password"
-            id="encryption-key-input"
-            placeholder="Enter ${isPasswordBased === "true" ? "password" : "encryption key"}"
-            style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-family: ${isPasswordBased === "true" ? "inherit" : "monospace"};"
-            autocomplete="off"
-          >
-          <button
-            id="decrypt-button"
-            style="background: var(--pico-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: 500;"
-            onclick="attemptDecryption()"
-          >
-            Decrypt
-          </button>
-          <button
-            id="cancel-button"
-            style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;"
-            onclick="showEncryptedInfo()"
-          >
-            Show Info
-          </button>
-        </div>
-        <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 1.5rem;">
-          <strong>Tip:</strong> The key should have been provided to you separately.
-        </p>
-      </div>
-    `;
-
-    // Focus on the input field
-    setTimeout(() => {
-      const input = document.getElementById('encryption-key-input');
-      if (input) {
-        input.focus();
-        // Add enter key support
-        input.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') {
-            attemptDecryption();
-          }
-        });
+    // Use SharedSecurity to show encryption dialog
+    SharedSecurity.showEncryptionDialog({
+      isPasswordBased: isPasswordBased === "true",
+      onSuccess: (key) => {
+        attemptDecryptionWithKey(key);
+      },
+      onCancel: () => {
+        showEncryptedInfo();
       }
-    }, 100);
+    });
   }
 
   // Show encrypted paste info dialog
   function showEncryptedInfo() {
-    const pasteContent = document.getElementById('paste-content');
-    pasteContent.innerHTML = `
-      <div id="encryption-info" style="padding: 2rem; text-align: center; color: var(--pico-color);">
-        <h3 style="color: var(--pico-primary);">🔒 Encrypted Paste</h3>
-        <p style="margin-bottom: 1.5rem;">This content is protected with AES-256-GCM encryption.</p>
-        <div style="background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px; padding: 1rem; margin: 1rem 0; text-align: left;">
-          <h4 style="margin-top: 0; color: var(--pico-primary);">How to decrypt:</h4>
-          <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
-            <li>Obtain the encryption key from the person who shared this paste</li>
-            <li>Click the "Enter Key" button below</li>
-            <li>Paste the key and the content will decrypt automatically</li>
-          </ol>
-        </div>
-        <div style="background: var(--pico-secondary-background); border: 1px solid var(--pico-border-color); border-radius: 4px; padding: 1rem; margin: 1rem 0; text-align: left;">
-          <h4 style="margin-top: 0; color: var(--pico-primary);">About this encryption:</h4>
-          <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
-            <li><strong>Algorithm:</strong> AES-256-GCM</li>
-            <li><strong>Security:</strong> Zero-knowledge - the server cannot decrypt your content</li>
-            <li><strong>Compatibility:</strong> Works with OpenSSL command line tools</li>
-          </ul>
-        </div>
-        <button
-          onclick="showPasswordDialog()"
-          style="background: var(--pico-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: 500;"
-        >
-          Enter Key
-        </button>
-      </div>
-    `;
+    // Use SharedSecurity to show encryption info
+    SharedSecurity.showEncryptionInfo();
   }
 
-  // Attempt decryption with user-provided key
-  async function attemptDecryption() {
-    const keyInput = document.getElementById('encryption-key-input');
-    const decryptButton = document.getElementById('decrypt-button');
-    const dialog = document.getElementById('encryption-dialog');
-
-    const key = keyInput ? keyInput.value.trim() : '';
-
+  // Attempt decryption with provided key
+  async function attemptDecryptionWithKey(key) {
     if (!key) {
-      showError('Please enter an encryption key');
+      SharedSecurity.showError('Please enter an encryption key');
       return;
-    }
-
-    // Update button state
-    if (decryptButton) {
-      decryptButton.textContent = 'Decrypting...';
-      decryptButton.disabled = true;
     }
 
     try {
@@ -796,11 +668,7 @@
       } else {
         // Validate key format for key-based encryption
         if (!PastoCrypto.validateKey(key)) {
-          showError('Invalid encryption key format. The key should be a valid base64 string.');
-          if (decryptButton) {
-            decryptButton.textContent = 'Decrypt';
-            decryptButton.disabled = false;
-          }
+          SharedSecurity.showError('Invalid encryption key format. The key should be a valid base64 string.');
           return;
         }
 
@@ -833,27 +701,12 @@
         headerElement.innerHTML = '🔓 ' + headerElement.textContent;
       }
 
-      // Show success message briefly
-      const successMessage = document.createElement('div');
-      successMessage.innerHTML = '✅ Successfully decrypted!';
-      successMessage.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--pico-ins-color); color: white; padding: 0.75rem 1rem; border-radius: 4px; z-index: 1000; animation: fadeInOut 2s ease-in-out;';
-      document.body.appendChild(successMessage);
-
-      setTimeout(() => {
-        document.body.removeChild(successMessage);
-      }, 2000);
+      // Show success message using shared utilities
+      SharedSecurity.showSuccess('Successfully decrypted!');
 
     } catch (error) {
       console.error('Decryption error:', error);
-
-      // Restore button state
-      if (decryptButton) {
-        decryptButton.textContent = 'Decrypt';
-        decryptButton.disabled = false;
-      }
-
-      // Show error message
-      showError('Failed to decrypt content: ' + error.message);
+      SharedSecurity.showError('Failed to decrypt content: ' + error.message);
     }
   }
 
