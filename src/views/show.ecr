@@ -132,6 +132,41 @@
   const pasteFilename = <%= (paste.filename || paste.sepia_id).to_json %>;
   const pasteLanguage = <%= (paste.language || "text").to_json %>;
 
+  // Function to apply syntax highlighting to a content element
+  function applySyntaxHighlighting(contentElement, code, language) {
+    if (typeof hljs === 'undefined') {
+      // highlight.js not available, fallback to plain text
+      contentElement.textContent = code;
+      return;
+    }
+
+    // Don't highlight markdown - it will be rendered separately
+    const isMarkdown = (language === "markdown") || pasteFilename.endsWith(".md");
+    if (isMarkdown) {
+      contentElement.textContent = code;
+      return;
+    }
+
+    // Apply syntax highlighting
+    let highlightedCode;
+    try {
+      if (language && language !== 'text' && hljs.getLanguage(language)) {
+        highlightedCode = hljs.highlight(code, { language: language, ignoreIllegals: true }).value;
+      } else {
+        highlightedCode = hljs.highlightAuto(code).value;
+      }
+    } catch (e) {
+      console.error('Highlight.js error:', e);
+      highlightedCode = code;
+    }
+
+    contentElement.innerHTML = `<pre><code>${highlightedCode}</code></pre>`;
+
+    // Apply CodeJar theme classes for consistency
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    contentElement.className = isDark ? 'atom-one-dark' : 'atom-one-light';
+  }
+
   // Store encryption information
   const isEncrypted = <%= paste.responds_to?(:is_encrypted?) && paste.is_encrypted? ? "true" : "false" %>;
   const encryptedContent = <%= paste.responds_to?(:encrypted_content) && paste.encrypted_content ? paste.encrypted_content.to_json : "null" %>;
@@ -775,13 +810,13 @@
 
       // Update the content with the decrypted data
       const pasteContent = document.getElementById('paste-content');
-      pasteContent.textContent = decryptedContent;
+      applySyntaxHighlighting(pasteContent, decryptedContent, pasteLanguage);
 
       // Update rawContent for copy/download functionality
       window.rawContent = decryptedContent;
 
-      // SECURITY: Do NOT send decrypted content to server for highlighting
-      // Encrypted content is displayed as plain text only
+      // SECURITY: Client-side highlighting for encrypted content
+      // Using highlight.js instead of sending decrypted content to server
 
       // Update markdown rendering if needed
       const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
@@ -875,13 +910,13 @@
 
       // Update the content with the decrypted data
       const pasteContent = document.getElementById('paste-content');
-      pasteContent.textContent = decryptedContent;
+      applySyntaxHighlighting(pasteContent, decryptedContent, pasteLanguage);
 
       // Update rawContent for copy/download functionality
       window.rawContent = decryptedContent;
 
-      // SECURITY: Do NOT send decrypted content to server for highlighting
-      // Encrypted content is displayed as plain text only
+      // SECURITY: Client-side highlighting for encrypted content
+      // Using highlight.js instead of sending decrypted content to server
 
       // Update markdown rendering if needed
       const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
