@@ -62,10 +62,26 @@ function showGenericModal(options = {}) {
   const primaryBtn = modal.querySelector('#modalPrimaryBtn');
   const secondaryBtn = modal.querySelector('#modalSecondaryBtn');
 
-  primaryBtn.onclick = () => {
+  primaryBtn.onclick = async () => {
+    // Get the input value BEFORE removing the modal
+    let inputValue = null;
+    if (opts.extractInputBeforeClose) {
+      const input = modal.querySelector('input');
+      if (input) {
+        inputValue = input.value;
+      }
+    }
+
+    // Call the action first so it can still access modal content
+    if (opts.onPrimaryAction) {
+      try {
+        await opts.onPrimaryAction(inputValue);
+      } catch (error) {
+        console.error('Error in primary action:', error);
+      }
+    }
     modal.close();
     document.body.removeChild(modal);
-    if (opts.onPrimaryAction) opts.onPrimaryAction();
   };
 
   if (secondaryBtn) {
@@ -89,6 +105,21 @@ function showGenericModal(options = {}) {
   // Initialize Lucide icons
   if (window.lucide) {
     window.lucide.createIcons();
+  }
+
+  // Add Enter key support for input fields
+  const inputField = modal.querySelector('input');
+  if (inputField) {
+    inputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // Trigger the primary button action
+        const primaryBtn = modal.querySelector('#modalPrimaryBtn');
+        if (primaryBtn) {
+          primaryBtn.click();
+        }
+      }
+    });
   }
 
   modal.showModal();

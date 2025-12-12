@@ -1,3 +1,7 @@
+<%# Include shared utilities and styles %>
+<%= render "src/views/_shared_utils.ecr" %>
+<%= render "src/views/_shared_styles.ecr" %>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const topBarRight = document.querySelector('.top-bar-right');
@@ -5,7 +9,12 @@
       topBarRight.insertAdjacentHTML('afterbegin', `
         <a href="/<%= base_id %>" class="top-bar-btn" title="Back to Latest"><i data-lucide="arrow-left"></i></a>
       `);
-      lucide.createIcons();
+      // Initialize Lucide icons using shared utility
+      if (window.SharedIcons) {
+        window.SharedIcons.init(topBarRight);
+      } else if (window.lucide) {
+        window.lucide.createIcons();
+      }
     }
   });
 </script>

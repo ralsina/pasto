@@ -1,3 +1,7 @@
+<%# Include shared utilities and styles %>
+<%= render "src/views/_shared_utils.ecr" %>
+<%= render "src/views/_shared_styles.ecr" %>
+
 <!DOCTYPE html>
 <html lang="en" data-theme="<%= resolved_pico_theme || pico_theme %>">
 <head>
@@ -215,42 +219,7 @@
       -moz-appearance: none;
     }
 
-    .controls-button {
-      background: transparent;
-      border: 2px solid var(--pico-primary, #0074d9);
-      border-radius: 4px;
-      padding: 0;
-      cursor: pointer;
-      font-size: 1.25rem;
-      transition: background 0.2s, color 0.2s;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 40px;
-      min-height: 40px;
-      height: 3rem;
-      width: 3rem;
-      color: var(--pico-primary, #0074d9);
-      gap: 0.25rem;
-      box-sizing: border-box;
-    }
-
-    .controls-button:hover {
-      background: var(--pico-primary, #0074d9);
-      color: var(--pico-primary-inverse, white);
-    }
-
-    .controls-button i,
-    .controls-button svg {
-      color: inherit;
-      width: 20px !important;
-      height: 20px !important;
-      min-width: 20px !important;
-      min-height: 20px !important;
-      max-width: 20px !important;
-      max-height: 20px !important;
-    }
+    /* Controls button styles are now in _shared_styles.ecr */
 
     /* Mobile Responsive */
     @media (max-width: 768px) {
@@ -790,8 +759,10 @@
               }
             });
 
-            // Re-create Lucide icons
-            if (typeof lucide !== 'undefined') {
+            // Re-create Lucide icons using shared utility
+            if (window.SharedIcons) {
+              window.SharedIcons.init(mobileControls);
+            } else if (typeof lucide !== 'undefined') {
               lucide.createIcons();
             }
           }, 50);
@@ -880,8 +851,10 @@
         handleMobileControls();
       });
 
-      // Initialize Lucide icons if available
-      if (window.lucide) {
+      // Initialize Lucide icons using shared utility
+      if (window.SharedIcons) {
+        window.SharedIcons.init(document.body);
+      } else if (window.lucide) {
         window.lucide.createIcons();
       }
     });

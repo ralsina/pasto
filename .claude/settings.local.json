@@ -67,7 +67,9 @@
       "Bash(PASTO_THEME=github PASTO_PORT=3000 ./bin/pasto:*)",
       "Bash(PASTO_PORT=3001 ./bin/pasto:*)",
       "Bash(PASTO_PORT=4001 ./bin/pasto:*)",
-      "Bash(xdg-open:*)"
+      "Bash(xdg-open:*)",
+      "WebFetch(domain:highlightjs.readthedocs.io)",
+      "Bash(PASTO_PORT=5000 ./bin/pasto:*)"
     ],
     "deny": [],
     "ask": []

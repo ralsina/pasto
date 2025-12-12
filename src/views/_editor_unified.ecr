@@ -297,6 +297,10 @@
               <i data-lucide="refresh-cw" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>
               Generate
             </button>
+            <button type="button" id="copyPasswordBtn" style="padding: 0.75rem 1rem; border: 1px solid var(--pico-primary); background: var(--pico-secondary-background); color: var(--pico-color); border-radius: 4px; cursor: pointer; font-size: 0.9rem; white-space: nowrap;">
+              <i data-lucide="copy" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>
+              Copy
+            </button>
           </div>
           <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">
             Leave empty to auto-generate, or enter your own password (min 8 characters)
@@ -318,6 +322,7 @@
       // Add event listeners
       const passwordInput = document.getElementById('encryptionPassword');
       const generateBtn = document.getElementById('generatePasswordBtn');
+      const copyBtn = document.getElementById('copyPasswordBtn');
 
       generateBtn.onclick = () => {
         const newPassword = generateSecurePassword();
@@ -329,6 +334,41 @@
           passwordInput.type = 'password';
         }, 3000);
       };
+
+      // Copy button functionality
+      copyBtn.onclick = async () => {
+        const password = passwordInput.value.trim();
+        if (!password) {
+          alert('No password to copy. Please generate or enter a password first.');
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(password);
+
+          // Show temporary success feedback
+          const originalHTML = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Copied!';
+          copyBtn.style.background = 'var(--pico-ins-background)';
+          copyBtn.style.color = 'var(--pico-ins-inverse)';
+
+          setTimeout(() => {
+            copyBtn.innerHTML = originalHTML;
+            copyBtn.style.background = 'var(--pico-secondary-background)';
+            copyBtn.style.color = 'var(--pico-color)';
+          }, 2000);
+        } catch (err) {
+          alert('Failed to copy password: ' + err.message);
+        }
+      };
+
+      // Enter key support - trigger Encrypt Paste button
+      passwordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          modal.querySelector('#encryptBtn').click();
+        }
+      });
 
       // Cancel button
       modal.querySelector('#cancelEncryptionBtn').onclick = () => {
@@ -721,7 +761,12 @@ async function createPaste(event) {
       controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" aria-label="Hide Preview" style="display: flex;"><i data-lucide="eye-off" style="width: 20px; height: 20px;"></i></button>`;
 
       // Shared help and profile buttons
-      controlsHTML += `<%= render "src/views/_controls_help_profile.ecr" %>`;
+      controlsHTML += `<a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+          <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
+        </a>
+        <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+          <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+        </a>`;
 
       controlsGroup.innerHTML = controlsHTML;
     }

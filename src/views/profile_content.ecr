@@ -1,15 +1,47 @@
+<%# Include shared utilities and styles %>
+<%= render "src/views/_shared_utils.ecr" %>
+<%= render "src/views/_shared_styles.ecr" %>
+<%= render "src/views/_modal_utils.ecr" %>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const controlsGroup = document.getElementById('controls-group');
     if (controlsGroup) {
-      let html = `<a href="/" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="plus" style="width: 20px; height: 20px;"></i></a>`;
-      html += `<a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i data-lucide="help-circle" style="width: 20px; height: 20px;"></i></a>`;
-      <% if current_user %>
-      html += `<button onclick="document.getElementById('logout-form').submit()" class="controls-button" title="Logout" aria-label="Logout from your account" style="color: var(--pico-del-color);"><i data-lucide="log-out" style="width: 20px; height: 20px;"></i></button>`;
-      <% end %>
-      controlsGroup.insertAdjacentHTML('afterbegin', html);
-      if (window.lucide) {
-        lucide.createIcons();
+      // Define buttons for profile page
+      const buttons = [
+        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
+        {type: "link", href: "/help", icon: "help-circle", title: "Help"}
+        <% if current_user %>
+        ,
+        {type: "button", icon: "log-out", title: "Logout", action: "document.getElementById('logout-form').submit()", style: "danger"}
+        <% end %>
+      ];
+
+      // Use shared controls component
+      const controlsHTML = `
+        <div class="shared-controls center">
+          ${buttons.map(button => {
+            if (button.type === 'link') {
+              return `<a href="${button.href}" class="controls-button ${button.style || ''}" title="${button.title}" aria-label="${button.title}" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                <i data-lucide="${button.icon}" style="width: 20px; height: 20px;"></i>
+              </a>`;
+            } else if (button.type === 'button') {
+              return `<button onclick="${button.action}" class="controls-button ${button.style || ''}" title="${button.title}" aria-label="${button.title}">
+                <i data-lucide="${button.icon}" style="width: 20px; height: 20px;"></i>
+              </button>`;
+            }
+            return '';
+          }).join('')}
+        </div>
+      `;
+
+      controlsGroup.insertAdjacentHTML('afterbegin', controlsHTML);
+
+      // Initialize Lucide icons using shared utility
+      if (window.SharedIcons) {
+        window.SharedIcons.init(controlsGroup);
+      } else if (window.lucide) {
+        window.lucide.createIcons();
       }
     }
   });
@@ -300,42 +332,16 @@ function confirmRevokeSSHKey(fingerprint, keyType) {
   });
 }
 
-// Copy to clipboard function
+// Copy to clipboard using shared utility
 function copyToClipboard(text, type = 'api') {
   const itemType = type === 'ssh' ? 'SSH key fingerprint' : 'API key';
 
-  navigator.clipboard.writeText(text).then(function() {
-    // Show success message
-    showSuccess(`${itemType} copied to clipboard!`);
-  }, function(err) {
-    // Fallback for older browsers
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        showSuccess(`${itemType} copied to clipboard!`);
-      } else {
-        showError(`Failed to copy ${itemType}`);
-      }
-    } catch (err) {
-      showError(`Failed to copy ${itemType}`);
-    }
-
-    document.body.removeChild(textArea);
+  // Use shared clipboard utility
+  SharedClipboard.copy(text, {
+    successMessage: `${itemType} copied to clipboard!`,
+    errorMessage: `Failed to copy ${itemType}`
   });
 }
-
-// Reinitialize Lucide icons for the new buttons
-document.addEventListener('DOMContentLoaded', function() {
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-});
 </script>
 
 <style>
@@ -847,40 +853,7 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: var(--pico-secondary-hover-background);
   }
 
-  /* Controls buttons styling */
-  .controls-button {
-    background: transparent;
-    border: 2px solid var(--pico-primary);
-    border-radius: 4px;
-    padding: 0;
-    cursor: pointer;
-    font-size: 1.25rem;
-    transition: background 0.2s, color 0.2s;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    min-height: 40px;
-    color: var(--pico-primary);
-  }
-
-  .controls-button:hover {
-    background: var(--pico-primary);
-    color: var(--pico-primary-inverse);
-  }
-
-  .controls-button i,
-  .controls-button svg {
-    color: inherit;
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
-    min-height: 20px !important;
-    max-width: 20px !important;
-    max-height: 20px !important;
-  }
-
+  
   .login-instructions {
     margin: 2rem 0;
   }

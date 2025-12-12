@@ -58,33 +58,16 @@ window.SharedSecurity = {
     };
 
     const dialogHTML = `
-      <div id="encryption-dialog" class="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
-        <h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--pico-primary);">
-          <i data-lucide="lock" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
-          ${opts.title}
-        </h3>
-
+      <div id="encryption-dialog" class="encryption-dialog" style="text-align: center; color: var(--pico-color);">
         <p style="margin-bottom: 1.5rem;">Enter the ${opts.isPasswordBased ? "password" : "encryption key"} to decrypt this content:</p>
 
-        <div style="margin-bottom: 1.5rem;">
-          <input
-            type="password"
-            id="encryption-key-input"
-            placeholder="Enter ${opts.isPasswordBased ? "password" : "encryption key"}"
-            style="width: 100%; max-width: 400px; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem;"
-            autocomplete="off"
-          >
-        </div>
-
-        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
-          <button id="decrypt-btn" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
-            <i data-lucide="unlock" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
-            Decrypt
-          </button>
-          <button id="cancel-decrypt-btn" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
-            Cancel
-          </button>
-        </div>
+        <input
+          type="password"
+          id="encryption-key-input"
+          placeholder="Enter ${opts.isPasswordBased ? "password" : "encryption key"}"
+          style="width: 100%; max-width: 400px; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem;"
+          autocomplete="off"
+        >
       </div>
     `;
 
@@ -92,15 +75,15 @@ window.SharedSecurity = {
     if (window.showGenericModal) {
       return window.showGenericModal({
         title: opts.title,
+        icon: 'lock',
         customContent: dialogHTML,
-        primaryButtonText: '',
-        secondaryButtonText: '',
-        showSecondaryButton: false,
-        onPrimaryAction: () => {
-          this.attemptDecryption(opts);
-        },
-        onSecondaryAction: () => {
-          if (opts.onCancel) opts.onCancel();
+        primaryButtonText: 'Decrypt',
+        primaryButtonIcon: 'unlock',
+        showSecondaryButton: false, // Remove cancel button
+        extractInputBeforeClose: true, // Extract input value before closing
+        onPrimaryAction: (inputValue) => {
+          // Call attemptDecryption with the input value
+          this.attemptDecryptionWithInput(opts, inputValue);
         }
       });
     } else {
@@ -114,27 +97,32 @@ window.SharedSecurity = {
     // Simple modal implementation
     const modal = document.createElement('dialog');
     modal.className = 'dialog-modal';
-    modal.innerHTML = html;
+    modal.innerHTML = html + `
+      <div style="display: flex; justify-content: center; margin-top: 2rem;">
+        <button id="decrypt-btn" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+          <i data-lucide="unlock" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+          Decrypt
+        </button>
+      </div>
+    `;
 
     document.body.appendChild(modal);
 
-    // Add event listeners
+    // Add event listener for decrypt button
     const decryptBtn = modal.querySelector('#decrypt-btn');
-    const cancelBtn = modal.querySelector('#cancel-decrypt-btn');
-
     if (decryptBtn) {
       decryptBtn.onclick = () => {
         this.attemptDecryption(options);
       };
     }
 
-    if (cancelBtn) {
-      cancelBtn.onclick = () => {
-        modal.close();
-        document.body.removeChild(modal);
-        if (options.onCancel) options.onCancel();
-      };
-    }
+    // Handle ESC key to close dialog
+    modal.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      if (options.onCancel) options.onCancel();
+      modal.close();
+      document.body.removeChild(modal);
+    });
 
     // Initialize icons
     if (window.SharedIcons) {
@@ -161,12 +149,23 @@ window.SharedSecurity = {
       options.onSuccess(key, options);
     }
 
-    // Close the dialog
-    const dialog = document.getElementById('encryption-dialog');
-    if (dialog && dialog.parentElement) {
-      dialog.parentElement.close();
-      dialog.parentElement.remove();
+    // Note: Modal closing is handled by the modal system
+  },
+
+  // Attempt decryption with input value (used by modal system)
+  attemptDecryptionWithInput: function(options = {}, inputValue) {
+    const key = inputValue ? inputValue.trim() : '';
+    if (!key) {
+      this.showError('Please enter a valid encryption key');
+      return;
     }
+
+    // Call the provided success callback with the key
+    if (options.onSuccess) {
+      options.onSuccess(key, options);
+    }
+
+    // Note: Modal closing is handled by the modal system
   },
 
   // Show encryption info dialog

@@ -472,63 +472,33 @@
     // Build QR API URL - just the paste URL, no keys
     const qrApiUrl = `/api/qr/${pasteId}`;
 
-    // Create modal dialog with consistent styling
-    const modal = document.createElement('dialog');
-    modal.style.cssText = `
-      padding: 2rem;
-      border: 2px solid var(--pico-primary);
-      border-radius: 0.5rem;
-      max-width: 500px;
-      width: 90vw;
-      max-height: 90vh;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    `;
-
-    modal.innerHTML = `
-      <h3 style="margin-top: 0; margin-bottom: 1.5rem;">
-        <i data-lucide="qr-code" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
-        QR Code for Paste
-      </h3>
-
-      <div id="qr-container" style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
-        <div style="padding: 2rem; background: var(--pico-secondary-background); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
-          <div style="text-align: center;">
-            <i data-lucide="loader" style="width: 2rem; height: 2rem; animation: spin 1s linear infinite;"></i>
-            <div style="margin-top: 0.5rem; opacity: 0.7;">Loading QR code...</div>
+    // Use shared modal system
+    return window.showGenericModal({
+      title: 'QR Code for Paste',
+      icon: 'qr-code',
+      message: '',
+      customContent: `
+        <div id="qr-container" style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
+          <div style="padding: 2rem; background: var(--pico-secondary-background); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+              <i data-lucide="loader" style="width: 2rem; height: 2rem; animation: spin 1s linear infinite;"></i>
+              <div style="margin-top: 0.5rem; opacity: 0.7;">Loading QR code...</div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
-        <button id="qr-close-btn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
-          Close
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Add event listener right after appending
-    document.getElementById('qr-close-btn').onclick = function() {
-      modal.close();
-      document.body.removeChild(modal);
-    };
-
-    // Initialize Lucide icons before showing modal
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
-
-    modal.showModal();
-
-    // Display QR code directly using img tag
-    const qrContainer = document.getElementById('qr-container');
-    qrContainer.innerHTML = `
-      <img src="${qrApiUrl}" alt="QR Code" style="max-width: 300px; width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid var(--pico-border-color);" onerror="this.parentElement.innerHTML='<div style=\\'color: var(--pico-del-color); text-align: center; padding: 2rem;\\'><i data-lucide=\\'alert-circle\\' style=\\'width: 2rem; height: 2rem;\\'></i><div style=\\'margin-top: 0.5rem;\\'>Failed to load QR code</div></div>'" />
-    `;
+      `,
+      primaryButtonText: 'Close',
+      showSecondaryButton: false,
+      onShow: (modal) => {
+        // Load QR code after modal is shown
+        setTimeout(() => {
+          const qrContainer = document.getElementById('qr-container');
+          qrContainer.innerHTML = `
+            <img src="${qrApiUrl}" alt="QR Code" style="max-width: 300px; width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid var(--pico-border-color);" onerror="this.parentElement.innerHTML='<div style=\\'color: var(--pico-del-color); text-align: center; padding: 2rem;\\'><i data-lucide=\\'alert-circle\\' style=\\'width: 2rem; height: 2rem;\\'></i><div style=\\'margin-top: 0.5rem;\\'>Failed to load QR code</div></div>'" />
+          `;
+        }, 100);
+      }
+    });
   }
 
   function downloadPaste() {
@@ -648,6 +618,11 @@
     }
 
     try {
+      console.log('=== DEBUG: Starting decryption ===');
+      console.log('Key provided:', key ? 'YES' : 'NO');
+      console.log('encryptedContent:', encryptedContent ? encryptedContent.substring(0, 50) + '...' : 'NULL');
+      console.log('encryptionIv:', encryptionIv ? encryptionIv.substring(0, 50) + '...' : 'NULL');
+
       // Store key in session storage instead of URL fragment
       const currentPath = window.location.pathname;
       const pasteSepiaId = currentPath.substring(1);
@@ -657,31 +632,96 @@
 
       // Check if this is password-based encryption
       const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
+      console.log('isPasswordBased:', isPasswordBased);
+
+      // Debug: Check if PastoCrypto is available
+      console.log('=== DEBUG: Checking PastoCrypto availability ===');
+      console.log('typeof PastoCrypto:', typeof PastoCrypto);
+      console.log('typeof window.PastoCrypto:', typeof window.PastoCrypto);
+
+      // If PastoCrypto is not available, wait for it to load
+      if (typeof PastoCrypto === 'undefined' && typeof window.PastoCrypto === 'undefined') {
+        console.error('ERROR: PastoCrypto is not loaded yet! Waiting for it...');
+
+        // Wait for the crypto module to load
+        let attempts = 0;
+        const maxAttempts = 10;
+        const waitForCrypto = async () => {
+          while (attempts < maxAttempts && typeof window.PastoCrypto === 'undefined') {
+            attempts++;
+            console.log(`Waiting for PastoCrypto to load... attempt ${attempts}/${maxAttempts}`);
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+
+          if (typeof window.PastoCrypto === 'undefined') {
+            throw new Error('PastoCrypto failed to load after multiple attempts');
+          }
+
+          // Continue with decryption
+          console.log('PastoCrypto loaded successfully!');
+          return window.PastoCrypto;
+        };
+
+        try {
+          window.PastoCrypto = await waitForCrypto();
+        } catch (error) {
+          console.error('Failed to load PastoCrypto:', error);
+          SharedSecurity.showError('Encryption module failed to load. Please refresh the page and try again.');
+          return;
+        }
+      }
+
+      // Use whichever PastoCrypto is available
+      const Crypto = typeof PastoCrypto !== 'undefined' ? PastoCrypto : window.PastoCrypto;
+      console.log('Using Crypto object:', Crypto);
+      console.log('Available Crypto methods:', Object.getOwnPropertyNames(Crypto));
+      console.log('Crypto.decryptWithPassword type:', typeof Crypto.decryptWithPassword);
 
       if (isPasswordBased) {
         // Get encryption salt and iterations from the paste data
         const encryptionSalt = "<%= paste.encryption_salt %>";
         const encryptionIterations = <%= paste.encryption_iterations || 100000 %>;
+        console.log('Using password-based encryption with salt:', encryptionSalt, 'iterations:', encryptionIterations);
 
         // Decrypt using password (no base64 validation for passwords)
-        decryptedContent = await PastoCrypto.decryptWithPassword(encryptedContent, encryptionIv, encryptionSalt, key, encryptionIterations);
+        console.log('Calling Crypto.decryptWithPassword...');
+        if (typeof Crypto.decryptWithPassword !== 'function') {
+          console.error('ERROR: Crypto.decryptWithPassword is not a function!');
+          throw new Error('Crypto.decryptWithPassword is not available');
+        }
+        decryptedContent = await Crypto.decryptWithPassword(encryptedContent, encryptionIv, encryptionSalt, key, encryptionIterations);
+        console.log('Decryption result:', decryptedContent ? decryptedContent.substring(0, 100) + '...' : 'NULL');
       } else {
         // Validate key format for key-based encryption
-        if (!PastoCrypto.validateKey(key)) {
+        console.log('Validating key format...');
+        if (!Crypto.validateKey(key)) {
           SharedSecurity.showError('Invalid encryption key format. The key should be a valid base64 string.');
           return;
         }
 
         // Decrypt using key
-        decryptedContent = await PastoCrypto.decrypt(encryptedContent, encryptionIv, key);
+        console.log('Calling Crypto.decrypt...');
+        decryptedContent = await Crypto.decrypt(encryptedContent, encryptionIv, key);
+        console.log('Decryption result:', decryptedContent ? decryptedContent.substring(0, 100) + '...' : 'NULL');
       }
+
+      console.log('Updating content with decrypted data...');
+      console.log('pasteContent element:', document.getElementById('paste-content'));
+      console.log('pasteLanguage:', pasteLanguage);
 
       // Update the content with the decrypted data
       const pasteContent = document.getElementById('paste-content');
+      if (!pasteContent) {
+        console.error('ERROR: paste-content element not found!');
+        return;
+      }
+
+      console.log('Calling applySyntaxHighlighting...');
       applySyntaxHighlighting(pasteContent, decryptedContent, pasteLanguage);
 
       // Update rawContent for copy/download functionality
       window.rawContent = decryptedContent;
+      console.log('Set window.rawContent, length:', decryptedContent ? decryptedContent.length : 0);
 
       // SECURITY: Client-side highlighting for encrypted content
       // Using highlight.js instead of sending decrypted content to server
@@ -698,7 +738,8 @@
       // Update the paste header to show it's decrypted
       const headerElement = document.querySelector('.paste-header h2');
       if (headerElement) {
-        headerElement.innerHTML = '🔓 ' + headerElement.textContent;
+        // Remove any existing unlock emoji and keep clean text
+        headerElement.textContent = headerElement.textContent.replace('🔓 ', '').trim();
       }
 
       // Show success message using shared utilities
@@ -706,7 +747,11 @@
 
     } catch (error) {
       console.error('Decryption error:', error);
-      SharedSecurity.showError('Failed to decrypt content: ' + error.message);
+      // Clear the invalid key from session storage and retry
+      Crypto.removeKeyFromSession(pasteSepiaId);
+      // Show password dialog again instead of error
+      showPasswordDialog();
+      return;
     }
   }
 
@@ -724,17 +769,25 @@
     // Check if this is password-based encryption
     const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
 
+    // Use whichever PastoCrypto is available
+    const Crypto = typeof PastoCrypto !== 'undefined' ? PastoCrypto : window.PastoCrypto;
+    if (typeof Crypto === 'undefined') {
+      console.error('ERROR: PastoCrypto is not available in handleEncryptedContent!');
+      showPasswordDialog();
+      return;
+    }
+
     let encryptionKey;
     if (isPasswordBased) {
       // For password-based encryption, check session storage first
-      encryptionKey = PastoCrypto.getKeyFromSession(pasteSepiaId);
+      encryptionKey = Crypto.getKeyFromSession(pasteSepiaId);
       if (!encryptionKey) {
         showPasswordDialog();
         return;
       }
     } else {
       // For key-based encryption, check session storage
-      encryptionKey = PastoCrypto.getKeyFromSession(pasteSepiaId);
+      encryptionKey = Crypto.getKeyFromSession(pasteSepiaId);
       if (!encryptionKey) {
         showPasswordDialog();
         return;
@@ -750,15 +803,15 @@
         const encryptionIterations = <%= paste.encryption_iterations || 100000 %>;
 
         // Decrypt using password (no validation needed for passwords)
-        decryptedContent = await PastoCrypto.decryptWithPassword(encryptedContent, encryptionIv, encryptionSalt, encryptionKey, encryptionIterations);
+        decryptedContent = await Crypto.decryptWithPassword(encryptedContent, encryptionIv, encryptionSalt, encryptionKey, encryptionIterations);
       } else {
         // Validate key format for key-based encryption
-        if (!PastoCrypto.validateKey(encryptionKey)) {
+        if (!Crypto.validateKey(encryptionKey)) {
           throw new Error('Invalid encryption key format. Expected base64-encoded key.');
         }
 
         // Decrypt using key
-        decryptedContent = await PastoCrypto.decrypt(encryptedContent, encryptionIv, encryptionKey);
+        decryptedContent = await Crypto.decrypt(encryptedContent, encryptionIv, encryptionKey);
       }
 
       // Update the content with the decrypted data
@@ -783,17 +836,16 @@
       // Update the paste header to show it's decrypted
       const headerElement = document.querySelector('.paste-header h2');
       if (headerElement) {
-        headerElement.innerHTML = '🔓 ' + headerElement.textContent;
+        // Remove any existing unlock emoji and keep clean text
+        headerElement.textContent = headerElement.textContent.replace('🔓 ', '').trim();
       }
 
     } catch (error) {
       console.error('Decryption error:', error);
-      document.getElementById('paste-content').innerHTML =
-        '<div style="padding: 2rem; text-align: center; color: var(--pico-del-color);">' +
-        '<h3>❌ Decryption Failed</h3>' +
-        '<p>Unable to decrypt this content. The key may be invalid or corrupted.</p>' +
-        '<p style="font-size: 0.9rem; opacity: 0.7;">Error: ' + error.message + '</p>' +
-        '</div>';
+      // Clear the invalid key from session storage and retry
+      Crypto.removeKeyFromSession(pasteSepiaId);
+      // Show password dialog again instead of error
+      showPasswordDialog();
     }
   }
 
@@ -841,7 +893,12 @@
           <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
         </a>
         <% end %>
-        <%= render "src/views/_controls_help_profile.ecr" %>
+              <a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+          <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
+        </a>
+        <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+          <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+        </a>
       `;
 
       // Initialize Lucide icons

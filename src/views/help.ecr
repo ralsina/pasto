@@ -1,3 +1,7 @@
+<%# Include shared utilities and styles %>
+<%= render "src/views/_shared_utils.ecr" %>
+<%= render "src/views/_shared_styles.ecr" %>
+
 <div class="help-markdown" id="help-markdown"></div>
 <script>
   fetch('/assets/HELP.md')
@@ -25,19 +29,34 @@
 </style>
 
 <script>
-  // Inject controls into controls-group
+  // Inject controls into controls-group using shared components
   document.addEventListener('DOMContentLoaded', function() {
     const controlsGroup = document.getElementById('controls-group');
     if (controlsGroup) {
-      controlsGroup.innerHTML = `
-        <a href="/" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-          <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
-        </a>
-        <%= render "src/views/_controls_help_profile.ecr" %>
+      // Define buttons for help page
+      const buttons = [
+        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
+        {type: "link", href: "/help", icon: "help-circle", title: "Help"},
+        {type: "link", href: "/profile", icon: "user", title: "Profile / Login"}
+      ];
+
+      // Use shared controls component
+      const controlsHTML = `
+        <div class="shared-controls center">
+          ${buttons.map(button => {
+            return `<a href="${button.href}" class="controls-button" title="${button.title}" aria-label="${button.title}" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+              <i data-lucide="${button.icon}" style="width: 20px; height: 20px;"></i>
+            </a>`;
+          }).join('')}
+        </div>
       `;
 
-      // Initialize Lucide icons
-      if (window.lucide) {
+      controlsGroup.insertAdjacentHTML('afterbegin', controlsHTML);
+
+      // Initialize Lucide icons using shared utility
+      if (window.SharedIcons) {
+        window.SharedIcons.init(controlsGroup);
+      } else if (window.lucide) {
         window.lucide.createIcons();
       }
     }
