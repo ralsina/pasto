@@ -12,7 +12,7 @@
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#5d5dff">
+  <meta name="theme-color" content="#0172ad">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -947,6 +947,9 @@
           pico_color: '<%= pico_color %>',
           syntax_theme: '<%= syntax_theme %>'
         });
+
+        // Make syntax theme available to JavaScript
+        window.pastoSyntaxTheme = '<%= syntax_theme %>';
       } else {
         // For anonymous users, use localStorage preferences
         const savedPicoTheme = localStorage.getItem('picoTheme') || 'auto';
@@ -962,6 +965,9 @@
           pico_color: savedPicoColor,
           syntax_theme: savedSyntaxTheme
         });
+
+        // Make syntax theme available to JavaScript
+        window.pastoSyntaxTheme = savedSyntaxTheme;
       }
 
       // Load syntax themes via API

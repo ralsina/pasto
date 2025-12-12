@@ -571,7 +571,7 @@
       const pasteContent = document.getElementById('paste-content');
       pasteContent.innerHTML = `
         <div id="encryption-dialog" style="padding: 2rem; text-align: center; color: var(--pico-color);">
-          <div style="background: #ff6b6b; color: white; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+          <div style="background: var(--pico-del-background, #dc3545); color: var(--pico-del-inverse, white); padding: 1rem; border-radius: var(--pico-border-radius, 0.25rem); margin: 1rem 0;">
             <h3>🔒 Insecure Environment Detected</h3>
             <p><strong>This encrypted paste cannot be accessed in your current browser environment.</strong></p>
             <p>Web Crypto API requires a <strong>secure context</strong> (HTTPS) to function properly.</p>
@@ -925,7 +925,7 @@
       const formData = new FormData();
       formData.append('content', rawContent);
       formData.append('language', '');
-      formData.append('theme', 'monokai');
+      formData.append('theme', '<%= paste.theme %>');
 
       fetch('/highlight', {
         method: 'POST',

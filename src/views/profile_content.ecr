@@ -696,8 +696,8 @@ function copyToClipboard(text, type = 'api') {
 
   /* Burn-after-reading paste styling */
   .paste-item.burn-after-reading {
-    border-left: 3px solid #ff6b35;
-    background-color: rgba(255, 107, 53, 0.05);
+    border-left: 3px solid var(--pico-del-color, #dc3545);
+    background-color: var(--pico-del-background, rgba(220, 53, 69, 0.05));
   }
 
   .burn-icon, .lock-icon, .private-icon {
@@ -724,18 +724,18 @@ function copyToClipboard(text, type = 'api') {
   }
 
   .burn-badge {
-    background: #ff6b35;
-    color: white;
+    background: var(--pico-del-background, #dc3545);
+    color: var(--pico-del-inverse, white);
   }
 
   .encrypted-badge {
-    background: #007bff;
-    color: white;
+    background: var(--pico-primary-background, #0172ad);
+    color: var(--pico-primary-inverse, white);
   }
 
   .private-badge {
-    background: #6c757d;
-    color: white;
+    background: var(--pico-secondary-background, #525f7a);
+    color: var(--pico-secondary-inverse, white);
   }
 
   .paste-link {

@@ -33,12 +33,12 @@
   background: var(--pico-primary, #0074d9);
   color: var(--pico-primary-inverse, white);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 116, 217, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--pico-primary-rgb, 1, 114, 217), 0.3);
 }
 
 .controls-button:active {
   transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 116, 217, 0.3);
+  box-shadow: 0 1px 4px rgba(var(--pico-primary-rgb, 1, 114, 217), 0.3);
 }
 
 .controls-button i,
@@ -138,7 +138,7 @@
   flex-direction: column;
   gap: 1.5rem;
   background: var(--pico-background-color);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--pico-box-shadow);
   animation: modal-slide-in 0.3s ease-out;
 }
 
@@ -154,7 +154,7 @@
 }
 
 .dialog-modal::backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--pico-modal-overlay-background-color, rgba(232, 234, 237, 0.75));
   backdrop-filter: blur(2px);
 }
 
@@ -214,7 +214,7 @@
 .btn-primary:hover {
   background: color-mix(in srgb, var(--pico-primary-background, var(--pico-primary)) 85%, black);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 116, 217, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--pico-primary-rgb, 1, 114, 217), 0.3);
 }
 
 .btn-secondary {
@@ -236,7 +236,7 @@
 .btn-danger:hover {
   background: color-mix(in srgb, var(--pico-del-background) 90%, black);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--pico-del-rgb, 220, 53, 69), 0.3);
 }
 
 .btn-success {
@@ -247,7 +247,7 @@
 .btn-success:hover {
   background: color-mix(in srgb, var(--pico-ins-background) 90%, black);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--pico-ins-rgb, 40, 167, 69), 0.3);
 }
 
 .btn-outline {
