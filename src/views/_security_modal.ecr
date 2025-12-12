@@ -18,7 +18,6 @@ function showSharedSecurityModal(initialSettings, options = {}) {
   // Default options
   const defaultOptions = {
     showEncryptionOptions: true,
-    showPasswordOptions: true,
     saveButtonText: 'Save Settings',
     primaryButtonStyle: 'var(--pico-primary-background)',
     primaryButtonTextColor: 'var(--pico-primary-inverse)'
@@ -39,9 +38,8 @@ function showSharedSecurityModal(initialSettings, options = {}) {
         <label for="security-access-control" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="shield" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Access Control</label>
         <select id="security-access-control" style="width: 100%; padding: 0.5rem;">
           <option value="public" ${securitySettings.accessControl === 'public' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Public</option>
-          <option value="password" ${securitySettings.accessControl === 'password' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Password Protected</option>
-          <option value="encrypted" ${securitySettings.encryptionEnabled ? 'selected' : ''}>End-to-End Encrypted</option>
           <option value="private" ${securitySettings.accessControl === 'private' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Private</option>
+          <option value="encrypted" ${securitySettings.encryptionEnabled ? 'selected' : ''}>Encrypted</option>
         </select>
       </div>
 
@@ -67,43 +65,6 @@ function showSharedSecurityModal(initialSettings, options = {}) {
         </div>
       </label>
 
-      ${opts.showPasswordOptions ? `
-      <!-- Password Options -->
-      <div id="passwordOptions" style="display: ${securitySettings.accessControl === 'password' ? 'block' : 'none'}; margin-top: 1rem; padding: 1rem; background: var(--pico-secondary-background); border-radius: 4px;">
-        <label for="security-password" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Password</label>
-        <input type="password" id="security-password" placeholder="Enter password to protect paste" value="${securitySettings.password || ""}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem; background: var(--pico-background-color);">
-        <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">Minimum 8 characters required</div>
-      </div>
-      ` : ''}
-
-      ${opts.showEncryptionOptions ? `
-      <div id="encryptionOptions" style="display: ${securitySettings.encryptionEnabled ? 'block' : 'none'}; margin-top: 1rem; padding: 1rem; background: var(--pico-secondary-background); border-radius: 4px;">
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="radio" name="passwordType" value="auto" ${!securitySettings.encryptionPassword || securitySettings.encryptionPassword === 'auto' ? 'checked' : ''} style="margin: 0;">
-            <div>
-              <strong>Auto Password</strong>
-              <div style="font-size: 0.9rem; opacity: 0.8;">Generate secure random password</div>
-            </div>
-          </label>
-
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="radio" name="passwordType" value="custom" ${securitySettings.encryptionPassword && securitySettings.encryptionPassword !== 'auto' ? 'checked' : ''} style="margin: 0;">
-            <div style="flex: 1;">
-              <strong>Custom Password</strong>
-              <div style="font-size: 0.9rem; opacity: 0.8;">Use your own password</div>
-            </div>
-          </label>
-
-          <div id="customPasswordDiv" style="display: ${securitySettings.encryptionPassword && securitySettings.encryptionPassword !== 'auto' ? 'block' : 'none'}; margin-top: 0.5rem;">
-            <input type="password" id="customPasswordInput" placeholder="Enter your password" value="${securitySettings.encryptionPassword && securitySettings.encryptionPassword !== 'auto' ? securitySettings.encryptionPassword : ''}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem; background: var(--pico-background-color);">
-            <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">Minimum 8 characters</div>
-          </div>
-        </div>
-      </div>
-      ` : ''}
-    </div>
-
     <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
       <button id="cancelSecurityBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
         Cancel
@@ -120,7 +81,6 @@ function showSharedSecurityModal(initialSettings, options = {}) {
   const accessControlSelect = document.getElementById('security-access-control');
   const passwordTypeRadios = document.querySelectorAll('input[name="passwordType"]');
   const encryptionOptions = document.getElementById('encryptionOptions');
-  const passwordOptions = document.getElementById('passwordOptions');
   const customPasswordDiv = document.getElementById('customPasswordDiv');
   const customPasswordInput = document.getElementById('customPasswordInput');
 
@@ -132,12 +92,10 @@ function showSharedSecurityModal(initialSettings, options = {}) {
       securitySettings.encryptionEnabled = true;
       securitySettings.accessControl = 'public';
       if (encryptionOptions) encryptionOptions.style.display = 'block';
-      if (passwordOptions) passwordOptions.style.display = 'none';
     } else {
       securitySettings.encryptionEnabled = false;
       securitySettings.accessControl = value;
       if (encryptionOptions) encryptionOptions.style.display = 'none';
-      if (passwordOptions) passwordOptions.style.display = value === 'password' ? 'block' : 'none';
     }
   });
 
@@ -172,11 +130,6 @@ function showSharedSecurityModal(initialSettings, options = {}) {
   // Save button - return updated settings via callback
   modal.querySelector('#saveSecurityBtn').onclick = () => {
     // Update security settings from form values
-    if (passwordOptions && passwordOptions.style.display !== 'none') {
-      const passwordInput = document.getElementById('security-password');
-      securitySettings.password = passwordInput ? passwordInput.value : '';
-    }
-
     if (encryptionOptions && encryptionOptions.style.display !== 'none') {
       const passwordType = document.querySelector('input[name="passwordType"]:checked')?.value;
       if (passwordType === 'auto') {

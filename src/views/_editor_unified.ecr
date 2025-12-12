@@ -179,25 +179,7 @@
     window.togglePreview(jar, window.getLanguageGetter, window.getThemeGetter);
   }
 
-  function updatePreview() {
-    window.updatePreview(jar, window.getLanguageGetter, window.getThemeGetter);
-
-    // Update currentLanguage if auto-detect is active and language was detected
-    const languageSelect = document.getElementById('language');
-    const isAutoDetect = (languageSelect?.value === 'Auto' || languageSelect?.value === '');
-    if (isAutoDetect && languageSelect?.options) {
-      const autoDetectOption = Array.from(languageSelect.options).find(
-        option => option.value === 'Auto' || option.value === ''
-      );
-      if (autoDetectOption && autoDetectOption.textContent.includes('(')) {
-        const match = autoDetectOption.textContent.match(/\(([^)]+)\)/);
-        if (match) {
-          currentLanguage = match[1];
-        }
-      }
-    }
-  }
-
+  
 <% if mode == "edit" %>
   function updatePaste() {
     const content = jar ? jar.toString() : '';
@@ -237,10 +219,7 @@
       formData.append('private', 'true');
     }
 
-    if (securitySettings.password) {
-      formData.append('password', securitySettings.password);
-    }
-
+    
     fetch('/' + pasteId + '/edit', {
       method: 'POST',
       body: formData
@@ -278,40 +257,116 @@
 
 <% else %>
   // Create mode functions
-  let isEncryptionEnabled = false;
-
-  function toggleEncryption() {
-    const btn = document.getElementById('encryption-toggle-btn');
-    if (!btn) return;
-
-    const icon = btn.querySelector('svg.lucide');
-    if (!icon) return;
-
-    isEncryptionEnabled = !isEncryptionEnabled;
-    console.log('toggleEncryption called, new state:', isEncryptionEnabled);
-
-    if (isEncryptionEnabled) {
-      btn.title = 'Disable Encryption';
-      btn.setAttribute('aria-label', 'Disable encryption');
-      btn.style.background = 'var(--pico-primary)';
-      btn.style.borderColor = 'var(--pico-primary)';
-      btn.style.color = 'white';
-      icon.setAttribute('data-lucide', 'lock');
-    } else {
-      btn.title = 'Enable Encryption';
-      btn.setAttribute('aria-label', 'Enable encryption');
-      btn.style.background = 'transparent';
-      btn.style.borderColor = 'var(--pico-primary)';
-      btn.style.color = 'var(--pico-primary)';
-      icon.setAttribute('data-lucide', 'unlock');
+  
+  function generateSecurePassword(length = 16) {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    const array = new Uint32Array(length);
+    crypto.getRandomValues(array);
+    for (let i = 0; i < length; i++) {
+      password += charset[array[i] % charset.length];
     }
-
-    if (window.lucide) {
-      lucide.createIcons();
-    }
+    return password;
   }
 
-  async function createPaste(event) {
+  async function showEncryptionOptionsDialog() {
+    return new Promise((resolve, reject) => {
+      const modal = document.createElement('dialog');
+      modal.style.cssText = `
+        padding: 2rem;
+        border: 2px solid var(--pico-primary);
+        border-radius: 0.5rem;
+        max-width: 450px;
+        width: 90vw;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      `;
+
+      modal.innerHTML = `
+        <h3 style="margin-top: 0; margin-bottom: 1rem;">
+          <i data-lucide="lock" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+          Encrypt Paste
+        </h3>
+
+        <div>
+          <label for="encryptionPassword" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Encryption Password</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="password" id="encryptionPassword" placeholder="Enter password or click Generate" style="flex: 1; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem; background: var(--pico-background-color);">
+            <button type="button" id="generatePasswordBtn" style="padding: 0.75rem 1rem; border: 1px solid var(--pico-primary); background: var(--pico-primary-background); color: var(--pico-primary-inverse); border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+              <i data-lucide="refresh-cw" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>
+              Generate
+            </button>
+          </div>
+          <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">
+            Leave empty to auto-generate, or enter your own password (min 8 characters)
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1rem; justify-content: flex-end;">
+          <button id="cancelEncryptionBtn" style="background: var(--pico-secondary-background); color: var(--pico-color); border: 1px solid var(--pico-border-color); padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+            Cancel
+          </button>
+          <button id="encryptBtn" style="background: var(--pico-primary-background); color: var(--pico-primary-inverse); border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+            Encrypt Paste
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Add event listeners
+      const passwordInput = document.getElementById('encryptionPassword');
+      const generateBtn = document.getElementById('generatePasswordBtn');
+
+      generateBtn.onclick = () => {
+        const newPassword = generateSecurePassword();
+        passwordInput.value = newPassword;
+        passwordInput.type = 'text';
+
+        // Show password for 3 seconds then hide
+        setTimeout(() => {
+          passwordInput.type = 'password';
+        }, 3000);
+      };
+
+      // Cancel button
+      modal.querySelector('#cancelEncryptionBtn').onclick = () => {
+        modal.close();
+        document.body.removeChild(modal);
+        reject(new Error('User cancelled encryption'));
+      };
+
+      // Encrypt button
+      modal.querySelector('#encryptBtn').onclick = () => {
+        const password = passwordInput.value.trim();
+
+        if (password.length > 0 && password.length < 8) {
+          alert('Password must be at least 8 characters long');
+          return;
+        }
+
+        modal.close();
+        document.body.removeChild(modal);
+
+        if (password.length === 0) {
+          // Auto-generate password
+          resolve({ type: 'auto', password: generateSecurePassword() });
+        } else {
+          resolve({ type: 'custom', password: password });
+        }
+      };
+
+      // Initialize Lucide icons
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      modal.showModal();
+    });
+  }
+
+async function createPaste(event) {
     if (event) {
       event.preventDefault();
     }
@@ -340,7 +395,7 @@
       let encryptionOptions = null;
 
       // Handle encryption if enabled
-      if (isEncryptionEnabled) {
+      if (securitySettings.encryptionEnabled) {
         if (typeof PastoCrypto === 'undefined') {
           alert('Encryption module not loaded. Please refresh the page and try again.');
           return;
@@ -355,6 +410,7 @@
         }
       }
 
+      
       if (isEncrypted && encryptionOptions) {
         let encryptionResult;
         if (encryptionOptions.type === 'custom') {
@@ -423,7 +479,9 @@
           }
 
           if (isPasswordBased) {
-            showPasswordDialog(encryptionKey, pasteId, result.url);
+            // For password-protected pastes, just redirect to the paste URL
+            // The user already entered the password in security settings
+            window.location.href = result.url;
           } else {
             showEncryptionKeyDialog(encryptionKey, result.url);
           }
@@ -444,6 +502,116 @@
     }
   }
 
+  // Show encryption key dialog with copy button
+  function showEncryptionKeyDialog(encryptionKey, pasteUrl) {
+    const modal = document.createElement('dialog');
+    modal.style.cssText = `
+      padding: 2rem;
+      border: 2px solid var(--pico-primary);
+      border-radius: 0.5rem;
+      max-width: 500px;
+      width: 90vw;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    `;
+
+    modal.innerHTML = `
+      <h3 style="margin-top: 0; margin-bottom: 1rem;">
+        <i data-lucide="key" style="width: 1.5rem; height: 1.5rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+        Encryption Key Generated
+      </h3>
+
+      <div>
+        <p style="margin-bottom: 1rem;">Your paste has been encrypted! Save this key - you'll need it to decrypt the paste:</p>
+
+        <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+          <input type="text" id="encryptionKeyDisplay" value="${encryptionKey}" readonly style="flex: 1; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-family: monospace; font-size: 0.9rem; background: var(--pico-background-color); color: var(--pico-color);">
+          <button type="button" id="copyKeyBtn" style="padding: 0.75rem 1rem; border: 1px solid var(--pico-primary); background: var(--pico-primary-background); color: var(--pico-primary-inverse); border-radius: 4px; cursor: pointer; font-size: 0.9rem; white-space: nowrap;">
+            <i data-lucide="copy" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>
+            Copy
+          </button>
+        </div>
+
+        <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">
+          ⚠️ Store this key securely. Without it, the paste cannot be decrypted!
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; margin-top: 1rem; justify-content: space-between;">
+        <div>
+          <a href="${pasteUrl}" style="color: var(--pico-primary); text-decoration: none; font-size: 0.9rem;">
+            <i data-lucide="external-link" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>
+            View Paste
+          </a>
+        </div>
+        <button id="closeKeyBtn" style="background: var(--pico-primary-background); color: var(--pico-primary-inverse); border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">
+          Got it!
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Copy button functionality
+    const copyBtn = document.getElementById('copyKeyBtn');
+    const keyInput = document.getElementById('encryptionKeyDisplay');
+
+    copyBtn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(encryptionKey);
+
+        // Update button to show success
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Copied!';
+        copyBtn.style.background = 'var(--pico-success-background)';
+
+        // Revert after 2 seconds
+        setTimeout(() => {
+          copyBtn.innerHTML = originalHTML;
+          copyBtn.style.background = 'var(--pico-primary-background)';
+          // Re-create icons
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }, 2000);
+
+      } catch (err) {
+        // Fallback for browsers that don't support clipboard API
+        keyInput.select();
+        document.execCommand('copy');
+
+        // Update button to show success
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Copied!';
+        copyBtn.style.background = 'var(--pico-success-background)';
+
+        // Revert after 2 seconds
+        setTimeout(() => {
+          copyBtn.innerHTML = originalHTML;
+          copyBtn.style.background = 'var(--pico-primary-background)';
+          // Re-create icons
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }, 2000);
+      }
+    };
+
+    // Close button
+    modal.querySelector('#closeKeyBtn').onclick = () => {
+      modal.close();
+      document.body.removeChild(modal);
+    };
+
+    // Initialize Lucide icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
+    modal.showModal();
+  }
+
   // Create mode security settings dialog
   function showSecuritySettingsDialog() {
     window.showSharedSecurityModal(securitySettings, {
@@ -453,9 +621,10 @@
           securitySettings.encryptionPassword = generateSecurePassword();
         }
         window.encryptionPassword = securitySettings.encryptionPassword;
-        window.isEncryptionEnabled = securitySettings.encryptionEnabled;
+        // Update the global securitySettings reference
+        window.securitySettings = securitySettings;
         updateSecuritySettingsButton();
-        showSecurityStatus();
+        // showSecurityStatus(); // Commented out - function not defined
       }
     });
   }
@@ -480,10 +649,7 @@
       activeFeatures.push('Encrypted');
     }
 <% else %>
-    if (securitySettings.accessControl === 'password') {
-      activeFeatures.push('Password');
-    }
-    if (securitySettings.accessControl === 'private') {
+        if (securitySettings.accessControl === 'private') {
       activeFeatures.push('Private');
     }
     if (securitySettings.expiration) {
@@ -592,6 +758,9 @@
 
     // Export jar to window for external functions
     window.jar = jar;
+
+    // Export security settings to window for shared functionality
+    window.securitySettings = securitySettings;
 
     // Update preview on content change using debounced function
     jar.onUpdate(() => {
