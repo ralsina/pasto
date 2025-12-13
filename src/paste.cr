@@ -67,20 +67,25 @@ module Pasto
       css_class_name = theme_name.gsub("/", "-")
       base_theme_name = theme_name.split("/").first
 
-      # Get the actual background color from the .b class (background)
+      # Find proper background color - avoid .b class which can have wrong colors
       bg_color = nil
       css.split("}").each do |rule|
         rule = rule.strip
-        if rule.includes?(".b") && rule.includes?("background-color:")
-          if match = rule.match(/background-color:\s*#([a-fA-F0-9]{6})/)
+        # Look for body or editor-like backgrounds, but avoid .b class which can be variable-specific
+        if (rule.includes?("background-color:") || rule.includes?("background:")) &&
+           !rule.includes?(".b") &&
+           !rule.includes?(".hljs-") &&
+           !rule.match(/\.l[nscseg],?/i)
+          # Look for hex color in background property
+          if match = rule.match(/background(?:-color)?:\s*#([a-fA-F0-9]{6})/i)
             bg_color = "##{match[1]}"
             break
           end
         end
       end
 
-      # Use the actual theme background color, or fallback to Pico CSS background variable
-      final_bg_color = bg_color || "var(--pico-background-color)"
+      # Use a light default if no background found
+      final_bg_color = bg_color || "var(--pico-background-color, #ffffff)"
 
       # Add background color rule for editor element directly by ID
       result << "#editor { background-color: #{final_bg_color} !important; }"
