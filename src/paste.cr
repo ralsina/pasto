@@ -8,7 +8,7 @@ require "./data/tartrazine_hljs_mapping"
 
 module Pasto
   # Add highlight.js classes to Tartrazine CSS for compatibility
-  def self.add_highlightjs_classes(css : String) : String
+  def self.add_highlightjs_classes(css : String, theme_name : String? = nil) : String
     # Tartrazine returns minified CSS, so we need to parse it differently
     # Group selectors by highlight.js class to avoid duplicates
     hljs_to_selectors = Hash(String, Array(String)).new
@@ -60,6 +60,40 @@ module Pasto
 
     # Add unmapped rules
     result.concat(unmapped_rules)
+
+    # Add background color rule for editor if theme name is provided
+    if theme_name
+      # Add background color rule for editor - handle both base theme and full theme name
+      css_class_name = theme_name.gsub("/", "-")
+      base_theme_name = theme_name.split("/").first
+
+      # Get the actual background color from the .b class (background)
+      bg_color = nil
+      css.split("}").each do |rule|
+        rule = rule.strip
+        if rule.includes?(".b") && rule.includes?("background-color:")
+          if match = rule.match(/background-color:\s*#([a-fA-F0-9]{6})/)
+            bg_color = "##{match[1]}"
+            break
+          end
+        end
+      end
+
+      # Use the actual theme background color, or fallback to Pico CSS background variable
+      final_bg_color = bg_color || "var(--pico-background-color)"
+
+      # Add background color rule for editor element directly by ID
+      result << "#editor { background-color: #{final_bg_color} !important; }"
+
+      # Fix editor-wrapper margin and height
+      result << ".editor-wrapper { margin: 0 !important; height: 100% !important; }"
+
+      # Ensure editor element has proper padding and height
+      result << "#editor { padding: 12px !important; height: 100% !important; min-height: 400px !important; font-size: 0.875rem !important; }"
+
+      # Ensure preview uses same font size as editor
+      result << "#preview pre, #preview pre code, #preview code, .preview-content pre, .preview-content code { font-size: 18px !important; }"
+    end
 
     result.join("")
   end
