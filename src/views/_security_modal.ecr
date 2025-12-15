@@ -38,7 +38,9 @@ function showSharedSecurityModal(initialSettings, options = {}) {
         <label for="security-access-control" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="shield" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Access Control</label>
         <select id="security-access-control" style="width: 100%; padding: 0.5rem;">
           <option value="public" ${securitySettings.accessControl === 'public' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Public</option>
-          ${options.isUserLoggedIn ? '<option value="private" ${securitySettings.accessControl === \'private\' && !securitySettings.encryptionEnabled ? \'selected\' : \'\'}>Private</option>' : ''}
+          <% if current_user %>
+          <option value="private" ${securitySettings.accessControl === 'private' && !securitySettings.encryptionEnabled ? 'selected' : ''}>Private</option>
+        <% end %>
           <option value="encrypted" ${securitySettings.encryptionEnabled ? 'selected' : ''}>Encrypted</option>
         </select>
       </div>

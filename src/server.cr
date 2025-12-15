@@ -81,10 +81,13 @@ module Pasto
       # Check ownership requirement
       if current_user_id == paste.user_id
         return AccessResult.new(true, paste: paste)
+      else
+        # Access denied - ownership required or paste is private and user is not owner
+        return AccessResult.new(false, status_code: 403)
       end
     end
 
-    # Access granted
+    # Access granted - public paste and no ownership requirement
     AccessResult.new(true, paste: paste)
   rescue
     AccessResult.new(false, status_code: 404)

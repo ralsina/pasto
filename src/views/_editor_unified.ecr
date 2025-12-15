@@ -246,7 +246,6 @@
     window.showSharedSecurityModal(securitySettings, {
       showEncryptionOptions: false, // Edit doesn't support changing encryption
       showPasswordOptions: false,   // Edit doesn't support changing password protection
-      isUserLoggedIn: window.isUserLoggedIn || false,
       primaryButtonStyle: 'var(--pico-primary-background)',
       primaryButtonTextColor: 'var(--pico-primary-inverse)',
       onSave: (updatedSettings) => {
@@ -656,7 +655,6 @@ async function createPaste(event) {
   // Create mode security settings dialog
   function showSecuritySettingsDialog() {
     window.showSharedSecurityModal(securitySettings, {
-      isUserLoggedIn: window.isUserLoggedIn || false,
       onSave: (updatedSettings) => {
         Object.assign(securitySettings, updatedSettings);
         if (securitySettings.encryptionEnabled && securitySettings.encryptionPassword === 'auto') {
