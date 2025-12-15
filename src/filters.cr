@@ -75,16 +75,9 @@ module Pasto
                         path == "/highlight"
 
       unless skip_http_limit
-        client_ip = Pasto.get_client_ip(env)
-        allowed, result = Pasto::RateLimits.allow_http?(client_ip)
-        add_rate_limit_headers(env, result)
-
+        allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :http)
         unless allowed
-          retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
-          env.response.headers["Retry-After"] = retry_after.to_s
-          env.response.status_code = 429
-          env.response.content_type = "text/plain"
-          env.response.print "Too many requests. Please slow down. Retry after #{retry_after} seconds."
+          env.response.print rate_limit_response
           env.response.close
           return false
         end

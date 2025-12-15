@@ -1,4 +1,3 @@
-
 require "./assets"
 require "./filters"
 require "./models/*"
@@ -217,69 +216,40 @@ module Pasto
   # API endpoint for live syntax highlighting
   post "/highlight" do |env|
     # Rate limit check for highlight endpoint
-    client_ip = Pasto.get_client_ip(env)
-    allowed, result = Pasto::RateLimits.allow_highlight?(client_ip)
-    add_rate_limit_headers(env, result)
-
+    allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :highlight)
     unless allowed
-      env.response.status_code = 429
-      retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
-      env.response.headers["Retry-After"] = retry_after.to_s
-      env.response.content_type = "application/json"
-      next {"error" => "Rate limit exceeded. Retry after #{retry_after} seconds."}.to_json
+      next rate_limit_response
     end
-
-    content = env.params.body["content"]?.to_s
-    language = env.params.body["language"]?.to_s
-    theme = env.params.body["theme"]?.to_s
-    line_numbers_str = env.params.body["line_numbers"]?.to_s
-
-    content = "" if content.nil? || content.empty?
-    theme = (config.try(&.theme) || "default-dark") if theme.empty?
-    line_numbers = line_numbers_str == "true"
 
     # Normalize line endings from \r\n and \r to \n
-    content = content.gsub("\r\n", "\n").gsub("\r", "\n")
+    content = env.params.body["content"]?.to_s.gsub("\r\n", "\n").gsub("\r", "\n")
+    theme = env.params.body["theme"]?.to_s.empty? ? config.theme : env.params.body["theme"]?.to_s
+    line_numbers = env.params.body["line_numbers"]?.to_s == "true"
 
     # Handle language detection
-    if language.empty? || language == "Auto" || language == ""
-      language = nil
+    language = env.params.body["language"]?.to_s
+    if language.empty? || language == "Auto"
+      language = Pasto::Paste.get_best_supported_language(content)
     end
 
-    if content.empty?
-      env.response.content_type = "text/html"
-      next "<pre><code>Start typing to see preview...</code></pre>"
-    end
+    # Use detected language for highlighting
+    highlighted_content, _css = Pasto::Paste.highlight_content(content, language, "monokai", line_numbers)
 
-    begin
-      # Detect language if not provided
-      detected_language = language
-      if detected_language.nil? || detected_language.empty?
-        detected_language = Pasto::Paste.get_best_supported_language(content)
-      end
-
-      # Use detected language for highlighting
-      highlight_language = detected_language || language
-      highlighted_content, _css = Pasto::Paste.highlight_content(content, highlight_language, "monokai", line_numbers)
-
-      # Return JSON with both highlighted content and detected language
-      env.response.content_type = "application/json"
-      {
-        "html"              => highlighted_content,
-        "detected_language" => detected_language,
-        "original_language" => language,
-      }.to_json
-    rescue ex
-      puts "DEBUG: Highlighting failed for language '#{language}': #{ex.message}"
-      # Fallback to plain text with proper escaping
-      escaped_content = HTML.escape(content)
-      env.response.content_type = "application/json"
-      {
-        "html"              => "<pre><code>#{escaped_content}</code></pre>",
-        "detected_language" => language && !language.empty? ? language : nil,
-        "original_language" => language,
-      }.to_json
-    end
+    # Return JSON with both highlighted content and detected language
+    env.response.content_type = "application/json"
+    {
+      "html"     => highlighted_content,
+      "language" => language,
+    }.to_json
+  rescue ex
+    puts "DEBUG: Highlighting failed for language '#{language}': #{ex.message}"
+    # Fallback to plain text with proper escaping
+    escaped_content = HTML.escape(content.to_s)
+    env.response.content_type = "application/json"
+    {
+      "html"     => "<pre><code>#{escaped_content}</code></pre>",
+      "language" => language,
+    }.to_json
   end
 
   # Helper structure to hold extracted paste parameters
@@ -401,18 +371,12 @@ module Pasto
   # Handle paste submission
   post "/" do |env|
     # Rate limiting check
-    client_ip = Pasto.get_client_ip(env)
     current_user = Pasto.get_current_user(env)
     user_id = current_user.try(&.sepia_id)
 
-    allowed, result = Pasto::RateLimits.allow_paste?(client_ip, user_id)
-    add_rate_limit_headers(env, result)
-
+    allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :paste, user_id)
     unless allowed
-      env.response.status_code = 429
-      retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
-      env.response.headers["Retry-After"] = retry_after.to_s
-      next "Rate limit exceeded. Please wait #{retry_after} seconds before creating another paste."
+      next rate_limit_response
     end
 
     # Extract and validate paste parameters
@@ -587,15 +551,9 @@ module Pasto
     end
 
     # Rate limit forks the same as paste creation
-    client_ip = Pasto.get_client_ip(env)
-    allowed, result = Pasto::RateLimits.allow_paste?(client_ip, current_user.sepia_id)
-    add_rate_limit_headers(env, result)
-
+    allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :paste, current_user.sepia_id)
     unless allowed
-      env.response.status_code = 429
-      retry_after = Math.max(1, (result.reset_time - Time.utc).total_seconds.ceil.to_i)
-      env.response.headers["Retry-After"] = retry_after.to_s
-      next "Rate limit exceeded. Please wait #{retry_after} seconds."
+      next rate_limit_response
     end
 
     original_paste = Pasto::Paste.from_file(id)
@@ -858,9 +816,8 @@ module Pasto
     client_ip = Pasto.get_client_ip(env)
 
     # Rate limiting for preview generation (use existing highlight limiter)
-    allowed, _ = Pasto::RateLimits.allow_highlight?(client_ip)
+    allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :highlight)
     unless allowed
-      env.response.status_code = 429
       next "Rate limit exceeded for preview generation"
     end
 

@@ -133,8 +133,8 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
       );
 
       if (autoDetectOption) {
-        if (data.detected_language) {
-          autoDetectOption.textContent = `Auto (${data.detected_language})`;
+        if (data.language) {
+          autoDetectOption.textContent = `Auto (${data.language})`;
         } else {
           autoDetectOption.textContent = 'Auto';
         }
@@ -354,7 +354,20 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Export functions to window for backward compatibility
 window.createCodeJar = createCodeJar;
-window.updateLanguage = updateLanguage;
+window.updateLanguage = function() {
+  // Find the current jar and hidden language input
+  const languageInput = document.getElementById('language') || document.querySelector('input[name="language"]');
+  const editorElement = document.querySelector('.codejar-editor');
+  if (!languageInput || !editorElement) return;
+
+  // Try to get the jar instance from the element
+  let jar = null;
+  if (editorElement._jar) {
+    jar = editorElement._jar;
+  }
+
+  updateLanguage(jar, languageInput);
+};
 window.togglePreview = togglePreview;
 window.updatePreview = updatePreview;
 window.getLanguageGetter = getLanguageGetter;

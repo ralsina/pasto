@@ -933,12 +933,12 @@
       })
       .then(response => response.json())
       .then(data => {
-        if (data.detected_language) {
+        if (data.language) {
           const autoDetectOption = Array.from(languageSelect.options).find(
             option => option.value === '' || option.value === 'Auto'
           );
           if (autoDetectOption) {
-            autoDetectOption.textContent = `Auto (${data.detected_language})`;
+            autoDetectOption.textContent = `Auto (${data.language})`;
           }
 
           // Re-highlight the content with the detected language
