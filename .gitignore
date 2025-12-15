@@ -25,3 +25,11 @@ bin/
 .crystal/
 sessions/
 .crystal/
+
+# E2E Testing
+node_modules/
+package-lock.json
+test-results/
+/playwright-report/
+test-results.xml
+/playwright/.cache/

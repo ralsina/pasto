@@ -1,0 +1,19 @@
+{
+  "name": "pasto-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for Pasto pastebin application",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "install": "npm install",
+    "postinstall": "npx playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
