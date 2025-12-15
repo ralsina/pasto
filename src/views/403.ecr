@@ -1,0 +1,126 @@
+<%# Include shared utilities and styles %>
+<%= render "src/views/_shared_utils.ecr" %>
+<%= render "src/views/_shared_styles.ecr" %>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const controlsGroup = document.getElementById('controls-group');
+    if (controlsGroup) {
+      // Define buttons for 403 page
+      const buttons = [
+        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
+        {type: "link", href: "/help", icon: "help-circle", title: "Help"}
+        <% if current_user %>
+        ,
+        {type: "link", href: "/profile", icon: "user", title: "Profile"}
+        <% else %>
+        ,
+        {type: "link", href: "/auth/help", icon: "log-in", title: "Login"}
+        <% end %>
+      ];
+
+      // Use shared controls component
+      const controlsHTML = `
+        <div class="shared-controls center">
+          ${buttons.map(button => {
+            if (button.type === 'link') {
+              return `<a href="${button.href}" class="controls-button" title="${button.title}" aria-label="${button.title}" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                <i data-lucide="${button.icon}" style="width: 20px; height: 20px;"></i>
+              </a>`;
+            }
+            return '';
+          }).join('')}
+        </div>
+      `;
+
+      controlsGroup.insertAdjacentHTML('afterbegin', controlsHTML);
+
+      // Initialize Lucide icons using shared utility
+      if (window.SharedIcons) {
+        window.SharedIcons.init(controlsGroup);
+      } else if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+  });
+</script>
+
+<div class="error-container">
+  <div class="error-content">
+    <div class="error-icon">
+      <i data-lucide="shield-x" style="width: 64px; height: 64px; color: var(--pico-ins-color);"></i>
+    </div>
+
+    <h1>403 - Access Denied</h1>
+    <p class="error-message">
+      <% if current_user %>
+        This private paste belongs to another user. You can only access your own private pastes.
+      <% else %>
+        This paste is private. Please <a href="/auth/help">log in</a> to access it, or ask the owner to make it public.
+      <% end %>
+    </p>
+  </div>
+</div>
+
+<style>
+  .error-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .error-content {
+    text-align: center;
+    background-color: var(--pico-background-color);
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 3rem 2rem;
+    box-shadow: var(--pico-box-shadow, 0.0145rem 0.029rem 0.174rem rgba(129, 145, 181, 0.01698), 0.0335rem 0.067rem 0.402rem rgba(129, 145, 181, 0.024), 0.0625rem 0.125rem 0.75rem rgba(129, 145, 181, 0.03));
+  }
+
+  .error-icon {
+    margin-bottom: 2rem;
+  }
+
+  .error-content h1 {
+    color: var(--pico-ins-color);
+    margin-bottom: 1rem;
+    font-size: 3rem;
+    font-weight: 700;
+  }
+
+  .error-message {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--pico-color);
+    margin-bottom: 0;
+  }
+
+  .error-message a {
+    color: var(--pico-primary);
+    text-decoration: none;
+  }
+
+  .error-message a:hover {
+    text-decoration: underline;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .error-container {
+      margin: 1rem auto;
+    }
+
+    .error-content {
+      padding: 2rem 1.5rem;
+    }
+
+    .error-content h1 {
+      font-size: 2.5rem;
+    }
+
+    .error-message {
+      font-size: 1rem;
+    }
+  }
+</style>

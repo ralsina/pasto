@@ -153,6 +153,10 @@ module Pasto
       unless access_result.success?
         if access_result.status_code == 404
           raise Kemal::Exceptions::RouteNotFound.new(env)
+        elsif access_result.status_code == 403
+          # Set status code and raise a custom exception to trigger the 403 error handler
+          env.response.status_code = 403
+          raise Kemal::Exceptions::CustomException.new(env, "Access denied")
         else
           env.response.status_code = access_result.status_code
           env.response.content_type = "text/plain"

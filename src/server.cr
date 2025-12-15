@@ -166,23 +166,13 @@ module Pasto
       # Validate the original paste exists and is accessible
       access_result = Pasto.validate_paste_access(env)
       unless access_result.success?
-        if access_result.status_code == 404
-          halt env, 404
-        else
-          env.response.status_code = access_result.status_code
-          next "Access denied"
-        end
+        halt env, access_result.status_code
       end
     else
       # edit and delete require ownership
       access_result = Pasto.validate_paste_access(env, require_owner: true)
       unless access_result.success?
-        if access_result.status_code == 404
-          halt env, 404
-        else
-          env.response.status_code = access_result.status_code
-          next "Access denied"
-        end
+        halt env, access_result.status_code
       end
     end
   end
@@ -509,7 +499,7 @@ module Pasto
     # Use the existing access validation function
     access = Pasto.validate_paste_access(env, require_owner: true)
     unless access.allowed?
-      halt env, access.status_code, "Access denied"
+      halt env, access.status_code
     end
 
     if access.paste
@@ -824,6 +814,28 @@ module Pasto
     render "src/views/layout.ecr"
   end
 
+  # Error handling for 403 Forbidden cases
+  error 403 do |env|
+    current_user = Pasto.get_current_user(env)
+    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
+    page_title = "403 - Access Denied"
+    is_home_page = false
+
+    # Social media metadata
+    meta_title = "403 - Access Denied - Pasto"
+    meta_description = "Access to this paste is restricted"
+    meta_url = "/403"
+    meta_image = "/favicon.png"
+
+    # Set 403 status code
+    env.response.status_code = 403
+
+    reason = "access_denied"
+
+    content = render "src/views/403.ecr"
+    render "src/views/layout.ecr"
+  end
+
   # Preview image route for social media cards (must come before catch-all routes)
   get "/preview/:id" do |env|
     # Rate limiting for preview generation (use existing highlight limiter)
@@ -836,8 +848,7 @@ module Pasto
     access = Pasto.validate_paste_access(env)
 
     unless access.allowed?
-      env.response.status_code = access.status_code
-      next "Access denied"
+      halt env, access.status_code
     end
 
     if access.paste
