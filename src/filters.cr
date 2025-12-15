@@ -155,16 +155,15 @@ module Pasto
 
       # Determine access requirements based on path
       require_owner = path.ends_with?("/edit") || path.ends_with?("/history")
-      allow_raw_encrypted = path.ends_with?("/raw")
 
-      access_result = Pasto.validate_paste_access(env, require_owner: require_owner, allow_raw_encrypted: allow_raw_encrypted)
+      access_result = Pasto.validate_paste_access(env, require_owner: require_owner)
       unless access_result.success?
         if access_result.status_code == 404
           raise Kemal::Exceptions::RouteNotFound.new(env)
         else
           env.response.status_code = access_result.status_code
           env.response.content_type = "text/plain"
-          env.response.print access_result.reason || "Access denied"
+          env.response.print "Access denied"
           env.response.close
           return false
         end

@@ -11,7 +11,7 @@ class PreviewGenerator
 
     # Create PNG formatter manually to set font size for spleen-32x64.pcf
     formatter = Tartrazine::Png.new(
-      theme: Tartrazine.theme("monokai"),
+      theme: Tartrazine.theme(paste.theme),
       line_numbers: false,
       font_path: temp_font_path,
       font_width: 32, # Match the spleen-32x64 font width

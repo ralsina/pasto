@@ -16,7 +16,7 @@ cache_dir: "./public/cache"
 
 # Application settings
 env: "development"
-theme: "monokai"
+theme: "chicago-day"
 
 # Limits and security
 max_paste_size: 102400  # 100KB default maximum paste size

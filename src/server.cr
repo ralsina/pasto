@@ -1,47 +1,31 @@
-require "kemal"
-require "http"
-require "file_utils"
-require "tartrazine"
+require "./*"
+require "./models/*"
 require "ecr"
+require "file_utils"
+require "http"
 require "kemal-session"
-require "qr-code"
+require "kemal"
 require "qr-code/export/png"
-require "stumpy_png"
-require "./filters"
-require "./paste"
-require "./preview_generator"
-require "./user_session"
-require "./models/user"
-require "./assets"
-require "./help"
-require "./health"
-require "./ratelimit"
-require "./cache"
-require "./profile"
-require "./models/auth_token"
-require "./models/ssh_key"
-require "./models/api_key"
-require "./qr_generator"
+require "tartrazine"
 
 module Pasto
-  # Helper to validate session and get current user
+  # Extracts UserSession from Kemal session and fetches User from Sepia storage
+  # Returns nil for unauthenticated users or invalid sessions
   def self.get_current_user(env) : User?
-    user_session = env.session.object?("user").as(Pasto::UserSession?)
-
-    return nil unless user_session
-
-    # Get user from database
-    User.find(user_session.user_id)
+    if user_session = env.session.object?("user").as(Pasto::UserSession?)
+      User.find(user_session.user_id)
+    else
+      nil
+    end
   end
 
   # Unified access control result
   struct AccessResult
     property? allowed : Bool
     property paste : Pasto::Paste?
-    property reason : String?
     property status_code : Int32
 
-    def initialize(@allowed : Bool, @paste : Pasto::Paste? = nil, @reason : String? = nil, @status_code : Int32 = 200)
+    def initialize(@allowed : Bool, @paste : Pasto::Paste? = nil, @status_code : Int32 = 200)
     end
 
     def success? : Bool
@@ -49,85 +33,68 @@ module Pasto
     end
   end
 
-  # Unified access control helper for paste content access
-  # Handles existence, expiration, private status, and burn-after-reading checks
-  def self.validate_paste_access(env, require_owner : Bool = false, allow_raw_encrypted : Bool = false) : AccessResult
+  # Validates paste access control and returns structured access result
+  #
+  # This function consolidates paste access validation logic including existence checks,
+  # user authentication, and permission verification. Used by both middleware filters
+  # and route handlers for consistent access control.
+  #
+  # Arguments:
+  #   env - HTTP request environment containing session and routing information
+  #   require_owner - If true, only allows access to paste owners (used for edit/delete operations)
+  #
+  # Returns:
+  #   AccessResult with success status, paste object (if accessible), and appropriate HTTP status code
+  #   - 400 for missing or empty paste IDs in URL parameters
+  #   - 403 for permission/ownership violations
+  #   - 404 for non-existent pastes
+  #   - 200 for successful access
+  def self.validate_paste_access(env, require_owner : Bool = false) : AccessResult
     id = extract_paste_id(env)
 
-    return AccessResult.new(false, reason: "Invalid paste ID", status_code: 400) if id.nil? || id.empty?
+    return AccessResult.new(false, status_code: 400) if id.nil? || id.empty?
 
     # Load the paste
-    begin
-      paste = Pasto::Paste.from_file(id)
-      return AccessResult.new(false, reason: "Paste not found", status_code: 404) if paste.nil?
-    rescue
-      return AccessResult.new(false, reason: "Paste not found", status_code: 404)
-    end
+    paste = Pasto::Paste.from_file(id)
+    return AccessResult.new(false, status_code: 404) if paste.nil?
 
-    # Get current user for private/owner checks
-    current_user = get_current_user(env)
-    current_user_id = current_user.try(&.sepia_id)
+    # Only get current user if we need to check ownership or private access
+    if require_owner || paste.private?
+      current_user = get_current_user(env)
+      current_user_id = current_user.try(&.sepia_id)
 
-    # Check ownership requirement
-    if require_owner && paste.user_id != current_user_id
-      return AccessResult.new(false, paste: paste, reason: "You don't have permission to access this paste", status_code: 403)
-    end
-
-    # Check private paste access
-    if paste.private? && paste.user_id != current_user_id
-      return AccessResult.new(false, paste: paste, reason: "This paste is private and can only be accessed by the owner", status_code: 403)
-    end
-
-    # No special handling needed for burn-after-reading in middleware
-    # The route handlers will delete the paste after serving content
-
-    # For encrypted pastes in raw endpoints, allow access to encrypted content
-    if allow_raw_encrypted && paste.is_encrypted? && paste.responds_to?(:encrypted_content) && paste.encrypted_content
-      return AccessResult.new(true, paste: paste)
+      # Check ownership requirement
+      if current_user_id == paste.user_id
+        return AccessResult.new(false, paste: paste, status_code: 403)
+      end
     end
 
     # Access granted
     AccessResult.new(true, paste: paste)
+  rescue
+    AccessResult.new(false, status_code: 404)
   end
 
   # Extract paste ID from various URL patterns
   private def self.extract_paste_id(env) : String?
+    # Try the simple case first
+    id = env.params.url["id"]?
+    return nil unless id
+
+    # Handle special cases only when needed
     path = env.request.path
 
-    # Handle different route patterns
-    if path.includes?("/api/qr/")
-      # /api/qr/:id
-      env.params.url["id"]?
-    elsif path.includes?("/preview/")
-      # /preview/:id.png
-      id_with_ext = env.params.url["id"]?
-      return id_with_ext.gsub(/\.png$/, "") if id_with_ext
-    elsif path.includes?("/raw")
-      # /:id/raw
-      env.params.url["id"]?
-    elsif path.includes?("/edit") || path.includes?("/delete") || path.includes?("/fork") || path.includes?("/history")
-      # /:id/edit, /:id/delete, /:id/fork, /:id/history
-      env.params.url["id"]?
-    elsif path.includes?("/version/")
-      # /:id/version/:gen - extract base ID
-      env.params.url["id"]?
-    else
-      # Main paste view /:id (with optional extension)
-      id = env.params.url["id"]?
-
-      # Handle file extensions in paste IDs (like /:id.py)
-      if id && path.includes?(".") && path.count('.') > 0
-        parts = path.split(".")
-        if parts.size >= 2
-          # Extract the part before the last extension
-          base_path = path[1..-1] # Remove leading /
-          ext_parts = base_path.split(".")
-          return ext_parts[0..-2].join(".")
-        end
-      end
-
-      id
+    # Remove .png from preview URLs
+    if path.includes?("/preview/")
+      return id.gsub(/\.png$/, "")
     end
+
+    # Handle file extensions in main paste view (/:id.py)
+    if path.count('.') > 1 && !path.includes?("/api/")
+      return id.split(".")[0..-2].join(".")
+    end
+
+    id
   end
 
   # /help endpoint: render the help markdown using the ECR template
@@ -194,13 +161,13 @@ module Pasto
         next "You must be logged in to fork a paste"
       end
       # Validate the original paste exists and is accessible
-      access_result = Pasto.validate_paste_access(env, require_owner: false)
+      access_result = Pasto.validate_paste_access(env)
       unless access_result.success?
         if access_result.status_code == 404
           halt env, 404
         else
           env.response.status_code = access_result.status_code
-          next access_result.reason || "Access denied"
+          next "Access denied"
         end
       end
     else
@@ -211,7 +178,7 @@ module Pasto
           halt env, 404
         else
           env.response.status_code = access_result.status_code
-          next access_result.reason || "Access denied"
+          next "Access denied"
         end
       end
     end
@@ -378,11 +345,11 @@ module Pasto
     property title : String?
     property syntax_theme : String
     property expires_at : Time?
-    property burn_after_reading : Bool
-    property is_private : Bool
-    property is_encrypted : Bool
+    property? burn_after_reading : Bool
+    property? is_private : Bool
+    property? is_encrypted : Bool
     property encryption_iv : String?
-    property password_based : Bool
+    property? password_based : Bool
     property encryption_salt : String?
     property encryption_iterations : Int32
 
@@ -472,15 +439,15 @@ module Pasto
     if expires_at = params.expires_at
       paste.expires_at = expires_at
     end
-    paste.burn_after_reading = params.burn_after_reading
-    paste.private = params.is_private
+    paste.burn_after_reading = params.burn_after_reading?
+    paste.private = params.is_private?
 
     # Set encryption fields if applicable
-    if params.is_encrypted
+    if params.is_encrypted?
       paste.is_encrypted = true
       paste.encrypted_content = params.content
       paste.encryption_iv = params.encryption_iv
-      paste.password_based = params.password_based
+      paste.password_based = params.password_based?
       paste.encryption_salt = params.encryption_salt
       paste.encryption_iterations = params.encryption_iterations
       paste.content = "" # Clear regular content for encrypted pastes
@@ -526,7 +493,7 @@ module Pasto
 
     # Set burn_after_reading from either explicit checkbox or view-once expiration
     expiration_str = env.params.body["expiration"]?.to_s
-    paste.burn_after_reading = params.burn_after_reading || expiration_str == "view-once"
+    paste.burn_after_reading = params.burn_after_reading? || expiration_str == "view-once"
 
     if paste.save
       # If user has SSH keys, add paste to their first key for consistency

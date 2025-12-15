@@ -21,39 +21,40 @@ function mapLanguage(lang) {
 }
 
 // Highlight function for CodeJar
-function highlight(editor, currentLanguage = '') {
+function highlight(editor, currentLanguage = '', syntaxTheme = null) {
   const code = editor.textContent;
   if (!code) return;
 
   const lang = currentLanguage || '';
   const mappedLang = mapLanguage(lang);
 
+  // Get syntax theme from parameter or fallback to getter
+  const theme = syntaxTheme || getThemeGetter();
+
   try {
     if (mappedLang !== 'plaintext' && hljs.getLanguage(mappedLang)) {
       const result = hljs.highlight(code, { language: mappedLang, ignoreIllegals: true });
       editor.innerHTML = result.value;
-      // Apply CodeJar theme class
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      editor.className = isDark ? 'atom-one-dark' : 'atom-one-light';
+      // Apply syntax highlighting theme class
+      editor.className = theme;
     } else if (!lang || lang === '' || mappedLang === 'plaintext') {
       // Auto-detect mode or plaintext
       const result = hljs.highlightAuto(code);
       editor.innerHTML = result.value;
-      // Apply CodeJar theme class
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      editor.className = isDark ? 'atom-one-dark' : 'atom-one-light';
+      // Apply syntax highlighting theme class
+      editor.className = theme;
     } else {
       // Unknown language, try auto-detection
       const result = hljs.highlightAuto(code);
       editor.innerHTML = result.value;
-      // Apply CodeJar theme class
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      editor.className = isDark ? 'atom-one-dark' : 'atom-one-light';
+      // Apply syntax highlighting theme class
+      editor.className = theme;
     }
   } catch (e) {
     console.error('Highlight error:', e);
     // Fallback to plain text
     editor.textContent = code;
+    editor.className = theme;
   }
 }
 
@@ -110,7 +111,7 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
   const formData = new FormData();
   formData.append('content', content);
   formData.append('language', languageSelect.value);
-  formData.append('theme', syntaxThemeSelect.value || 'monokai');
+  formData.append('theme', syntaxThemeSelect.value || (window.pastoSyntaxTheme || 'default-dark'));
 
   fetch('/highlight', {
     method: 'POST',
@@ -261,7 +262,7 @@ function getLanguageGetter() {
 // Get theme value from select element
 function getThemeGetter() {
   const themeElement = document.querySelector('#syntax-theme') || document.getElementById('syntax-theme');
-  return themeElement ? themeElement.value : 'monokai';
+  return themeElement ? themeElement.value : (window.pastoSyntaxTheme || 'default-dark');
 }
 
 // Initialize Lucide icons

@@ -64,8 +64,6 @@ module Pasto
     # Add background color rule for editor if theme name is provided
     if theme_name
       # Add background color rule for editor - handle both base theme and full theme name
-      css_class_name = theme_name.gsub("/", "-")
-      base_theme_name = theme_name.split("/").first
 
       # Get the actual background color from the .b class (background)
       bg_color = nil

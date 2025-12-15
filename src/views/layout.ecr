@@ -705,20 +705,7 @@
               }
             }
 
-            // Debug: Log form field information
-            if (mobileControl.matches('input, select, textarea, button')) {
-              console.log('Mobile control created:', {
-                tag: mobileControl.tagName,
-                type: mobileControl.type || 'N/A',
-                id: mobileControl.id,
-                originalId: originalId,
-                ariaLabel: mobileControl.getAttribute('aria-label'),
-                placeholder: mobileControl.getAttribute('placeholder'),
-                autocomplete: mobileControl.getAttribute('autocomplete'),
-                className: mobileControl.className
-              });
-            }
-
+  
             mobileControlsGroup.appendChild(mobileControl);
           });
 
