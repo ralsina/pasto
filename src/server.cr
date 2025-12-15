@@ -253,13 +253,14 @@ module Pasto
 
   # Main page - paste creation form
   get "/" do |env|
+    config = Pasto.config
     # Validate session to get current user
     current_user = Pasto.get_current_user(env)
 
-    # Get theme preferences with priority: user config > cookie > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    # Get theme preferences with priority: user config > server defaults
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || config.theme
 
     # Resolve "auto" theme to prevent flashing - default to dark for server-side
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -281,6 +282,7 @@ module Pasto
     pico_theme = saved_pico_theme # Keep original for JavaScript
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = config.theme
     # resolved_pico_theme already set above
 
     # Social media metadata (for home page)
@@ -322,7 +324,7 @@ module Pasto
     line_numbers_str = env.params.body["line_numbers"]?.to_s
 
     content = "" if content.nil? || content.empty?
-    theme = "default-dark" if theme.empty?
+    theme = (config.try(&.theme) || "default-dark") if theme.empty?
     line_numbers = line_numbers_str == "true"
 
     # Normalize line endings from \r\n and \r to \n
@@ -400,7 +402,7 @@ module Pasto
 
     # Get syntax theme from form or use default
     syntax_theme = env.params.body["syntax_theme"]?.to_s
-    syntax_theme = "default-dark" if syntax_theme.empty?
+    syntax_theme = (config.try(&.theme) || "default-dark") if syntax_theme.empty?
 
     # Handle expiration
     expiration_str = env.params.body["expiration"]?.to_s
@@ -577,10 +579,10 @@ module Pasto
       next "You don't have permission to edit this paste"
     end
 
-    # Get theme preferences with priority: user config > cookie > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    # Get theme preferences with priority: user config > server defaults
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || Pasto.config.theme
 
     # Resolve "auto" theme to prevent flashing - default to dark for server-side
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -591,6 +593,7 @@ module Pasto
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = Pasto.config.theme
 
     # Social media metadata (generic for edit pages)
     meta_title = "Pasto - Edit Paste"
@@ -816,10 +819,10 @@ module Pasto
       next "Only the paste owner can view history"
     end
 
-    # Get theme preferences with priority: user config > cookie > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    # Get theme preferences with priority: user config > server defaults
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || Pasto.config.theme
 
     # Resolve "auto" theme to prevent flashing - default to dark for server-side
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -833,6 +836,7 @@ module Pasto
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = Pasto.config.theme
 
     # Social media metadata (generic for history pages)
     meta_title = "Pasto - Paste History"
@@ -862,10 +866,10 @@ module Pasto
     # Get current user
     current_user = Pasto.get_current_user(env)
 
-    # Get theme preferences with priority: user config > cookie > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    # Get theme preferences with priority: user config > server defaults
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || Pasto.config.theme
 
     # Resolve "auto" theme to prevent flashing - default to dark for server-side
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -887,6 +891,7 @@ module Pasto
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = Pasto.config.theme
 
     # Generate social media metadata for version view
     meta_title = "#{paste.display_title} (v#{paste.generation})"
@@ -914,14 +919,15 @@ module Pasto
   # 404 page route
   get "/404" do |env|
     current_user = Pasto.get_current_user(env)
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || Pasto.config.theme
     page_title = "404 - Not Found"
     is_home_page = false
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = Pasto.config.theme
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
     # Social media metadata
@@ -942,14 +948,15 @@ module Pasto
   # Error handling for other 404 cases
   error 404 do |env|
     current_user = Pasto.get_current_user(env)
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || Pasto.config.theme
     page_title = "404 - Not Found"
     is_home_page = false
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = Pasto.config.theme
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
     # Social media metadata
@@ -1076,10 +1083,10 @@ module Pasto
     # Note: For burn-after-reading pastes, we'll increment the view count AFTER showing the content
     # This ensures the user can see the paste once before it gets deleted
 
-    # Get theme preferences with priority: user config > cookie > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    # Get theme preferences with priority: user config > server defaults
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || Pasto.config.theme
 
     # Resolve "auto" theme to prevent flashing - default to dark for server-side
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -1107,6 +1114,7 @@ module Pasto
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = Pasto.config.theme
     is_home_page = false
     page_title = "Paste #{paste.sepia_id}"
 
@@ -1142,7 +1150,8 @@ module Pasto
       css = formatter.style_defs
 
       # Add highlight.js classes for compatibility with CodeJar editor
-      enhanced_css = Pasto.add_highlightjs_classes(css)
+      puts "DEBUG: Generating CSS for theme: #{theme_name}"
+      enhanced_css = Pasto.add_highlightjs_classes(css, theme_name)
 
       env.response.content_type = "text/css"
       enhanced_css

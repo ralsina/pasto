@@ -11,7 +11,7 @@ require "kemal-session"
 module Pasto
   VERSION = "0.1.0"
 
-  @@config : Config?
+  @@config : Config = Config.new([] of String)
 
   def self.config
     @@config

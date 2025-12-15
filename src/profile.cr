@@ -210,9 +210,9 @@ module Pasto
     ssh_enabled = config.try(&.ssh_enabled?) || false
 
     # Get theme preferences with priority: user config > cookie > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_theme=([^;]+)/, 1]? } || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_pico_color=([^;]+)/, 1]? } || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || env.request.headers["Cookie"]?.try { |cookie| cookie[/pasto_syntax_theme=([^;]+)/, 1]? } || "default"
+    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
+    saved_pico_color = current_user.try(&.pico_color) || "slate"
+    saved_syntax_theme = current_user.try(&.syntax_theme) || config.theme
 
     # Resolve "auto" theme to prevent flashing - default to dark for server-side
     resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
@@ -223,6 +223,7 @@ module Pasto
     pico_theme = saved_pico_theme
     pico_color = saved_pico_color
     syntax_theme = saved_syntax_theme
+    theme = config.theme
 
     # Social media metadata (generic for profile pages)
     meta_title = "Pasto - User Profile"

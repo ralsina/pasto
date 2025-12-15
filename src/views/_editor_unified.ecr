@@ -757,8 +757,8 @@ async function createPaste(event) {
 <% end %>
 
       // Preview toggle - appears in both modes
-      controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai')" class="controls-button" title="Show Preview" id="controls-show-preview-button" aria-label="Show Preview" style="display: none;"><i data-lucide="eye" style="width: 20px; height: 20px;"></i></button>`;
-      controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" aria-label="Hide Preview" style="display: flex;"><i data-lucide="eye-off" style="width: 20px; height: 20px;"></i></button>`;
+      controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || '<%= syntax_theme %>')" class="controls-button" title="Show Preview" id="controls-show-preview-button" aria-label="Show Preview" style="display: none;"><i data-lucide="eye" style="width: 20px; height: 20px;"></i></button>`;
+      controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || '<%= syntax_theme %>')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" aria-label="Hide Preview" style="display: flex;"><i data-lucide="eye-off" style="width: 20px; height: 20px;"></i></button>`;
 
       // Shared help and profile buttons
       controlsHTML += `<a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
@@ -779,7 +779,9 @@ async function createPaste(event) {
     // Use shared highlight function
     jar = CodeJar(editorElement, (editor) => {
       if (typeof window.highlight === 'function') {
-        window.highlight(editor, getCurrentLanguage());
+        const currentTheme = localStorage.getItem('syntaxTheme') || '<%= theme %>';
+        console.log('DEBUG: Applying theme class:', currentTheme);
+        window.highlight(editor, getCurrentLanguage(), currentTheme);
       }
     }, {
       tab: '  ',
@@ -798,8 +800,19 @@ async function createPaste(event) {
     // Set keyboard focus on the editor
     editorElement.focus();
 
+    // Apply theme class to editor element immediately
+    const currentTheme = localStorage.getItem('syntaxTheme') || '<%= theme %>';
+    console.log('DEBUG: Applying initial theme class on startup:', currentTheme);
+    editorElement.className = currentTheme;
+
     // Set initial content
-    jar.updateCode(initialContent);
+    jar.updateCode(initialContent || "");
+
+    // Trigger preview update to initialize everything
+    window.updatePreview(window.jar,
+      () => document.getElementById('language')?.value || '',
+      () => currentTheme
+    );
 
     // Export jar to window for external functions
     window.jar = jar;
@@ -813,7 +826,7 @@ async function createPaste(event) {
       debounceTimer = setTimeout(() => {
         window.updatePreview(window.jar,
           () => document.getElementById('language')?.value || '',
-          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || '<%= syntax_theme %>'
         );
       }, 300);
     });
@@ -824,7 +837,7 @@ async function createPaste(event) {
       setTimeout(() => {
         window.updatePreview(window.jar,
           () => document.getElementById('language')?.value || '',
-          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || 'monokai'
+          () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || '<%= syntax_theme %>'
         );
       }, 100);
     }
