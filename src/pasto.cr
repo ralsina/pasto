@@ -4,17 +4,22 @@ require "kemal"
 require "./paste"
 require "./preview_generator"
 require "./server"
+require "./api"
+require "./theme_helper"
 require "./cache"
 require "./models/user"
 require "kemal-session"
 
 module Pasto
-  VERSION = "0.1.0"
+  VERSION = {{ `shards version #{__DIR__}`.chomp.stringify }}
 
-  @@config : Config = Config.new([] of String)
+  @@config : Config?
 
-  def self.config
-    @@config
+  def self.config : Config
+    if config = @@config
+      return config
+    end
+    raise "Pasto config not initialized"
   end
 
   def self.config=(config : Config)
@@ -320,8 +325,7 @@ DOC
 
   def self.run(args)
     # Parse config first before Kemal interferes with ARGV
-    config = Config.new(args)
-    @@config = config
+    self.config = Config.new(args)
 
     # Clear ARGV to prevent Kemal from interfering
     ARGV.clear

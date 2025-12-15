@@ -3,7 +3,7 @@
 <%= render "src/views/_shared_styles.ecr" %>
 
 <!DOCTYPE html>
-<html lang="en" data-theme="<%= resolved_pico_theme || pico_theme %>">
+<html lang="en" data-theme="<%= theme_vars[:resolved_pico_theme] %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,39 +22,38 @@
   <meta name="description" content="<%= meta_description %>">
 
   <!-- Social Media Meta Tags -->
-  <% if !is_home_page && page_title && page_title != "Pasto" && page_title.includes?("Paste") %>
-    <% # Enhanced social media tags only for paste pages %>
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<%= meta_title %>">
-    <meta name="twitter:description" content="<%= meta_description %>">
-    <meta name="twitter:image" content="<%= meta_image %>">
-
-    <meta property="og:type" content="website">
+  <% if meta_title %>
     <meta property="og:title" content="<%= meta_title %>">
+  <% end %>
+  <% if meta_description %>
     <meta property="og:description" content="<%= meta_description %>">
+  <% end %>
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pasto">
+  <% if meta_url && !meta_url.empty? %>
     <meta property="og:url" content="<%= meta_url %>">
+  <% end %>
+  <% if meta_image && !meta_image.empty? %>
     <meta property="og:image" content="<%= meta_image %>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:site_name" content="Pasto">
-  <% else %>
-    <% # Basic social media tags for non-paste pages %>
-    <meta property="og:title" content="<%= meta_title %>">
-    <meta property="og:description" content="<%= meta_description %>">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Pasto">
+  <% end %>
+
+  <% # Twitter Card tags if we have enough data %>
+  <% if meta_title && meta_description %>
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= meta_title %>">
+    <meta name="twitter:description" content="<%= meta_description %>">
+    <% if meta_image && !meta_image.empty? %>
+      <meta name="twitter:image" content="<%= meta_image %>">
+    <% end %>
   <% end %>
 
   <!-- Async CSS loading with correct themes from server -->
-  <link rel="preload" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" as="style" onload="loadCSS(this, 'pico-css-link')">
-  <link rel="preload" href="/syntax/<%= syntax_theme %>/<%= pico_theme == "dark" ? "dark" : "light" %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
+  <link rel="preload" href="/assets/<%= theme_vars[:pico_theme_file] %>" as="style" onload="loadCSS(this, 'pico-css-link')">
+  <link rel="preload" href="/syntax/<%= theme_vars[:saved_syntax_theme] %>/<%= theme_vars[:resolved_pico_theme] %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
 
-  <!-- Fallback for browsers that don't support preload/JavaScript -->
-  <noscript>
-    <link rel="stylesheet" href="/assets/<%= pico_color == "css" ? "pico.min.css" : "pico.#{pico_color}.min.css" %>" id="pico-css-link">
-    <link rel="stylesheet" href="/syntax/<%= syntax_theme %>/<%= pico_theme == "dark" ? "dark" : "light" %>" id="highlight-css-link">
-  </noscript>
-
+  
   <script>
     // Async CSS loading function
     function loadCSS(link, id) {
@@ -73,6 +72,7 @@
   <script src="/assets/crypto.js" defer></script>
   <!-- Shared editor functionality -->
   <script src="/assets/editor-shared.js" defer></script>
+  <script src="/assets/mobile_controls.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
@@ -84,419 +84,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
   </noscript>
 
-  <style>
-    /* Critical CSS to prevent FOUC while main CSS loads asynchronously */
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-    }
-
-    /* Essential Pico-like styles for immediate rendering */
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      line-height: 1.5;
-      min-height: 100vh;
-    }
-
-    /* Clean Responsive Layout */
-    .app-layout {
-      display: flex;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      width: 260px;
-      flex-shrink: 0;
-      border-right: 3px solid var(--pico-primary);
-      background: var(--pico-background-color);
-      transition: margin-left 0.3s ease;
-      overflow-y: auto;
-    }
-
-    .sidebar.collapsed {
-      margin-left: -260px;
-    }
-
-    .main-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .controls {
-      padding: 1rem 1rem 0 1rem;
-      border-bottom: 1px solid var(--pico-border-color);
-      background: var(--pico-background-color);
-      flex-shrink: 0;
-      min-height: 60px;
-    }
-
-    .content-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-    }
-
-    /* Sidebar toggle button */
-    .sidebar-toggle {
-      position: fixed;
-      top: 1rem;
-      left: 0.5rem;
-      z-index: 1000;
-      background: var(--pico-primary, #0074d9);
-      color: white;
-      border: none;
-      outline: none;
-      border-radius: 4px;
-      padding: 0.5rem;
-      cursor: pointer;
-      font-size: 1.2rem;
-      width: 3rem;
-      height: 3rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: left 0.3s ease, border-radius 0.3s ease;
-    }
-
-    .sidebar-toggle:focus,
-    .sidebar-toggle:focus-visible,
-    .sidebar-toggle:focus-within {
-      outline: none !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-
-    .sidebar:not(.collapsed) .sidebar-toggle {
-      left: 258.5px;
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;
-    }
-
-    /* Controls styling */
-    .controls-group {
-      display: flex;
-      gap: 0.5rem;
-      align-items: stretch;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      justify-content: flex-end;
-      margin-left: auto;
-      padding-left: 2.75rem; /* Space for sidebar toggle */
-    }
-
-    .controls-input {
-      flex: 0 0 auto;
-      width: 200px !important;
-      padding: 0.5rem;
-      border: 1px solid var(--pico-border-color);
-      border-radius: 4px;
-      font-size: 0.9rem;
-      height: 3rem !important;
-      box-sizing: border-box;
-      line-height: 1;
-      vertical-align: middle;
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-    }
-
-    .controls-select {
-      padding: 0.5rem;
-      border: 1px solid var(--pico-border-color);
-      border-radius: 4px;
-      font-size: 0.9rem;
-      width: 200px;
-      height: 3rem;
-      box-sizing: border-box;
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-    }
-
-    /* Controls button styles are now in _shared_styles.ecr */
-
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-      .app-layout {
-        flex-direction: column;
-      }
-
-      body .app-layout .sidebar {
-        width: 100%;
-        height: auto;
-        position: static;
-        border-right: none;
-        border-bottom: 1px solid var(--pico-border-color);
-        margin-left: 0 !important;
-        transform: translateX(0) !important; /* Override desktop negative margin for all sidebar states */
-      }
-
-      body .app-layout .sidebar.collapsed {
-        display: block; /* Keep sidebar visible for toggle button */
-        height: auto;
-        min-height: 3rem; /* Just enough for toggle button */
-        margin-left: 0 !important;
-        transform: translateX(0) !important; /* Explicit override for collapsed state */
-      }
-
-      .sidebar.collapsed .sidebar-content {
-        display: none; /* Hide sidebar content when collapsed */
-      }
-
-      .sidebar-toggle {
-        position: relative;
-        margin: 0.5rem;
-        align-self: flex-start;
-        display: block; /* Always show toggle button */
-        left: auto !important;
-        top: auto !important;
-        border-top-left-radius: 4px !important;
-        border-top-right-radius: 4px !important;
-        border-bottom-left-radius: 4px !important;
-        border-bottom-right-radius: 4px !important;
-      }
-
-      .main-content {
-        margin-left: 0;
-        padding-top: 0;
-      }
-
-      .controls-group {
-        flex-direction: column;
-        width: 100%;
-        gap: 0.5rem;
-      }
-
-      .controls-input,
-      .controls-select {
-        width: 100%;
-        min-width: unset;
-      }
-
-      /* Mobile controls layout优化 - better arrangement */
-      .mobile-controls .controls-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 0;
-      }
-
-      .mobile-controls .controls-row {
-        display: flex;
-        flex-direction: row;
-        gap: 0.5rem;
-        align-items: stretch;
-        flex-wrap: wrap;
-      }
-
-      .mobile-controls .controls-row > * {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .mobile-controls .controls-input {
-        width: 100%;
-        min-width: 120px;
-      }
-
-      .mobile-controls .controls-select {
-        width: 100%;
-        min-width: 140px;
-      }
-
-      .mobile-controls .controls-button {
-        flex: 0 0 auto;
-        width: auto;
-        min-width: 44px; /* Touch-friendly minimum size */
-        padding: 0.5rem 0.75rem;
-      }
-    }
-
-    /* Editor/Preview specific styles */
-    .editor-preview-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      height: calc(100vh - 140px); /* Reduced to maximize content area */
-      min-height: 350px;
-    }
-
-    .editor-preview-container.preview-hidden {
-      grid-template-columns: 1fr;
-    }
-
-    .editor-preview-container.preview-hidden .preview-pane {
-      display: none;
-    }
-
-    .editor-pane {
-      border: 1px solid var(--pico-primary);
-      border-radius: 4px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    .editor-wrapper {
-      flex: 1;
-      margin: 0.75rem;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .preview-pane {
-      border: 1px solid var(--pico-primary);
-      border-radius: 4px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-  
-    .codejar-editor {
-      flex: 1;
-      padding: 0;
-      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: var(--pico-font-size) !important;
-      line-height: 1.5;
-      overflow: auto;
-      outline: none;
-      border: none;
-      resize: none;
-      tab-size: 2;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
-    .codejar-editor:empty::before {
-      content: 'Paste your code here...';
-      color: var(--pico-muted-color, #6b7280);
-    }
-
-    .preview-content {
-      flex: 1;
-      padding: 0;
-      overflow: auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .preview-content pre {
-      flex: 1;
-      margin: 0;
-      padding: 0;
-      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: var(--pico-font-size);
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      background: transparent;
-      border: none;
-      outline: none;
-      box-sizing: border-box;
-    }
-
-    .preview-content code {
-      display: block;
-      padding: 0.75rem;
-      font-weight: 400;
-      height: 100%;
-      box-sizing: border-box;
-    }
-
-    /* Show/Hide states */
-    .hidden {
-      display: none !important;
-    }
-
-    /* Make all headings use Chivo fonts */
-    h1, h2, h3, h4, h5, h6 {
-      font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-    }
-
-    /* Mobile adjustments for editor */
-    @media (max-width: 768px) {
-      .editor-preview-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr auto; /* Editor takes main space, preview takes what it needs */
-        height: auto;
-        min-height: 400px;
-        max-height: 70vh; /* Don't take too much screen space on mobile */
-      }
-
-      .editor-preview-container.preview-hidden {
-        grid-template-rows: 1fr; /* Only editor when preview hidden */
-      }
-
-      .editor-pane {
-        min-height: 300px; /* Ensure editor has usable space on mobile */
-      }
-
-      .preview-pane {
-        min-height: 200px; /* Ensure preview has usable space when visible */
-        max-height: 50vh; /* Limit preview height on mobile */
-        overflow-y: auto; /* Allow scrolling for long previews */
-      }
-    }
-
-    /* Grass animation styles */
-    .grass-container {
-      pointer-events: none;
-    }
-
-    .grass-blade {
-      stroke-dasharray: 22;
-      stroke-dashoffset: 22;
-      opacity: 0;
-      transition: stroke-dashoffset 2s ease-out, opacity 1.5s ease-out;
-      transform-origin: bottom center;
-      transition-delay: 5s;
-    }
-
-    .sidebar:not(.collapsed) .grass-blade {
-      stroke-dashoffset: 0;
-      opacity: 1;
-      animation: sway 4s ease-in-out infinite alternate;
-      animation-delay: 6.5s; /* 5s initial delay + 1.5s transition */
-    }
-
-    @keyframes sway {
-      0% {
-        transform: translateX(-1px);
-      }
-      25% {
-        transform: translateX(1px);
-      }
-      50% {
-        transform: translateX(-0.5px);
-      }
-      75% {
-        transform: translateX(0.8px);
-      }
-      100% {
-        transform: translateX(-1px);
-      }
-    }
-
-    /* Spinner animation for loading states */
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(360deg);
-      }
-    }
-  </style>
+  <%= render "src/views/_critical_css.ecr" %>
 </head>
 <body>
   <div class="app-layout">
@@ -529,9 +117,9 @@
         <div class="theme-group" style="margin-bottom: 1rem; margin-top: 0;">
           <label style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">UI Theme:</label>
           <select id="pico-theme" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;">
-            <option value="auto" <%= pico_theme == "auto" ? "selected" : "" %>>Auto (System)</option>
-            <option value="light" <%= pico_theme == "light" ? "selected" : "" %>>Light</option>
-            <option value="dark" <%= pico_theme == "dark" ? "selected" : "" %>>Dark</option>
+            <option value="auto" <%= theme_vars[:saved_pico_theme] == "auto" ? "selected" : "" %>>Auto (System)</option>
+            <option value="light" <%= theme_vars[:saved_pico_theme] == "light" ? "selected" : "" %>>Light</option>
+            <option value="dark" <%= theme_vars[:saved_pico_theme] == "dark" ? "selected" : "" %>>Dark</option>
           </select>
         </div>
 
@@ -541,7 +129,7 @@
             <% color_options = ["css", "red", "pink", "fuchsia", "purple", "violet", "indigo", "blue", "cyan", "jade", "green", "lime", "yellow", "amber", "pumpkin", "orange", "sand", "grey", "zinc", "slate"] %>
             <% color_names = ["Azure", "Red", "Pink", "Fuchsia", "Purple", "Violet", "Indigo", "Blue", "Cyan", "Jade", "Green", "Lime", "Yellow", "Amber", "Pumpkin", "Orange", "Sand", "Grey", "Zinc", "Slate"] %>
             <% color_options.each_with_index do |color, index| %>
-              <option value="<%= color %>" <%= pico_color == color ? "selected" : "" %>><%= color_names[index] %></option>
+              <option value="<%= color %>" <%= theme_vars[:saved_pico_color] == color ? "selected" : "" %>><%= color_names[index] %></option>
             <% end %>
           </select>
         </div>
@@ -574,196 +162,8 @@
 
   <script>
     // Function to handle mobile controls placement - simplified version
-    function handleMobileControls() {
-      const sidebar = document.getElementById('sidebar');
-      const mainControls = document.getElementById('main-controls');
-      const mobileControls = document.getElementById('mobile-controls');
-      const isMobile = window.innerWidth <= 768;
-
-      if (!sidebar || !mainControls || !mobileControls) return;
-
-      if (isMobile) {
-        // Fix mobile sidebar positioning
-        sidebar.style.marginLeft = '0';
-        sidebar.style.transform = 'translateX(0)';
-
-        // Hide main controls on mobile
-        mainControls.style.display = 'none';
-
-        // Move all controls from main to mobile sidebar
-        const controlsGroup = mainControls.querySelector('.controls-group');
-        if (controlsGroup) {
-          // Create a clean mobile controls group
-          const mobileControlsGroup = document.createElement('div');
-          mobileControlsGroup.className = 'controls-group';
-
-          // Clear and repopulate mobile controls
-          mobileControls.innerHTML = '';
-          mobileControls.appendChild(mobileControlsGroup);
-
-          // Clone each control element individually to avoid duplicates
-          const controls = Array.from(controlsGroup.children);
-          controls.forEach((control, index) => {
-            const mobileControl = control.cloneNode(true);
-
-            // Remove original ID to avoid duplicates and create unique mobile ID
-            const originalId = mobileControl.id;
-            mobileControl.id = originalId ? `mobile-${originalId}` : `mobile-control-${index}`;
-
-            // Add mobile-specific class for styling
-            mobileControl.classList.add('mobile-control');
-
-            // Add proper labels and accessibility attributes
-            if (mobileControl.matches('input')) {
-              if (!mobileControl.hasAttribute('aria-label')) {
-                const placeholder = mobileControl.getAttribute('placeholder');
-                const type = mobileControl.getAttribute('type');
-                let label = placeholder;
-
-                if (!label) {
-                  if (type === 'text') {
-                    label = 'Title input';
-                  } else if (type === 'hidden') {
-                    label = 'Hidden input field';
-                  } else if (type) {
-                    label = `${type} input`;
-                  } else {
-                    label = `Input field ${index + 1}`;
-                  }
-                }
-
-                mobileControl.setAttribute('aria-label', label);
-              }
-            }
-
-            if (mobileControl.matches('select')) {
-              if (!mobileControl.hasAttribute('aria-label')) {
-                const existingLabel = mobileControl.getAttribute('aria-label');
-                const id = mobileControl.id;
-                let label = existingLabel;
-
-                if (!label && id) {
-                  if (id.includes('language')) {
-                    label = 'Programming language selector';
-                  } else if (id.includes('expiration')) {
-                    label = 'Expiration time selector';
-                  } else if (id.includes('theme')) {
-                    label = 'Theme selector';
-                  } else {
-                    label = `Selector ${index + 1}`;
-                  }
-                } else if (!label) {
-                  label = `Select option ${index + 1}`;
-                }
-
-                mobileControl.setAttribute('aria-label', label);
-              }
-            }
-
-            if (mobileControl.matches('button') && !mobileControl.hasAttribute('aria-label')) {
-              const label = mobileControl.getAttribute('title') || mobileControl.textContent.trim() || `Button ${index + 1}`;
-              mobileControl.setAttribute('aria-label', label);
-            }
-
-            if (mobileControl.matches('a') && !mobileControl.hasAttribute('aria-label')) {
-              const label = mobileControl.textContent.trim() || mobileControl.getAttribute('title') || `Link ${index + 1}`;
-              mobileControl.setAttribute('aria-label', label);
-            }
-
-            // Remove form attributes that cause duplication issues and add proper autocomplete
-            if (mobileControl.hasAttribute('name')) {
-              mobileControl.removeAttribute('name');
-            }
-
-            // Add appropriate autocomplete attributes based on input type and context
-            if (mobileControl.matches('input')) {
-              const type = mobileControl.getAttribute('type');
-              const id = mobileControl.id || originalId;
-              const placeholder = mobileControl.getAttribute('placeholder');
-
-              let autocomplete = 'off'; // Default for security
-
-              if (placeholder && placeholder.toLowerCase().includes('title')) {
-                autocomplete = 'off'; // Titles are free-form
-              } else if (id && id.includes('title')) {
-                autocomplete = 'off';
-              } else if (id && id.includes('username')) {
-                autocomplete = 'username';
-              } else if (id && id.includes('email')) {
-                autocomplete = 'email';
-              } else if (id && id.includes('password')) {
-                autocomplete = 'current-password';
-              } else if (id && id.includes('name')) {
-                autocomplete = 'name';
-              } else if (id && id.includes('url') || id.includes('website')) {
-                autocomplete = 'url';
-              }
-
-              // Don't override existing autocomplete unless it's missing
-              if (!mobileControl.hasAttribute('autocomplete')) {
-                mobileControl.setAttribute('autocomplete', autocomplete);
-              }
-            }
-
-  
-            mobileControlsGroup.appendChild(mobileControl);
-          });
-
-          // Re-attach event handlers and recreate icons
-          setTimeout(() => {
-            // Re-attach handlers for each control by matching with originals
-            controls.forEach((originalControl, index) => {
-              const mobileControl = mobileControlsGroup.children[index];
-              if (!mobileControl) return;
-
-              // Handle select change handlers
-              if (mobileControl.matches('select')) {
-                if (originalControl.onchange || originalControl.getAttribute('onchange')) {
-                  mobileControl.addEventListener('change', () => {
-                    if (typeof window.updateLanguage === 'function') {
-                      window.updateLanguage();
-                    }
-                  });
-                }
-              }
-
-              // Handle button click handlers
-              if (mobileControl.matches('button')) {
-                if (originalControl.onclick) {
-                  mobileControl.onclick = originalControl.onclick;
-                }
-                if (originalControl.getAttribute('onclick')) {
-                  mobileControl.setAttribute('onclick', originalControl.getAttribute('onclick'));
-                }
-              }
-
-              // Handle any other onclick events
-              if (originalControl.onclick) {
-                mobileControl.onclick = originalControl.onclick;
-              }
-              if (originalControl.getAttribute('onclick')) {
-                mobileControl.setAttribute('onclick', originalControl.getAttribute('onclick'));
-              }
-            });
-
-            // Re-create Lucide icons using shared utility
-            if (window.SharedIcons) {
-              window.SharedIcons.init(mobileControls);
-            } else if (typeof lucide !== 'undefined') {
-              lucide.createIcons();
-            }
-          }, 50);
-        }
-      } else {
-        // On desktop, show main controls and clear mobile controls
-        mainControls.style.display = 'block';
-        mobileControls.innerHTML = '';
-
-        // Reset desktop styles
-        sidebar.style.marginLeft = '';
-        sidebar.style.transform = '';
-      }
-    }
+    // Include mobile controls functionality from external file
+    // The handleMobileControls function is loaded from mobile_controls.js
 
     // Sidebar toggle function
     function toggleSidebar() {
@@ -925,18 +325,18 @@
       if (isUserLoggedIn) {
         // For logged-in users, server has provided specific theme preferences
         // Set select elements to show server preferences
-        document.getElementById('pico-theme').value = '<%= pico_theme %>';
-        document.getElementById('pico-color').value = '<%= pico_color %>';
+        document.getElementById('pico-theme').value = '<%= theme_vars[:saved_pico_theme] %>';
+        document.getElementById('pico-color').value = '<%= theme_vars[:saved_pico_color] %>';
 
         // Don't call updateThemes() - server already set the correct theme
         console.log('Logged-in user detected: using server-side themes', {
-          pico_theme: '<%= pico_theme %>',
-          pico_color: '<%= pico_color %>',
-          syntax_theme: '<%= syntax_theme %>'
+          pico_theme: '<%= theme_vars[:saved_pico_theme] %>',
+          pico_color: '<%= theme_vars[:saved_pico_color] %>',
+          syntax_theme: '<%= theme_vars[:saved_syntax_theme] %>'
         });
 
         // Make syntax theme available to JavaScript
-        window.pastoSyntaxTheme = '<%= syntax_theme %>';
+        window.pastoSyntaxTheme = '<%= theme_vars[:saved_syntax_theme] %>';
       } else {
         // For anonymous users, use localStorage preferences
         const savedPicoTheme = localStorage.getItem('picoTheme') || 'auto';
@@ -970,7 +370,7 @@
 
           if (isUserLoggedIn) {
             // Logged-in user with server-provided theme
-            currentTheme = '<%= syntax_theme %>';
+            currentTheme = '<%= theme_vars[:saved_syntax_theme] %>';
           } else {
             // Anonymous user, use localStorage or default
             currentTheme = localStorage.getItem('syntaxTheme') || 'default';

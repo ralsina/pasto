@@ -5,17 +5,10 @@ module Pasto
     current_user = Pasto.get_current_user(env)
     config = Pasto.config
 
-    # Get theme preferences with priority: user config > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || config.theme
+    # Get all theme-related template variables
+    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config)
     page_title = "Help & Usage Guide"
     is_home_page = false
-    pico_theme = saved_pico_theme
-    pico_color = saved_pico_color
-    syntax_theme = saved_syntax_theme
-    theme = config.theme
-    resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
 
     # Social media metadata (generic for non-paste pages)
     meta_title = "Pasto - Help & Usage Guide"

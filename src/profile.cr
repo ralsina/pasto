@@ -209,21 +209,12 @@ module Pasto
     ssh_port = config.try(&.ssh_port) || 2222
     ssh_enabled = config.try(&.ssh_enabled?) || false
 
-    # Get theme preferences with priority: user config > cookie > defaults
-    saved_pico_theme = current_user.try(&.pico_theme) || "auto"
-    saved_pico_color = current_user.try(&.pico_color) || "slate"
-    saved_syntax_theme = current_user.try(&.syntax_theme) || config.theme
-
-    # Resolve "auto" theme to prevent flashing - default to dark for server-side
-    resolved_pico_theme = saved_pico_theme == "auto" ? "dark" : saved_pico_theme
+    # Get all theme-related template variables
+    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config)
 
     # Set template variables (ECR template will have access to these)
     page_title = "Profile"
     is_home_page = false
-    pico_theme = saved_pico_theme
-    pico_color = saved_pico_color
-    syntax_theme = saved_syntax_theme
-    theme = config.theme
 
     # Social media metadata (generic for profile pages)
     meta_title = "Pasto - User Profile"
