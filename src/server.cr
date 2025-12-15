@@ -194,6 +194,80 @@ module Pasto
     env.redirect "/?logout=success"
   end
 
+  # SSH Auth token route - validate token and create session
+  get "/auth/:token" do |env|
+    token_id = env.params.url["token"]
+    client_ip = Pasto.get_client_ip(env)
+
+    # Rate limit login attempts
+    allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :login)
+    unless allowed
+      next rate_limit_response
+    end
+
+    token = Pasto::AuthToken.find(token_id)
+
+    if token.nil? || token.expired?
+      # Delete expired token if it exists
+      token.try(&.delete)
+
+      env.response.status_code = 404
+      current_user = Pasto.get_current_user(env)
+      theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
+
+      # Set individual variables
+      page_title = "Invalid Token"
+      is_home_page = false
+      meta_title = "Pasto - Authentication Error"
+      meta_description = "Modern pastebin with live syntax highlighting and SSH access"
+      meta_url = "/auth/error"
+      meta_image = "/favicon.png"
+
+      content = render "src/views/auth_error.ecr"
+      render "src/views/layout.ecr"
+      next
+    end
+
+    # Load or create SSHKey
+    ssh_key = Pasto::SSHKey.find_or_create(token.fingerprint)
+
+    # Check if key already has an owner
+    user = if owner_id = ssh_key.owner_id
+             Pasto::User.find(owner_id)
+           else
+             nil
+           end
+
+    # If no user exists, create one and link the key
+    if user.nil?
+      user = Pasto::User.new
+      user.save             # Save first to get sepia_id
+      user.add_key(ssh_key) # This sets owner_id and adds to keys array
+      user.save             # Save again with the key added
+      puts "Created new user #{user.sepia_id} for SSH key #{token.fingerprint}"
+    else
+      # Make sure the key is in the user's keys array (in case of data inconsistency)
+      unless user.keys.any? { |k| k.sepia_id == ssh_key.sepia_id }
+        user.add_key(ssh_key)
+        user.save
+        puts "Added SSH key #{token.fingerprint} to existing user #{user.sepia_id}"
+      end
+      puts "Existing user #{user.sepia_id} logging in via SSH key #{token.fingerprint}"
+    end
+
+    # Create session
+    user_session = Pasto::UserSession.new(user.sepia_id, nil, client_ip)
+    env.session.object("user", user_session)
+
+    # Delete the token (one-time use)
+    token.delete
+
+    puts "SSH auth successful for user #{user.sepia_id} from #{client_ip}"
+
+    # Redirect to home with success message
+    env.redirect "/?ssh_login=success"
+  end
+
   # Main page - paste creation form
   get "/" do |env|
     config = Pasto.config
