@@ -1,6 +1,8 @@
+require "./api"
 require "./assets"
 require "./filters"
 require "./models/*"
+require "./profile"
 require "./qr_generator"
 require "./user_session"
 require "ecr"
@@ -68,7 +70,7 @@ module Pasto
 
       # Check ownership requirement
       if current_user_id == paste.user_id
-        return AccessResult.new(false, paste: paste, status_code: 403)
+        return AccessResult.new(true, paste: paste)
       end
     end
 
@@ -266,56 +268,48 @@ module Pasto
     property? password_based : Bool
     property encryption_salt : String?
     property encryption_iterations : Int32
+    property user_id : String?
 
-    def initialize(@content, @language, @title, @syntax_theme, @expires_at, @burn_after_reading, @is_private, @is_encrypted, @encryption_iv, @password_based, @encryption_salt, @encryption_iterations)
+    # Initialize from HTTP request environment
+    def initialize(env : HTTP::Server::Context)
+      @content = env.params.body["content"]?.to_s
+      language = env.params.body["language"]?.to_s
+      @language = language.empty? ? nil : language
+
+      # Get title from form
+      @title = env.params.body["title"]?.to_s.strip.empty? ? nil : env.params.body["title"]?.to_s
+
+      # Get syntax theme from form or use default
+      @syntax_theme = env.params.body["syntax_theme"]?.to_s.empty? ? Pasto.config.theme : env.params.body["syntax_theme"]?.to_s
+
+      # Handle expiration
+      expiration_str = env.params.body["expiration"]?.to_s
+      @expires_at = Pasto::Paste.parse_expiration(expiration_str)
+
+      # Extract current user ID
+      current_user = Pasto.get_current_user(env)
+      @user_id = current_user.try(&.sepia_id)
+
+      # Handle security fields
+      @burn_after_reading = env.params.body["burn_after_reading"]?.to_s == "true"
+      @is_private = env.params.body["private"]?.to_s == "true"
+
+      # Handle encryption fields
+      @is_encrypted = env.params.body["is_encrypted"]?.to_s == "true"
+      @encryption_iv = env.params.body["encryption_iv"]?.to_s.strip.empty? ? nil : env.params.body["encryption_iv"]?.to_s
+
+      # Handle password-based encryption fields
+      @password_based = env.params.body["password_based"]?.to_s == "true"
+      @encryption_salt = env.params.body["encryption_salt"]?.to_s.strip.empty? ? nil : env.params.body["encryption_salt"]?.to_s
+
+      encryption_iterations_str = env.params.body["encryption_iterations"]?.to_s
+      if encryption_iterations_str.empty?
+        @encryption_iterations = 100000
+      else
+        @encryption_iterations = encryption_iterations_str.to_i
+        @encryption_iterations = 100000 if @encryption_iterations == 0
+      end
     end
-  end
-
-  # Extract and validate common paste parameters from request
-  private def self.extract_paste_params(env) : PasteParams
-    content = env.params.body["content"]?.to_s
-    language = env.params.body["language"]?.to_s
-    language = nil if language.empty?
-
-    # Get title from form
-    title = env.params.body["title"]?.to_s
-    title = nil if title.strip.empty?
-
-    # Get syntax theme from form or use default
-    syntax_theme = env.params.body["syntax_theme"]?.to_s
-    syntax_theme = (config.try(&.theme) || "default-dark") if syntax_theme.empty?
-
-    # Handle expiration
-    expiration_str = env.params.body["expiration"]?.to_s
-    expires_at = Pasto::Paste.parse_expiration(expiration_str)
-
-    # Handle security fields
-    burn_after_reading = env.params.body["burn_after_reading"]?.to_s == "true"
-    is_private = env.params.body["private"]?.to_s == "true"
-
-    # Handle encryption fields
-    is_encrypted = env.params.body["is_encrypted"]?.to_s == "true"
-    encryption_iv = env.params.body["encryption_iv"]?.to_s
-    encryption_iv = nil if encryption_iv.strip.empty?
-
-    # Handle password-based encryption fields
-    password_based = env.params.body["password_based"]?.to_s == "true"
-    encryption_salt = env.params.body["encryption_salt"]?.to_s
-    encryption_salt = nil if encryption_salt.strip.empty?
-
-    encryption_iterations_str = env.params.body["encryption_iterations"]?.to_s
-    if encryption_iterations_str.empty?
-      encryption_iterations = 100000
-    else
-      encryption_iterations = encryption_iterations_str.to_i
-      encryption_iterations = 100000 if encryption_iterations == 0
-    end
-
-    PasteParams.new(
-      content, language, title, syntax_theme, expires_at,
-      burn_after_reading, is_private, is_encrypted,
-      encryption_iv, password_based, encryption_salt, encryption_iterations
-    )
   end
 
   # Validate paste content and size
@@ -325,31 +319,22 @@ module Pasto
     end
 
     # Size validation
-    config = Pasto.config
-    if config.nil?
-      return {false, "Configuration not available"}
-    end
-
-    content_bytesize = content.bytesize
-    if content_bytesize > config.max_paste_size
-      return {false, "Paste too large. Maximum size is #{config.max_paste_size} bytes (got #{content_bytesize} bytes)."}
+    if content.bytesize > Pasto.config.max_paste_size
+      return {false, "Paste too large. Maximum size is #{Pasto.config.max_paste_size} bytes (got #{content.bytesize} bytes)."}
     end
 
     {true, nil}
   end
 
   # Apply paste parameters to a paste object
-  private def self.apply_paste_params(paste : Pasto::Paste, params : PasteParams, normalize_line_endings : Bool = false)
-    # Apply content (with optional line ending normalization)
-    if normalize_line_endings
-      paste.content = params.content.gsub("\r\n", "\n").gsub("\r", "\n")
-    else
-      paste.content = params.content
-    end
+  private def self.apply_paste_params(paste : Pasto::Paste, params : PasteParams)
+    # Apply content with line ending normalization
+    paste.content = params.content.gsub("\r\n", "\n").gsub("\r", "\n")
 
     paste.language = params.language
     paste.title = params.title
     paste.theme = params.syntax_theme
+    paste.user_id = params.user_id
     if expires_at = params.expires_at
       paste.expires_at = expires_at
     end
@@ -380,7 +365,13 @@ module Pasto
     end
 
     # Extract and validate paste parameters
-    params = extract_paste_params(env)
+    params = PasteParams.new(env)
+
+    # Prevent anonymous users from creating private pastes
+    if params.is_private? && current_user.nil?
+      env.response.status_code = 403
+      next "You must be logged in to create private pastes"
+    end
 
     # Validate content and size
     is_valid, error_message = validate_paste_content(params.content)
@@ -393,15 +384,11 @@ module Pasto
       next error_message || "Invalid content"
     end
 
-    # Create new paste with basic parameters
-    paste = Pasto::Paste.new(params.content, params.language, params.syntax_theme, user_id: user_id, title: params.title)
+    # Create new paste that will be populated by apply_paste_params
+    paste = Pasto::Paste.new
 
     # Apply all parameters to the paste
     apply_paste_params(paste, params)
-
-    # Set burn_after_reading from either explicit checkbox or view-once expiration
-    expiration_str = env.params.body["expiration"]?.to_s
-    paste.burn_after_reading = params.burn_after_reading? || expiration_str == "view-once"
 
     if paste.save
       # If user has SSH keys, add paste to their first key for consistency
@@ -432,10 +419,15 @@ module Pasto
 
   # Edit paste page (GET)
   get "/:id/edit" do |env|
-    id = env.params.url["id"]
+    # Use the existing access validation function
+    access = Pasto.validate_paste_access(env, require_owner: true)
+    unless access.allowed?
+      halt env, access.status_code, "Access denied"
+    end
 
-    paste = Pasto::Paste.from_file(id)
-    if paste.nil?
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
       halt env, 404
     end
 
@@ -445,14 +437,7 @@ module Pasto
       next "Burn-after-reading pastes cannot be edited"
     end
 
-    # Validate session to get current user
     current_user = Pasto.get_current_user(env)
-
-    # Check ownership
-    unless current_user && paste.user_id == current_user.sepia_id
-      env.response.status_code = 403
-      next "You don't have permission to edit this paste"
-    end
 
     # Get all theme-related template variables
     theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
@@ -461,11 +446,11 @@ module Pasto
     is_home_page = false
     page_title = "Edit Paste #{paste.sepia_id}"
 
-    # Social media metadata (generic for edit pages)
-    meta_title = "Pasto - Edit Paste"
-    meta_description = "Modern pastebin with live syntax highlighting and SSH access"
-    meta_url = ""
-    meta_image = ""
+    # Social media metadata for edit page
+    meta_title = "Pasto - Edit Paste #{paste.sepia_id}"
+    meta_description = "Edit paste with live syntax highlighting and SSH access"
+    meta_url = "/#{paste.sepia_id}"
+    meta_image = "/assets/favicon.png"
 
     # Set variables for unified template
     mode = "edit"
@@ -480,30 +465,21 @@ module Pasto
 
   # Edit paste submission (POST)
   post "/:id/edit" do |env|
-    id = env.params.url["id"]
+    # Validate access
+    access = Pasto.validate_paste_access(env, require_owner: true)
 
-    paste = Pasto::Paste.from_file(id)
-    if paste.nil?
+    unless access.allowed?
+      halt env, access.status_code
+    end
+
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
       halt env, 404
     end
 
-    # Prevent editing burn-after-reading pastes
-    if paste.burn_after_reading?
-      env.response.status_code = 403
-      next "Burn-after-reading pastes cannot be edited"
-    end
-
-    # Validate session to get current user
-    current_user = Pasto.get_current_user(env)
-
-    # Check ownership
-    unless current_user && paste.user_id == current_user.sepia_id
-      env.response.status_code = 403
-      next "You don't have permission to edit this paste"
-    end
-
     # Extract and validate paste parameters
-    params = extract_paste_params(env)
+    params = PasteParams.new(env)
 
     # Validate content and size
     is_valid, error_message = validate_paste_content(params.content)
@@ -517,14 +493,8 @@ module Pasto
     end
 
     # Apply parameters to existing paste (with line ending normalization and versioning)
-    apply_paste_params(paste, params, normalize_line_endings: true)
+    apply_paste_params(paste, params)
     paste.updated_at = Time.utc
-
-    # Set burn_after_reading if view-once expiration
-    expiration_str = env.params.body["expiration"]?.to_s
-    if expiration_str == "view-once"
-      paste.burn_after_reading = true
-    end
 
     # Save with versioning to keep edit history
     if paste.save(force_new_generation: true)
@@ -590,56 +560,33 @@ module Pasto
 
   # Delete paste (owner only)
   post "/:id/delete" do |env|
-    id = env.params.url["id"]
+    # Validate access
+    access = Pasto.validate_paste_access(env, require_owner: true)
 
-    # Must be logged in first
-    current_user = Pasto.get_current_user(env)
-    unless current_user
+    unless access.allowed?
       env.response.content_type = "application/json"
-      env.response.status_code = 401
-      next {"success" => false, "error" => "You must be logged in to delete pastes"}.to_json
+      env.response.status_code = access.status_code
+      next {"success" => false, "error" => "Access denied"}.to_json
     end
 
-    # Try to find the paste safely - if it doesn't exist, return success
-    paste = Pasto::Paste.from_file(id)
-    if paste.nil?
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
       # Paste doesn't exist, return success for idempotent behavior
       env.response.content_type = "application/json"
       next {"success" => true, "message" => "Paste already deleted"}.to_json
     end
 
-    # Check ownership
-    unless paste.user_id == current_user.sepia_id
-      env.response.content_type = "application/json"
-      env.response.status_code = 403
-      next {"success" => false, "error" => "You don't have permission to delete this paste"}.to_json
-    end
-
     # Remove paste from user's SSH key pastes array
-    if !current_user.keys.empty?
-      current_user.keys.each do |ssh_key|
+    if user = Pasto.get_current_user(env)
+      user.keys.each do |ssh_key|
         ssh_key.pastes.reject! { |paste_item| paste_item.sepia_id == paste.sepia_id || paste_item.base_id == paste.base_id }
         ssh_key.save
       end
     end
 
-    # Delete all versions of the paste
-    base_id = paste.base_id
-    versions = Pasto::Paste.versions(base_id)
-    versions.each do |version|
-      Pasto::Cache.invalidate(version.sepia_id)
-      Sepia::Storage.delete(version)
-    end
-
-    # Also delete the base paste if it exists separately
-    begin
-      if base_paste = Pasto::Paste.from_file(base_id)
-        Pasto::Cache.invalidate(base_id)
-        Sepia::Storage.delete(base_paste)
-      end
-    rescue
-      # Base paste doesn't exist, which is fine
-    end
+    # Delete the paste completely (handles all versions automatically)
+    paste.delete_completely!
 
     # Return JSON response
     env.response.content_type = "application/json"
@@ -662,22 +609,28 @@ module Pasto
                 id
               end
 
+    # Validate access using centralized function
+    access = Pasto.validate_paste_access(env)
+
+    unless access.allowed?
+      halt env, access.status_code
+    end
+
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
+      halt env, 404
+    end
+
     # Get all versions of the paste
-    versions = Pasto::Paste.versions(base_id)
+    versions = Pasto::Paste.versions(paste.base_id)
 
     if versions.empty?
       halt env, 404
     end
 
-    # Get current user for ownership check
+    # Get current user for theme setup
     current_user = Pasto.get_current_user(env)
-
-    # Check if user can see history (owner only for now)
-    latest = versions.last
-    unless current_user && latest.user_id == current_user.sepia_id
-      env.response.status_code = 403
-      next "Only the paste owner can view history"
-    end
 
     # Get all theme-related template variables
     theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
@@ -687,13 +640,13 @@ module Pasto
 
     # Set template variables
     is_home_page = false
-    page_title = "History: #{latest.display_title}"
+    page_title = "History: #{paste.display_title}"
 
     # Social media metadata (generic for history pages)
     meta_title = "Pasto - Paste History"
     meta_description = "Modern pastebin with live syntax highlighting and SSH access"
-    meta_url = ""
-    meta_image = ""
+    meta_url = "/#{paste.sepia_id}/history"
+    meta_image = "/favicon.png"
 
     content = render "src/views/history.ecr"
     render "src/views/layout.ecr"
@@ -707,11 +660,26 @@ module Pasto
     # Construct the versioned ID
     versioned_id = "#{id}.#{gen}"
 
+    # Validate access using centralized function
+    access = Pasto.validate_paste_access(env)
+
+    unless access.allowed?
+      halt env, access.status_code
+    end
+
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
+      halt env, 404
+    end
+
+    # Load the specific version
     begin
-      paste = Pasto::Paste.load(versioned_id)
+      version_paste = Pasto::Paste.load(versioned_id)
+      # Use the versioned content but keep access-controlled paste metadata
+      paste_content = version_paste
     rescue
-      env.response.status_code = 404
-      next "Version not found"
+      halt env, 404
     end
 
     # Get current user
@@ -720,10 +688,10 @@ module Pasto
     # Get all theme-related template variables
     theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
 
-    # Generate highlighted content
-    highlighted_content = paste.highlight(nil)[0]
+    # Generate highlighted content from versioned paste
+    highlighted_content = paste_content.highlight(nil)[0]
 
-    # Version count for the history button
+    # Version count for the history button (owner can see history)
     version_count = 0
     if current_user && paste.user_id == current_user.sepia_id
       version_count = Pasto::Paste.versions(id).size
@@ -746,40 +714,7 @@ module Pasto
     render "src/views/layout.ecr"
   end
 
-  # ...existing code...
-
-  # Serve static files from public directory
-  public_dir = "#{Dir.current}/public"
-  Kemal.config.public_folder = public_dir
-
-  # Serve syntax highlighting CSS
-
-  # Favicon handler - returns baked PNG favicon
-
-  # Serve cached files directly if they exist
-
-  # 404 page route
-  get "/404" do |env|
-    current_user = Pasto.get_current_user(env)
-    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
-    page_title = "404 - Not Found"
-    is_home_page = false
-
-    # Social media metadata
-    meta_title = "404 - Not Found - Pasto"
-    meta_description = "The requested paste could not be found on Pasto"
-    meta_url = ""
-    meta_image = ""
-
-    # Set 404 status code
-    env.response.status_code = 404
-
-    reason = "not_found"
-
-    content = render "src/views/404.ecr"
-    render "src/views/layout.ecr"
-  end
-
+  
   # Error handling for other 404 cases
   error 404 do |env|
     current_user = Pasto.get_current_user(env)
@@ -790,8 +725,8 @@ module Pasto
     # Social media metadata
     meta_title = "404 - Not Found - Pasto"
     meta_description = "The requested paste could not be found on Pasto"
-    meta_url = ""
-    meta_image = ""
+    meta_url = "/404"
+    meta_image = "/favicon.png"
 
     # Set 404 status code
     env.response.status_code = 404
@@ -804,25 +739,23 @@ module Pasto
 
   # Preview image route for social media cards (must come before catch-all routes)
   get "/preview/:id" do |env|
-    # Assume the id parameter includes the .png extension
-    id_with_ext = env.params.url["id"]
-    id = id_with_ext.gsub(/\.png$/, "")
-
-    if id.nil? || id.empty?
-      env.response.status_code = 400
-      next "Invalid preview request"
-    end
-
-    client_ip = Pasto.get_client_ip(env)
-
     # Rate limiting for preview generation (use existing highlight limiter)
     allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :highlight)
     unless allowed
       next "Rate limit exceeded for preview generation"
     end
 
-    paste = Pasto::Paste.from_file(id)
-    if paste.nil?
+    # Validate access using centralized function
+    access = Pasto.validate_paste_access(env)
+
+    unless access.allowed?
+      env.response.status_code = access.status_code
+      next "Access denied"
+    end
+
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
       # Generate and serve 404 placeholder
       placeholder_path = generate_placeholder_file("Paste not found")
       env.response.status_code = 404
@@ -830,16 +763,7 @@ module Pasto
       next send_file env, placeholder_path
     end
 
-    # Handle burn after reading functionality for previews
-    # Note: We don't increment view count for previews to avoid accidental burning
-    if paste.burn_after_reading? && paste.should_burn_after_reading?
-      placeholder_path = generate_placeholder_file("Paste not found")
-      env.response.status_code = 404
-      env.response.headers["Cache-Control"] = "public, max-age=300" # 5 minutes for errors
-      next send_file env, placeholder_path
-    end
-
-    cache_path = PreviewGenerator.get_cache_path(id)
+    cache_path = PreviewGenerator.get_cache_path(paste.sepia_id)
 
     # Generate cached image if it doesn't exist
     unless File.exists?(cache_path) && File.info(cache_path).modification_time > paste.updated_at
@@ -874,37 +798,30 @@ module Pasto
         # Use the paste_id as the id for the rest of the route
         id = paste_id
 
-        begin
-          paste = Pasto::Paste.from_file(paste_id)
-          if paste.nil?
-            halt env, 404
-          end
-        rescue
-          halt env, 404
-        end
-
-        # Map extension to language
-        language_override = paste.language_for_extension(ext)
+        # Store extension for language mapping after access control
+        stored_ext = ext
       end
     end
 
-    # Load the paste (either with original id or modified id from extension handling)
-    begin
-      paste = Pasto::Paste.from_file(id)
-      if paste.nil?
-        halt env, 404
-      end
-    rescue
+    # Validate access using centralized function
+    access = Pasto.validate_paste_access(env)
+
+    unless access.allowed?
+      halt env, access.status_code
+    end
+
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
       halt env, 404
     end
 
-    # Validate session to get current user (needed for private paste check)
+    # Get current user for theme setup
     current_user = Pasto.get_current_user(env)
 
-    # Check if paste is private and user is not the owner
-    if paste.private? && paste.user_id != (current_user.try(&.sepia_id))
-      env.response.status_code = 403
-      next "This paste is private and can only be accessed by the owner"
+    # Apply language mapping from stored extension if present
+    if stored_ext
+      language_override = paste.language_for_extension(stored_ext)
     end
 
     # Note: For burn-after-reading pastes, we'll increment the view count AFTER showing the content
@@ -951,10 +868,6 @@ module Pasto
     content = render "src/views/show.ecr"
     render "src/views/layout.ecr"
   end
-
-  # Serve static files from public directory
-  public_dir = "#{Dir.current}/public"
-  Kemal.config.public_folder = public_dir
 
   # Serve syntax highlighting CSS for specific theme family and variant
   get "/syntax/:family/:variant" do |env|
