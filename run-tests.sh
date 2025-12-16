@@ -146,11 +146,6 @@ show_usage() {
     echo "  $0 tests/paste-creation.spec.ts  # Run specific test file"
     echo "  $0 -u                       # Run tests with Playwright UI"
     echo ""
-    echo "POPULAR TEST FILES:"
-    echo "  tests/paste-creation.spec.ts"
-    echo "  tests/private-paste-access.spec.ts"
-    echo "  tests/syntax-highlighting.spec.ts"
-    echo "  tests/mobile-responsive.spec.ts"
 }
 
 # Parse command line arguments
@@ -251,8 +246,8 @@ print_status "Starting test execution..."
 echo -e "${BLUE}Command: $PLAYWRIGHT_CMD${NC}"
 echo ""
 
-# Kill any existing Pasto server on port 5000
-PASTO_PID=$(lsof -ti:5000 2>/dev/null || true)
+# Kill any existing Pasto server on port 3000
+PASTO_PID=$(lsof -ti:3000 2>/dev/null || true)
 if [ -n "$PASTO_PID" ]; then
     print_status "Stopping existing Pasto server (PID: $PASTO_PID)..."
     kill $PASTO_PID 2>/dev/null || true
