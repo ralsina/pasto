@@ -794,6 +794,149 @@ async function createPaste(event) {
       history: true
     });
 
+    // Drag & Drop Support for Text Files
+    function isTextFile(file) {
+      // Check MIME type first
+      if (file.type.startsWith('text/')) {
+        return true;
+      }
+
+      // Check common text file extensions
+      const textExtensions = [
+        '.txt', '.md', '.js', '.py', '.cr', '.rs', '.go', '.java', '.c', '.cpp', '.h', '.hpp',
+        '.json', '.xml', '.yml', '.yaml', '.csv', '.html', '.css', '.scss', '.less', '.sass',
+        '.sql', '.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd', '.ini', '.conf',
+        '.log', '.toml', '.dockerfile', '.gitignore', '.env', '.r', '.R', '.php', '.rb',
+        '.swift', '.kt', '.scala', '.hs', '.ml', '.pl', '.lua', '.vim', '.emacs', '.tcl',
+        '.vue', '.svelte', '.jsx', '.tsx', '.ts', '.graphql', '.proto', '.makefile', '.cmake'
+      ];
+
+      return textExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    }
+
+    function showError(message) {
+      // Create or update error message element
+      let errorDiv = document.getElementById('drag-drop-error');
+      if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'drag-drop-error';
+        errorDiv.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #f44336;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 6px;
+          z-index: 1000;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          max-width: 300px;
+        `;
+        document.body.appendChild(errorDiv);
+      }
+
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    function processTextFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+
+        // Detect language from file extension
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (extension && typeof window.languageForExtension === 'function') {
+          const detectedLanguage = window.languageForExtension(extension);
+          if (detectedLanguage) {
+            const languageSelect = document.getElementById('language');
+            if (languageSelect) {
+              languageSelect.value = detectedLanguage;
+            }
+          }
+        }
+
+        // Update editor content
+        jar.updateCode(content);
+
+        // Update preview
+        if (typeof window.updatePreview === 'function') {
+          window.updatePreview(window.jar,
+            () => document.getElementById('language')?.value || '',
+            () => localStorage.getItem('syntaxTheme') || '<%= theme_vars[:theme] %>'
+          );
+        }
+
+        console.log('DEBUG: Successfully loaded text file:', file.name);
+      };
+
+      reader.onerror = function() {
+        showError(`Failed to read file: ${file.name}`);
+      };
+
+      reader.readAsText(file);
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      editorElement.style.backgroundColor = '#f0f8ff';
+      editorElement.style.border = '2px dashed #007acc';
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      editorElement.style.backgroundColor = '';
+      editorElement.style.border = '';
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Reset visual feedback
+      editorElement.style.backgroundColor = '';
+      editorElement.style.border = '';
+
+      const files = Array.from(e.dataTransfer.files);
+
+      if (files.length === 0) return;
+
+      if (files.length > 1) {
+        showError('Multiple files detected. Please drag one file at a time.');
+        return;
+      }
+
+      const file = files[0];
+
+      if (!isTextFile(file)) {
+        showError(`Binary files are not supported. Please copy and paste the text content from "${file.name}" instead.`);
+        return;
+      }
+
+      // Check file size against max paste size (100KB by default)
+      const maxSize = 100 * 1024; // 100KB
+      if (file.size > maxSize) {
+        showError(`File "${file.name}" is too large (${Math.round(file.size/1024)}KB). Maximum size is 100KB.`);
+        return;
+      }
+
+      processTextFile(file);
+    }
+
+    // Add drag & drop event listeners
+    editorElement.addEventListener('dragover', handleDragOver);
+    editorElement.addEventListener('dragleave', handleDragLeave);
+    editorElement.addEventListener('drop', handleDrop);
+
     // Force Chivo Mono font application
     editorElement.style.fontFamily = "'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace";
 
