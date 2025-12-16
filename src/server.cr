@@ -791,7 +791,6 @@ module Pasto
     render "src/views/layout.ecr"
   end
 
-  
   # Error handling for other 404 cases
   error 404 do |env|
     current_user = Pasto.get_current_user(env)
@@ -878,6 +877,52 @@ module Pasto
     # Serve the cached image using Kemal's optimized send_file helper
     env.response.headers["Cache-Control"] = "public, max-age=3600" # 1 hour
     send_file env, cache_path
+  end
+
+  # Raw paste endpoint
+  get "/:id/raw" do |env|
+    id = env.params.url["id"]
+
+    # Load the paste
+    paste = Pasto::Paste.from_file(id)
+    if paste.nil?
+      halt env, 404
+    end
+
+    # Note: For burn-after-reading pastes in raw endpoint, we'll increment after sending content
+
+    # Check access permissions using the centralized validation function
+    access_result = Pasto.validate_paste_access(env)
+    unless access_result.success?
+      halt env, access_result.status_code
+    end
+
+    # Set content type and filename using Crystal's MIME module
+    filename = Pasto::MimeTypes.generate_filename(paste)
+    mime_type = MIME.from_filename(filename) || "text/plain"
+
+    # Ensure charset is included for text types
+    if mime_type.starts_with?("text/")
+      mime_type += "; charset=utf-8"
+    end
+
+    env.response.content_type = mime_type
+    env.response.headers["Content-Disposition"] = "attachment; filename=\"#{filename}\""
+
+    # Mark paste for burning after response if it's burn-after-reading
+    if paste.burn_after_reading?
+      env.response.headers["X-Burn-After-Reading"] = paste.sepia_id
+    end
+
+    # For encrypted pastes, return the encrypted content
+    # For regular pastes, return the raw content
+    content = if paste.is_encrypted? && paste.responds_to?(:encrypted_content) && paste.encrypted_content
+                paste.encrypted_content
+              else
+                paste.content
+              end
+
+    content
   end
 
   get "/:id" do |env|
