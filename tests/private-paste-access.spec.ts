@@ -142,7 +142,8 @@ test.describe('Private Paste Access Control', () => {
 
   test('should handle direct API access to private paste', async ({ request }) => {
     // Test API endpoint access to private paste
-    const response = await request.get(`${privatePasteUrl.replace('http://localhost:5000', '')}/raw`);
+    const url = new URL(privatePasteUrl);
+    const response = await request.get(`${url.pathname}/raw`);
 
     // Should be 403 for unauthorized access
     expect(response.status()).toBe(403);
@@ -167,7 +168,8 @@ test.describe('Private Paste Access Control', () => {
 
   test('should protect delete endpoints for private pastes', async ({ request }) => {
     // Test DELETE API endpoint for private paste
-    const response = await request.delete(`${privatePasteUrl.replace('http://localhost:5000', '')}`, {
+    const url = new URL(privatePasteUrl);
+    const response = await request.delete(url.pathname, {
       headers: {
         'Content-Type': 'application/json'
       }

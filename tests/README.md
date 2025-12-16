@@ -87,7 +87,7 @@ npx playwright test --project=firefox
 ### Test Configuration
 
 The tests automatically:
-- Start a Pasto server on `http://localhost:5000`
+- Start a Pasto server on `http://localhost:3000`
 - Use a fresh browser context for each test
 - Take screenshots on failure
 - Record video on failure

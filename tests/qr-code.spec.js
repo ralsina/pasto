@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 test.describe('QR Code Feature', () => {
   test('should display QR code modal when QR button is clicked', async ({ page }) => {
     // Create a test paste first using API
-    const response = await page.request.post('http://localhost:4000/', {
+    const response = await page.request.post('http://localhost:3000/', {
       form: {
         content: 'Test content for QR code generation'
       }
@@ -15,7 +15,7 @@ test.describe('QR Code Feature', () => {
     expect(pasteId).toBeTruthy();
 
     // Navigate to the created paste
-    await page.goto(`http://localhost:4000/${pasteId}`);
+    await page.goto(`http://localhost:3000/${pasteId}`);
 
     // Find and click QR button
     const qrButton = await page.locator('#show-qr-btn');
@@ -56,7 +56,7 @@ test.describe('QR Code Feature', () => {
     const testPasteId = 'test-paste-id-12345';
 
     // Test QR API endpoint directly
-    const qrResponse = await request.get(`http://localhost:4000/api/qr/${testPasteId}`);
+    const qrResponse = await request.get(`http://localhost:3000/api/qr/${testPasteId}`);
 
     expect(qrResponse.status()).toBe(200);
     expect(qrResponse.headers()['content-type']).toBe('image/png');
@@ -71,7 +71,7 @@ test.describe('QR Code Feature', () => {
 
   test('should handle QR modal responsiveness', async ({ page }) => {
     // Create a test paste first using API
-    const response = await page.request.post('http://localhost:4000/', {
+    const response = await page.request.post('http://localhost:3000/', {
       form: {
         content: 'Test content for responsive QR modal'
       }
@@ -83,7 +83,7 @@ test.describe('QR Code Feature', () => {
     expect(pasteId).toBeTruthy();
 
     // Navigate to the created paste
-    await page.goto(`http://localhost:4000/${pasteId}`);
+    await page.goto(`http://localhost:3000/${pasteId}`);
 
     // Open QR modal
     const qrButton = await page.locator('#show-qr-btn');

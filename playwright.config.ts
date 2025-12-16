@@ -8,8 +8,8 @@ const getBaseUrl = () => {
   if (process.env.BASE_URL) {
     return process.env.BASE_URL;
   }
-  // Default to localhost:5000 for development
-  return 'http://localhost:5000';
+  // Default to localhost:3000 for development
+  return 'http://localhost:3000';
 };
 
 export default defineConfig({
@@ -83,8 +83,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'cd /home/ralsina/code/pasto && ./bin/pasto --port 5000',
-    url: 'http://localhost:5000',
+    command: 'cd /home/ralsina/code/pasto && ./bin/pasto --port 3000',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
