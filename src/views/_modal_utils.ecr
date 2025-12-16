@@ -123,6 +123,12 @@ function showGenericModal(options = {}) {
   }
 
   modal.showModal();
+
+  // Call onShow callback if provided
+  if (opts.onShow) {
+    opts.onShow(modal);
+  }
+
   return modal;
 }
 
