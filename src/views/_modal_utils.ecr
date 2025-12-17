@@ -28,6 +28,7 @@ function showGenericModal(options = {}) {
     primaryButtonTextColor: 'var(--pico-primary-inverse)',
     onPrimaryAction: null,
     onSecondaryAction: null,
+    onClose: null,
     closeOnBackdrop: true,
     customContent: null
   };
@@ -82,6 +83,7 @@ function showGenericModal(options = {}) {
     }
     modal.close();
     document.body.removeChild(modal);
+    if (opts.onClose) opts.onClose();
   };
 
   if (secondaryBtn) {
@@ -89,6 +91,7 @@ function showGenericModal(options = {}) {
       modal.close();
       document.body.removeChild(modal);
       if (opts.onSecondaryAction) opts.onSecondaryAction();
+      if (opts.onClose) opts.onClose();
     };
   }
 
@@ -98,6 +101,7 @@ function showGenericModal(options = {}) {
       if (e.target === modal) {
         modal.close();
         document.body.removeChild(modal);
+        if (opts.onClose) opts.onClose();
       }
     });
   }

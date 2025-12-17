@@ -123,8 +123,8 @@ module Pasto
 
       # Include request body hash for POST/PUT requests
       body_hash = ""
-      if env.request.method.in?("POST", "PUT") && env.request.body
-        body = env.request.body.not_nil!.gets_to_end
+      if env.request.method.in?("POST", "PUT") && (request_body = env.request.body)
+        body = request_body.gets_to_end
         body_hash = OpenSSL::Digest.new("sha256").update(body).final.hexstring[0..15]
         # Reset body for downstream handlers
         env.request.body = IO::Memory.new(body)

@@ -32,39 +32,6 @@ module Pasto
       raise "Failed to extract SSH key fingerprint: #{ex.message}"
     end
 
-    # Fallback method using external ssh-keygen
-    private def self.extract_fingerprint_external(public_key : String) : String
-      temp_file = File.tempname("ssh_key", ".pub")
-
-      begin
-        File.write(temp_file, public_key)
-
-        output = IO::Memory.new
-        error = IO::Memory.new
-
-        status = Process.run(
-          "ssh-keygen",
-          ["-lf", temp_file],
-          output: output,
-          error: error
-        )
-
-        unless status.success?
-          raise "ssh-keygen failed with exit code #{status.exit_code}. Error: #{error}"
-        end
-
-        output_str = output.to_s.strip
-
-        if match = output_str.match(/SHA256:(\S+)/)
-          match[1]
-        else
-          raise "Failed to extract SSH key fingerprint from output: #{output_str}. Error: #{error}"
-        end
-      ensure
-        File.delete(temp_file) if File.exists?(temp_file)
-      end
-    end
-
     # Validate SSH key format and extract key type
     def self.validate_and_get_type(public_key : String) : String
       # Simple validation without external processes

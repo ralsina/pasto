@@ -193,36 +193,30 @@ module Pasto
     # Validate session to get current user
     current_user = Pasto.get_current_user(env)
 
-    # Get SSH connection info from config
-    config = Pasto.config
-    ssh_host = config.try(&.bind) || "localhost"
-    # Use base_url host if bind is 0.0.0.0
-    if ssh_host == "0.0.0.0" && config
-      # Extract host from base_url
-      base_url = config.base_url
-      if match = base_url.match(%r{https?://([^:/]+)})
-        ssh_host = match[1]
-      else
-        ssh_host = "localhost"
-      end
-    end
-    ssh_port = config.try(&.ssh_port) || 2222
-    ssh_enabled = config.try(&.ssh_enabled?) || false
+    # SSH variables are used in profile_content.ecr template
+    ssh_host = if config && config.try(&.bind) == "0.0.0.0" # ameba:disable Lint/UselessAssign
+                 # Extract host from base_url
+                 base_url = config.base_url
+                 if match = base_url.match(%r{https?://([^:/]+)})
+                   match[1]
+                 else
+                   "localhost"
+                 end
+               else
+                 config.try(&.bind) || "localhost"
+               end
+    ssh_port = config.try(&.ssh_port) || 2222 # ameba:disable Lint/UselessAssign
+    ssh_enabled = config.try(&.ssh_enabled?) || false # ameba:disable Lint/UselessAssign
 
-    # Get all theme-related template variables
-    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config)
-
-    # Set template variables (ECR template will have access to these)
-    page_title = "Profile"
-    is_home_page = false
-
-    # Social media metadata (generic for profile pages)
-    meta_title = "Pasto - User Profile"
-    meta_description = "Modern pastebin with live syntax highlighting and SSH access"
-    meta_url = ""
-    meta_image = ""
-
-    content = render "src/views/profile_content.ecr"
+    # Template variables are used in layout.ecr and profile_content.ecr
+    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config) # ameba:disable Lint/UselessAssign
+    page_title = "Profile" # ameba:disable Lint/UselessAssign
+    is_home_page = false # ameba:disable Lint/UselessAssign
+    meta_title = "Pasto - User Profile" # ameba:disable Lint/UselessAssign
+    meta_description = "Modern pastebin with live syntax highlighting and SSH access" # ameba:disable Lint/UselessAssign
+    meta_url = "" # ameba:disable Lint/UselessAssign
+    meta_image = "" # ameba:disable Lint/UselessAssign
+    content = render "src/views/profile_content.ecr" # ameba:disable Lint/UselessAssign
     render "src/views/layout.ecr"
   end
 end

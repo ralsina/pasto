@@ -728,6 +728,46 @@ async function createPaste(event) {
     }
   }
 
+  // Show paste created modal for burn-after-reading pastes
+  function showPasteCreatedModal(pasteUrl, isViewOnce = false) {
+    return showGenericModal({
+      title: 'Paste Created',
+      message: isViewOnce
+        ? 'Your burn-after-reading paste has been created. This link will only work once and will be permanently deleted after viewing.'
+        : 'Your paste has been created successfully.',
+      icon: 'check-circle',
+      primaryButtonText: 'Copy URL',
+      showSecondaryButton: false,
+      primaryButtonStyle: 'var(--pico-form-element-invalid-border-color)',
+      primaryButtonTextColor: 'var(--pico-primary-inverse)',
+      customContent: `
+        <div style="background: var(--pico-code-background-color); padding: 1rem; border-radius: 4px; margin: 1rem 0; word-break: break-all;">
+          <code style="color: inherit; font-size: 0.9rem;">${pasteUrl}</code>
+        </div>
+        ${isViewOnce ? '<p style="color: var(--pico-del-color); font-size: 0.9rem; margin: 0;">⚠️ This URL will self-destruct after first use</p>' : ''}
+      `,
+      onPrimaryAction: async () => {
+        try {
+          await navigator.clipboard.writeText(pasteUrl);
+          showSuccess('URL copied to clipboard!');
+        } catch (err) {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = pasteUrl;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showSuccess('URL copied to clipboard!');
+        }
+      },
+      onClose: () => {
+        // Redirect to home page after modal is closed
+        window.location.href = '/';
+      }
+    });
+  }
+
   // Initialize CodeJar and setup the page
   document.addEventListener('DOMContentLoaded', async function() {
     // Inject controls using inline HTML

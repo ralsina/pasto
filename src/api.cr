@@ -17,7 +17,7 @@ module Pasto
       scheme = "https"
     end
 
-    base_url = "#{scheme}://#{host}"
+    base_url = "#{scheme}://#{host}" # ameba:disable Lint/UselessAssign
 
     env.response.content_type = "application/x-yaml"
     render "src/views/openapi.yaml.ecr"
@@ -370,7 +370,7 @@ module Pasto
       "view_count"         => paste.view_count,
       "user_id"            => paste.user_id,
       "is_owner"           => paste.user_id == api_user.sepia_id,
-      "ssh_fingerprint"     => paste.ssh_fingerprint,
+      "ssh_fingerprint"    => paste.ssh_fingerprint,
       "ssh_ip"             => paste.ssh_ip,
       "base_id"            => paste.base_id,
       "generation"         => paste.generation,

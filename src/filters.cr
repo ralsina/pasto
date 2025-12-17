@@ -19,38 +19,47 @@ module Pasto
     # CORS headers filter for API endpoints
     def self.add_cors_headers(env)
       origin = env.request.headers["Origin"]?
+      return unless origin
 
-      # Determine allowed origin
-      allowed_origin = if origin
-                         # Get the server's base URL for comparison
-                         config = Pasto.config
-                         server_origin = if config && !config.base_url.empty?
-                                           begin
-                                             uri = URI.parse(config.base_url)
-                                             "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != 80 && uri.port != 443 ? ":#{uri.port}" : ""}"
-                                           rescue
-                                             nil
-                                           end
-                                         end
+      allowed_origin = determine_allowed_origin(origin)
+      return unless allowed_origin
 
-                         # Allow the origin if it matches our server or is localhost (for development)
-                         if server_origin && origin == server_origin
-                           origin
-                         elsif origin.matches?(/https?:\/\/localhost(:\d+)?/) || origin.matches?(/https?:\/\/127\.0\.0\.1(:\d+)?/)
-                           origin
-                         else
-                           nil
-                         end
-                       end
+      set_cors_headers(env, allowed_origin)
+    end
 
-      # Set CORS headers if origin is allowed
-      if allowed_origin
-        env.response.headers["Access-Control-Allow-Origin"] = allowed_origin
-        env.response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS, HEAD"
-        env.response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, X-Requested-With"
-        env.response.headers["Access-Control-Allow-Credentials"] = "false"
-        env.response.headers["Access-Control-Max-Age"] = "86400" # 24 hours
+    # Determines if the origin is allowed for CORS
+    private def self.determine_allowed_origin(origin : String) : String?
+      server_origin = get_server_origin
+      return origin if server_origin && origin == server_origin
+      return origin if origin_allowed_for_development?(origin)
+      nil
+    end
+
+    # Gets the server's base URL origin for CORS comparison
+    private def self.get_server_origin : String?
+      config = Pasto.config
+      return nil unless config && !config.base_url.empty?
+
+      begin
+        uri = URI.parse(config.base_url)
+        "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != 80 && uri.port != 443 ? ":#{uri.port}" : ""}"
+      rescue
+        nil
       end
+    end
+
+    # Checks if origin is allowed for development purposes
+    private def self.origin_allowed_for_development?(origin : String) : Bool
+      origin.matches?(/https?:\/\/localhost(:\d+)?/) || origin.matches?(/https?:\/\/127\.0\.0\.1(:\d+)?/)
+    end
+
+    # Sets the actual CORS headers on the response
+    private def self.set_cors_headers(env, origin : String)
+      env.response.headers["Access-Control-Allow-Origin"] = origin
+      env.response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS, HEAD"
+      env.response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, X-Requested-With"
+      env.response.headers["Access-Control-Allow-Credentials"] = "false"
+      env.response.headers["Access-Control-Max-Age"] = "86400" # 24 hours
     end
 
     # Handle preflight OPTIONS requests for CORS
