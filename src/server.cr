@@ -1,6 +1,7 @@
+require "openssl"
 require "./api"
 require "./assets"
-require "./cache"
+require "pasto-cache"
 require "./filters"
 require "./health"
 require "./help"
@@ -314,12 +315,15 @@ module Pasto
     # Use detected language for highlighting
     highlighted_content, _css = Pasto::Paste.highlight_content(content, language, "monokai", line_numbers)
 
-    # Return JSON with both highlighted content and detected language
-    env.response.content_type = "application/json"
-    {
+    # Create response
+    response_json = {
       "html"     => highlighted_content,
       "language" => language,
     }.to_json
+
+    # Return JSON with both highlighted content and detected language
+    env.response.content_type = "application/json"
+    response_json
   rescue ex
     puts "DEBUG: Highlighting failed for language '#{language}': #{ex.message}"
     # Fallback to plain text with proper escaping
@@ -1034,5 +1038,12 @@ module Pasto
       env.response.content_type = "text/plain"
       "Theme not found: #{theme_name}"
     end
+  end
+
+  # Cache test endpoint for testing middleware caching
+  get "/api/cache-test" do |_|
+    timestamp = Time.utc.to_unix_ms
+    response_body = "Cache test timestamp: #{timestamp}"
+    response_body
   end
 end

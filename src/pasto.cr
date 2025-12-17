@@ -7,7 +7,7 @@ require "./server"
 require "./api"
 require "./theme_helper"
 require "./rate_limit_helper"
-require "./cache"
+require "pasto-cache"
 require "./models/user"
 require "kemal-session"
 
@@ -360,7 +360,23 @@ DOC
     end
 
     # Initialize cache
-    init_cache(config.cache_dir)
+    Pasto::Cache.cache_dir = config.cache_dir
+
+    # Configure cacheable endpoints
+    # Syntax highlighting API - cache for 1 hour
+    Pasto::Cache.add_cache_config(/^\/highlight$/, "application/json", 3600)
+
+    # CSS syntax themes - cache for 24 hours
+    Pasto::Cache.add_cache_config(/^\/syntax\/[^\/]+\/[^\/]+$/, "text/css", 86400)
+
+    # Paste image previews for social media - cache for 6 hours
+    Pasto::Cache.add_cache_config(/^\/paste\/[^\/]+\/preview$/, "image/png", 21600)
+
+    # Cache test endpoint - cache for 5 seconds
+    Pasto::Cache.add_cache_config(/^\/api\/cache-test$/, "text/x-cache-test", 5)
+
+    # Add caching middleware
+    PastoCache.add_cache_middleware
 
     # Initialize rate limiters with config values
     RateLimits.init(config)
@@ -397,11 +413,6 @@ DOC
       puts "🔐 SSH: #{config.ssh_bind}:#{config.ssh_port}"
     end
     Kemal.run
-  end
-
-  # Initialize the cache system
-  private def self.init_cache(cache_dir : String)
-    Cache.cache_dir = cache_dir
   end
 end
 

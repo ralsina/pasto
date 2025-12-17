@@ -31,6 +31,8 @@ dependencies:
     github: spider-gazelle/qr-code
   stumpy_png:
     github: stumpycr/stumpy_png
+  pasto-cache:
+    path: pasto-cache
         
 development_dependencies:
   ameba:

@@ -1,0 +1,23 @@
+name: pasto-cache
+version: 0.1.0
+
+authors:
+  - ralsina <ralsina@kde.org>
+
+crystal: 1.13.0
+
+license: MIT
+
+dependencies:
+  kemal:
+    github: kemalcr/kemal
+
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+
+targets:
+  pasto-cache:
+    main: src/pasto-cache.cr
+
+library: true

@@ -57,6 +57,10 @@ shards:
     git: https://github.com/kemalcr/kemal-session.git
     version: 1.3.0
 
+  pasto-cache:
+    path: pasto-cache
+    version: 0.1.0
+
   pcf-parser:
     git: https://github.com/l3kn/pcf-parser.git
     version: 0.1.1
