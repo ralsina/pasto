@@ -228,6 +228,9 @@ if [ "$DEBUG" = true ]; then
     print_status "Running in debug mode"
 fi
 
+# Let Playwright auto-detect workers based on CPU cores (50% as configured)
+print_status "Running with Playwright's auto-detected workers (50% of CPU cores)"
+
 # Add specific test file
 if [ -n "$SPEC_FILE" ]; then
     if [ -f "$SPEC_FILE" ]; then
@@ -240,7 +243,7 @@ if [ -n "$SPEC_FILE" ]; then
 fi
 
 # Set custom report directory
-export PLAYWRIGHT_HTML_REPORT="$REPORT_DIR/report"
+export PLAYWRIGHT_HTML_REPORT="$REPORT_DIR/html-report"
 
 print_status "Starting test execution..."
 echo -e "${BLUE}Command: $PLAYWRIGHT_CMD${NC}"
@@ -268,8 +271,8 @@ if [ $TEST_EXIT_CODE -eq 0 ]; then
     print_success "All tests passed! (Duration: ${DURATION}s)"
 
     # Show report location
-    if [ -d "$REPORT_DIR/report" ]; then
-        echo -e "${BLUE}HTML Report: $REPORT_DIR/report/index.html${NC}"
+    if [ -d "$REPORT_DIR/html-report" ]; then
+        echo -e "${BLUE}HTML Report: $REPORT_DIR/html-report/index.html${NC}"
     fi
 
     # Show JUnit report location
@@ -280,8 +283,8 @@ else
     print_error "Some tests failed! (Duration: ${DURATION}s)"
 
     # Show report location for failed tests
-    if [ -d "$REPORT_DIR/report" ]; then
-        echo -e "${BLUE}Check the HTML report for details: $REPORT_DIR/report/index.html${NC}"
+    if [ -d "$REPORT_DIR/html-report" ]; then
+        echo -e "${BLUE}Check the HTML report for details: $REPORT_DIR/html-report/index.html${NC}"
     fi
 
     # Show screenshot directory
