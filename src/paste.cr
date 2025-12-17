@@ -8,6 +8,7 @@ require "./data/tartrazine_hljs_mapping"
 
 module Pasto
   # Add highlight.js classes to Tartrazine CSS for compatibility
+  # ameba:disable Metrics/CyclomaticComplexity
   def self.add_highlightjs_classes(css : String, theme_name : String? = nil) : String
     # Tartrazine returns minified CSS, so we need to parse it differently
     # Group selectors by highlight.js class to avoid duplicates

@@ -29,16 +29,16 @@ module Pasto
 
     # Determines if the origin is allowed for CORS
     private def self.determine_allowed_origin(origin : String) : String?
-      server_origin = get_server_origin
-      return origin if server_origin && origin == server_origin
+      server_url = server_origin
+      return origin if server_url && origin == server_url
       return origin if origin_allowed_for_development?(origin)
       nil
     end
 
     # Gets the server's base URL origin for CORS comparison
-    private def self.get_server_origin : String?
+    private def self.server_origin : String?
       config = Pasto.config
-      return nil unless config && !config.base_url.empty?
+      return nil if !config || config.base_url.empty?
 
       begin
         uri = URI.parse(config.base_url)
