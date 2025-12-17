@@ -365,6 +365,9 @@ DOC
     # Initialize rate limiters with config values
     RateLimits.init(config)
 
+    # Print web server rate limits
+    puts "⚡ HTTP Rate limits: paste=#{config.rate_paste_limit}/#{config.rate_paste_window}s, paste-user=#{config.rate_paste_user_limit}/#{config.rate_paste_user_window}s, highlight=#{config.rate_highlight_limit}/#{config.rate_highlight_window}s, login=#{config.rate_login_limit}/#{config.rate_login_window}s, http=#{config.rate_http_limit}/#{config.rate_http_window}s"
+
     # Configure Kemal
     config.add_kemal_config
 
