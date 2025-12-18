@@ -1,6 +1,10 @@
 # NOTICE: This lockfile contains some overrides from shard.override.yml
 version: 2.0
 shards:
+  ameba:
+    git: https://github.com/crystal-ameba/ameba.git
+    version: 1.6.4
+
   backtracer:
     git: https://github.com/sija/backtracer.cr.git
     version: 1.2.4
@@ -54,8 +58,8 @@ shards:
     version: 1.3.0
 
   pasto-cache:
-    path: pasto-cache
-    version: 0.1.0
+    git: https://github.com/ralsina/pasto-cache.git
+    version: 0.1.0+git.commit.44159da5e04f82889f65debf105c2dd94f4aec1d
 
   pcf-parser:
     git: https://github.com/l3kn/pcf-parser.git

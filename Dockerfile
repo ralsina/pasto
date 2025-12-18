@@ -49,6 +49,7 @@ RUN shards install --production
 
 # Copy source code
 COPY src/ ./src/
+COPY pasto-cache/ ./pasto-cache/
 
 # Build both binaries in release mode
 # -Dinotify: use inotify backend for file watching
