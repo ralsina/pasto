@@ -1,10 +1,20 @@
 require "tartrazine"
+require "./assets"
 
 class PreviewGenerator
   def self.generate_preview_image(paste : Pasto::Paste) : String
-    # Extract first 5 lines for preview
-    lines = paste.content.lines.first(5)
-    preview_content = lines.join("\n")
+    # Handle special cases first
+    if paste.burn_after_reading?
+      preview_content = "🔥 Burn After Reading"
+    elsif paste.private?
+      preview_content = "🔒 Private Paste"
+    elsif paste.is_encrypted? && paste.content.empty?
+      preview_content = "🔐 Encrypted Content"
+    else
+      # Extract first 5 lines for preview
+      lines = paste.content.lines.first(5)
+      preview_content = lines.join("\n")
+    end
 
     # Extract baked spleen font to temporary file
     temp_font_path = extract_spleen_font
