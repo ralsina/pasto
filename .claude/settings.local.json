@@ -74,7 +74,8 @@
       "Bash(tee:*)",
       "Bash(PASTO_PORT=3000 ./bin/pasto:*)",
       "Bash(killall:*)",
-      "Bash(sudo killall:*)"
+      "Bash(sudo killall:*)",
+      "Bash(crystal tool unreachable:*)"
     ],
     "deny": [],
     "ask": []

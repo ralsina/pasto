@@ -469,11 +469,6 @@ module Pasto
       Time.utc > expires_at
     end
 
-    # Check if paste should be burned after reading
-    def should_burn_after_reading? : Bool
-      burn_after_reading?
-    end
-
     # Delete paste completely (for burn-after-reading)
     def burn_now! : Nil
       puts "🔥 Burning paste #{@sepia_id} (burn-after-reading) - deleting permanently"
