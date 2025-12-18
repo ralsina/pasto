@@ -1,11 +1,6 @@
 require "rate_limiter"
 
 # Comprehensive rate limiting for the Pasto web server
-# Helper to add rate limit headers to response
-def add_rate_limit_headers(env, result : RateLimitResult)
-  env.response.headers["X-RateLimit-Remaining"] = result.remaining.to_s
-  env.response.headers["X-RateLimit-Reset"] = result.reset_time.to_unix.to_s
-end
 
 # Comprehensive rate limiting for the Pasto web server
 module Pasto
@@ -112,17 +107,6 @@ module Pasto
           {result.allowed?, result}
         else
           {true, RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)}
-        end
-      end
-    end
-
-    # Get status without consuming a request
-    def self.http_status(ip : String) : RateLimitResult
-      @@mutex.synchronize do
-        if http = @@http
-          http.status(ip)
-        else
-          RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)
         end
       end
     end

@@ -32,50 +32,6 @@ module Pasto
       raise "Failed to extract SSH key fingerprint: #{ex.message}"
     end
 
-    # Validate SSH key format and extract key type
-    def self.validate_and_get_type(public_key : String) : String
-      # Simple validation without external processes
-
-      normalized_key = normalize_key(public_key)
-      parts = normalized_key.split(/\s+/)
-
-      if parts.size < 2
-        raise "Invalid SSH key format"
-      end
-
-      # Extract key type from the first part
-      key_type = parts[0]
-
-      # Validate key type
-      valid_types = ["ssh-rsa", "ssh-dss", "ssh-ed25519", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384", "ecdsa-sha2-nistp521", "sk-ssh-ed25519@openssh.com", "sk-ecdsa-sha2-nistp256@openssh.com"]
-      unless valid_types.includes?(key_type)
-        raise "Unsupported SSH key type: #{key_type}"
-      end
-
-      # Validate base64 format
-      unless parts[1].matches?(/^[A-Za-z0-9+\/]+={0,2}$/)
-        raise "Invalid SSH key data format"
-      end
-
-      # Map to human-readable names
-      case key_type
-      when "ssh-rsa"
-        "RSA"
-      when "ssh-dss"
-        "DSA"
-      when "ssh-ed25519"
-        "ED25519"
-      when .starts_with?("ecdsa-sha2-nistp")
-        "ECDSA"
-      when .starts_with?("sk-")
-        "Security Key"
-      else
-        key_type
-      end
-    rescue ex
-      raise "Invalid SSH key format: #{ex.message}"
-    end
-
     # Check if a public key is already associated with any user
     def self.key_already_associated?(fingerprint : String) : Bool
       # Check all SSH keys to see if this fingerprint exists
@@ -105,28 +61,6 @@ module Pasto
       false
     end
 
-    # Get the owner of a public key by fingerprint
-    def self.get_key_owner(fingerprint : String) : String?
-      data_dir = "data/Pasto::SSHKey"
-      return nil unless Dir.exists?(data_dir)
-
-      Dir.each_child(data_dir) do |key_file|
-        begin
-          key_data = File.read(File.join(data_dir, key_file))
-          parsed = JSON.parse(key_data)
-          if parsed["fingerprint"]?.try(&.as_s) == fingerprint
-            return parsed["owner_id"]?.try(&.as_s)
-          end
-        rescue
-          next
-        end
-      end
-
-      nil
-    rescue
-      nil
-    end
-
     # Normalize and clean SSH key string
     def self.normalize_key(public_key : String) : String
       # Remove leading/trailing whitespace
@@ -143,13 +77,6 @@ module Pasto
 
       # Reconstruct the key without the comment (we don't need it)
       "#{parts[0]} #{parts[1]}"
-    end
-
-    # Extract key type (RSA, ECDSA, ED25519, etc.)
-    def self.extract_key_type(public_key : String) : String
-      normalized = normalize_key(public_key)
-      parts = normalized.split(/\s+/)
-      parts[0] # First part should be the key type
     end
 
     # Check if SSH key looks reasonable before further processing

@@ -39,31 +39,12 @@ module Pasto
       key
     end
 
-    # Add a key by fingerprint (loads or creates it)
-    def add_key_by_fingerprint(fingerprint : String) : SSHKey
-      key = SSHKey.find_or_create(fingerprint)
-      add_key(key)
-    end
-
     # Add an API key to this user
     def add_api_key : ApiKey
       api_key = ApiKey.create_for_user(@sepia_id)
       @api_keys << api_key.sepia_id
       save
       api_key
-    end
-
-    # Find an API key by ID
-    def find_api_key(key_id : String) : ApiKey?
-      if @api_keys.includes?(key_id)
-        begin
-          ApiKey.find(key_id)
-        rescue
-          nil
-        end
-      else
-        nil
-      end
     end
 
     # Get all API keys for this user

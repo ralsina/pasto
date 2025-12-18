@@ -27,16 +27,5 @@ module Pasto
         theme:               config.theme,
       }
     end
-
-    # Set theme template variables for ECR templates
-    def self.vars=(theme_vars)
-      {
-        pico_theme:          theme_vars[:saved_pico_theme],
-        pico_color:          theme_vars[:saved_pico_color],
-        syntax_theme:        theme_vars[:saved_syntax_theme],
-        theme:               theme_vars[:theme],
-        resolved_pico_theme: theme_vars[:resolved_pico_theme],
-      }
-    end
   end
 end

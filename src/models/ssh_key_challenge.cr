@@ -20,11 +20,6 @@ module Pasto
     def initialize(@user_id : String, @fingerprint : String, @public_key : String, @sepia_id : String, @expires_at : Time)
     end
 
-    # Helper methods
-    def id : String
-      sepia_id
-    end
-
     # Check if challenge is still valid
     def valid? : Bool
       Time.utc < @expires_at
@@ -51,24 +46,10 @@ module Pasto
       nil
     end
 
-    # Find all challenges for a user
-    def self.find_for_user(user_id : String) : Array(SSHKeyChallenge)
-      # This is inefficient but we don't have a better way with Sepia storage
-      # In practice, users should have very few active challenges
-      all_challenges = [] of SSHKeyChallenge
-
-      # We can't easily iterate all SSHKeyChallenge objects with Sepia
-      # For now, we'll rely on the fact that challenges are short-lived
-      # and users will only have a few at a time
-
-      all_challenges
-    end
-
     # Clean up expired challenges
     def self.cleanup_expired
-      # In a real implementation, we'd iterate and delete expired ones
-      # For now, we rely on the file system cleanup or manual cleanup
-      # This is a limitation of the current Sepia storage approach
+      # TODO: implement cleanup of expired challenges
+      # Can just traverse the storage directory and delete old files.
     end
 
     # Validate challenge response and delete if successful

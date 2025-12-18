@@ -217,13 +217,6 @@ module Pasto
       nil
     end
 
-    # Safe loading method that handles exceptions
-    def self.safe_load(id : String) : Paste?
-      from_file(id)
-    rescue
-      nil
-    end
-
     def save(force_new_generation : Bool = false) : Bool
       @updated_at = Time.utc
       begin
@@ -314,10 +307,6 @@ module Pasto
         # Fallback: escape HTML and wrap in pre
         {HTML.escape(content), ""}
       end
-    end
-
-    def self.available_themes : Array(String)
-      Tartrazine.themes.sort
     end
 
     def self.available_languages : Array(String)
@@ -459,11 +448,6 @@ module Pasto
       end
     end
 
-    # Check if expiration string indicates burn_after_reading
-    def self.burn_after_reading?(expiration_str : String?) : Bool
-      expiration_str == "view-once"
-    end
-
     # Check if paste has expired
     def expired? : Bool
       Time.utc > expires_at
@@ -489,11 +473,6 @@ module Pasto
 
       # Delete this paste itself
       Sepia::Storage.delete(self)
-    end
-
-    private def generate_id : String
-      # Generate a short random ID
-      Random::Secure.urlsafe_base64(6).gsub(/[-_]/, "").chars.first(8).join
     end
   end
 end

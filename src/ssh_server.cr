@@ -46,7 +46,6 @@ module PastoSSH
   end
 
   @@current_fingerprint = ""
-  @@storage_dir = "./data"
   @@base_url = "http://localhost:5000"
 
   # Rate limiters for SSH operations
@@ -55,11 +54,6 @@ module PastoSSH
   @@conn_limiter : RateLimiter?
   @@ssh_key_limiter : RateLimiter?
   @@rate_mutex = Mutex.new
-
-  def self.storage_dir=(dir : String)
-    @@storage_dir = dir
-    Sepia::Storage.configure(:filesystem, {"path" => dir})
-  end
 
   def self.base_url=(url : String)
     @@base_url = url
@@ -714,8 +708,8 @@ DOC
 
     # Clean up user's API key list - remove broken references AND the revoked key
     valid_api_keys = user.api_keys.select do |key_id|
-      # Keep the key if it's not the one we're revoking AND the file still exists
-      key_id != api_key_to_revoke.sepia_id && File.exists?("data/Pasto::ApiKey/#{key_id}")
+      # Keep the key if it's not the one we're revoking AND it still exists in storage
+      key_id != api_key_to_revoke.sepia_id && Pasto::ApiKey.exists?(key_id)
     end
 
     # Update user's API key list
