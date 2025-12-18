@@ -205,18 +205,18 @@ module Pasto
                else
                  config.try(&.bind) || "localhost"
                end
-    ssh_port = config.try(&.ssh_port) || 2222 # ameba:disable Lint/UselessAssign
+    ssh_port = config.try(&.ssh_port) || 2222         # ameba:disable Lint/UselessAssign
     ssh_enabled = config.try(&.ssh_enabled?) || false # ameba:disable Lint/UselessAssign
 
     # Template variables are used in layout.ecr and profile_content.ecr
-    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config) # ameba:disable Lint/UselessAssign
-    page_title = "Profile" # ameba:disable Lint/UselessAssign
-    is_home_page = false # ameba:disable Lint/UselessAssign
-    meta_title = "Pasto - User Profile" # ameba:disable Lint/UselessAssign
+    theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config)                  # ameba:disable Lint/UselessAssign
+    page_title = "Profile"                                                            # ameba:disable Lint/UselessAssign
+    is_home_page = false                                                              # ameba:disable Lint/UselessAssign
+    meta_title = "Pasto - User Profile"                                               # ameba:disable Lint/UselessAssign
     meta_description = "Modern pastebin with live syntax highlighting and SSH access" # ameba:disable Lint/UselessAssign
-    meta_url = "" # ameba:disable Lint/UselessAssign
-    meta_image = "" # ameba:disable Lint/UselessAssign
-    content = render "src/views/profile_content.ecr" # ameba:disable Lint/UselessAssign
+    meta_url = ""                                                                     # ameba:disable Lint/UselessAssign
+    meta_image = ""                                                                   # ameba:disable Lint/UselessAssign
+    content = render "src/views/profile_content.ecr"                                  # ameba:disable Lint/UselessAssign
     render "src/views/layout.ecr"
   end
 end

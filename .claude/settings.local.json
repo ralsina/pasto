@@ -69,7 +69,12 @@
       "Bash(PASTO_PORT=4001 ./bin/pasto:*)",
       "Bash(xdg-open:*)",
       "WebFetch(domain:highlightjs.readthedocs.io)",
-      "Bash(PASTO_PORT=5000 ./bin/pasto:*)"
+      "Bash(PASTO_PORT=5000 ./bin/pasto:*)",
+      "Bash(./run-tests.sh:*)",
+      "Bash(tee:*)",
+      "Bash(PASTO_PORT=3000 ./bin/pasto:*)",
+      "Bash(killall:*)",
+      "Bash(sudo killall:*)"
     ],
     "deny": [],
     "ask": []

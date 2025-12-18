@@ -2,6 +2,72 @@
 
 ### 🚀 Features
 
+- Add keyboard shortcuts (Ctrl+S save, Ctrl+P preview)
+- Enhance raw downloads with proper MIME types and filenames
+- Enable client-side syntax highlighting for encrypted pastes
+- Add modern security features to SSH paste creation
+- Enhance encryption dialogs with improved UX and reliability
+- Add custom 403 error page for private paste access
+- Add comprehensive E2E Playwright testing framework
+- Add drag & drop support for text files
+
+### 🐛 Bug Fixes
+
+- Remove infinite recursion in updateLanguage function
+- Ensure consistent syntax highlighting between editor and preview
+- Prevent plaintext leakage to /highlight when encryption enabled
+- Remove hardcoded styles from security settings button
+- Editor background color updates immediately when theme changes
+- Improve background color extraction to avoid wrong colors from .b class
+- Complete theme priority system overhaul
+- Add missing requires to server.cr
+- Restore missing SSH authentication route
+- Complete API response for GET /api/v1/pastes/:id endpoint
+- Properly restrict access to private pastes
+- Restore missing raw paste endpoint with proper MIME type support
+- Add missing onShow callback to showGenericModal function
+- Update run-tests.sh to use port 3000 and current test files
+- Resolve critical linting issues and improve code quality
+
+### 💼 Other
+
+- Make all tests use consistent port 3000
+
+### 🚜 Refactor
+
+- Theme generation / loading rework
+- Massive cleanup of duplicated and dead code
+- Implement shared component system to eliminate code duplication
+- Integrate show.ecr with shared component system
+- Simplify AccessResult and validate_paste_access function
+- Eliminate massive code duplication and improve template organization
+- Clean up /highlight endpoint and fix JavaScript issues
+- Implement comprehensive access control and prevent anonymous private pastes
+- Extract language mapping to dedicated JavaScript module
+- Extract caching system into reusable pasto-cache shard
+
+### 📚 Documentation
+
+- Add comprehensive version history diff display plan
+- Add comprehensive competitive features roadmap
+
+### 🎨 Styling
+
+- Standardize Pico CSS variable usage across templates
+- Fix remaining linting issues for cleaner codebase
+
+### 🧪 Testing
+
+- Add comprehensive burn-after-reading 404 verification tests
+- Add comprehensive QR code functionality tests
+
+### ◀️ Revert
+
+- Restore .b class background color extraction for Tartrazine themes
+## [0.4.0] - 2025-12-09
+
+### 🚀 Features
+
 - Add social media preview cards with syntax highlighting
 - Integrate baked spleen font for preview image generation
 - Improve grass animation and fix label styling
@@ -84,6 +150,7 @@
 - Remove baked favicon.ico file
 - Commit pending layout and configuration changes
 - Lint
+- *(release)* V0.4.0
 
 ### ◀️ Revert
 

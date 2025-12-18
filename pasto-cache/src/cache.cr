@@ -8,7 +8,7 @@ module Pasto
     property content : String
     property mime_type : String
     property created_at : Time
-    property ttl : Int32?  # Time to live in seconds, nil means no expiration
+    property ttl : Int32? # Time to live in seconds, nil means no expiration
 
     def initialize(@content : String, @mime_type : String, @ttl : Int32? = nil)
       @created_at = Time.utc
@@ -21,10 +21,10 @@ module Pasto
 
     def to_json : String
       {
-        content: @content,
-        mime_type: @mime_type,
+        content:    @content,
+        mime_type:  @mime_type,
         created_at: @created_at.to_unix,
-        ttl: @ttl
+        ttl:        @ttl,
       }.to_json
     end
 
@@ -133,8 +133,7 @@ module Pasto
       key_data = "#{method}:#{path}:#{query}:#{body_hash}"
       OpenSSL::Digest.new("sha256").update(key_data).final.hexstring
     end
-
-    end
+  end
 
   # Initialize cache directory in the main app
   def self.init_cache(cache_dir : String)
