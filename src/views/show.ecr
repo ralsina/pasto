@@ -91,8 +91,8 @@
   }
 
   .overlay-btn {
-    background: var(--pico-secondary-background);
-    border: 1px solid var(--pico-muted-border-color);
+    background: var(--pico-contrast-background);
+    border: 1px solid var(--pico-primary);
     border-radius: var(--pico-border-radius);
     width: 40px;
     height: 40px;
@@ -111,18 +111,23 @@
 
   .overlay-btn:hover {
     opacity: 1;
-    background: var(--pico-secondary-hover-background);
+    background: var(--pico-primary);
   }
 
   .copy-btn.copied {
     background: var(--pico-ins-color);
   }
 
+  .copy-btn.copied i,
+  .copy-btn.copied svg {
+    color: var(--pico-contrast-inverse);
+  }
+
   .overlay-btn i,
   .overlay-btn svg {
     width: 1.25rem;
     height: 1.25rem;
-    color: var(--pico-primary);
+    color: var(--pico-contrast-inverse);
   }
 </style>
 
