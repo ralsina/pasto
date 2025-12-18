@@ -84,5 +84,10 @@ def encrypt_for_pasto_webcrypto(plaintext : String, key_b64 : String, iv_b64 : S
 
   # Get complete output with auth tag
   encrypted_data = cipher.encrypt_and_get_tag(plaintext)
+  
+  # Clear sensitive data from memory
+  key.fill(0)
+  iv.fill(0)
+  
   Base64.strict_encode(encrypted_data)
 end
