@@ -1,8 +1,10 @@
-require "../src/models/ssh_key"
-require "../src/models/auth_token"
-require "../src/models/user"
-require "../src/models/api_key"
-require "../src/models/ssh_key_challenge"
+require "./models/ssh_key"
+require "./models/auth_token"
+require "./models/user"
+require "./models/api_key"
+require "./models/ssh_key_challenge"
+require "./paste"
+require "./gcm_fix"
 require "shirk"
 require "sepia"
 require "uri"
@@ -12,38 +14,6 @@ require "random/secure"
 
 module PastoSSH
   # Alternative AES-GCM encryption approach using Crystal's OpenSSL with a workaround
-  # This creates encrypted data compatible with Web Crypto API format
-  private def self.encrypt_aes_gcm_webcrypto(plaintext : String, key : Bytes, iv : Bytes) : Bytes
-    # Use Crystal's OpenSSL::Cipher for GCM
-    cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    cipher.encrypt
-    cipher.key = key
-    cipher.iv = iv
-
-    # Encrypt the plaintext
-    ciphertext = cipher.update(plaintext) + cipher.final
-
-    # Create a placeholder auth tag since Crystal's OpenSSL doesn't expose GCM auth_tag
-    # For now, use a simple hash approach - this should be replaced with proper GCM auth tag
-    # Note: This is not cryptographically secure and is just for Web Crypto API format compatibility
-    placeholder_tag = Digest::SHA256.digest(iv + ciphertext)[0..15]
-
-    # Combine ciphertext + auth_tag for Web Crypto API compatibility
-    # Web Crypto API expects: [ciphertext][16-byte auth_tag]
-    result = Bytes.new(ciphertext.bytesize + placeholder_tag.bytesize)
-
-    # Copy ciphertext to result
-    ciphertext_bytes = ciphertext.to_slice
-    ciphertext_bytes.copy_to(result[0, ciphertext_bytes.size])
-
-    # Copy auth tag to result
-    placeholder_tag.copy_to(result[ciphertext_bytes.size, placeholder_tag.size])
-
-    result
-  rescue ex
-    puts "SSH: AES-GCM encryption failed: #{ex.message}"
-    raise "Encryption failed: #{ex.message}"
-  end
 
   @@current_fingerprint = ""
   @@base_url = "http://localhost:5000"
@@ -309,54 +279,11 @@ DOC
       encryption_key = Base64.strict_encode(Random::Secure.random_bytes(32))
       encryption_iv = Base64.strict_encode(Random::Secure.random_bytes(12))
 
-      # Implement proper AES-256-GCM encryption using Node.js (Web Crypto API compatible)
-      begin
-        # Write content to temp file for Node.js
-        input_file = File.tempname("ssh_encrypt_input", ".txt")
-        begin
-          File.write(input_file, content)
-
-          # Use simpler Node.js approach - pipe content directly
-          encrypted_output = IO::Memory.new
-          error_output = IO::Memory.new
-
-          result = Process.run(
-            "node",
-            ["-e",
-             "const crypto = require('crypto'); " +
-             "const key = Buffer.from('#{encryption_key}', 'base64'); " +
-             "const iv = Buffer.from('#{encryption_iv}', 'base64'); " +
-             "const cipher = crypto.createCipheriv('aes-256-gcm', key, iv); " +
-             "let data = ''; " +
-             "process.stdin.on('data', chunk => data += chunk); " +
-             "process.stdin.on('end', () => { " +
-             "  const encrypted = Buffer.concat([cipher.update(data, 'utf8'), cipher.final()]); " +
-             "  const authTag = cipher.getAuthTag(); " +
-             "  console.log(Buffer.concat([encrypted, authTag]).toString('base64')); " +
-             "});",
-            ],
-            input: IO::Memory.new(content),
-            output: encrypted_output,
-            error: error_output
-          )
-
-          unless result.success?
-            puts "SSH: Node.js stderr: #{error_output}"
-            raise "Node.js encryption failed with exit code: #{result.exit_code}"
-          end
-
-          encrypted_b64 = encrypted_output.to_s.strip
-          actual_content = encrypted_b64
-          puts "SSH: server-side Node.js AES-256-GCM encryption successful"
-          puts "SSH: total encrypted size: #{Base64.decode_string(encrypted_b64).size}"
-        ensure
-          File.delete(input_file) if File.exists?(input_file)
-        end
-      rescue ex
-        puts "SSH: encryption failed: #{ex.message}"
-        # Fallback to base64 if encryption fails
-        actual_content = Base64.strict_encode(content.to_slice)
-      end
+      # Implement proper AES-256-GCM encryption using Crystal (Web Crypto API compatible)
+      # Use our working Crystal GCM implementation
+      encrypted_b64 = encrypt_for_pasto_webcrypto(content, encryption_key, encryption_iv)
+      actual_content = encrypted_b64
+      puts "SSH: server-side Crystal AES-256-GCM encryption successful"
     elsif is_pre_encrypted
       # Content is already encrypted by user (true zero-trust)
       puts "SSH: using pre-encrypted content (zero-trust mode)"

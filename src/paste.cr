@@ -5,6 +5,7 @@ require "tartrazine"
 require "html"
 require "./mimetypes"
 require "./data/tartrazine_hljs_mapping"
+require "./gcm_fix"
 
 module Pasto
   # Add highlight.js classes to Tartrazine CSS for compatibility
@@ -261,6 +262,9 @@ module Pasto
     end
 
     def highlight(language_override : String? = nil) : {String, String}
+      # Return immediately for empty content (encrypted pastes)
+      return {"", ""} if @content.empty?
+
       lang = language_override || @language || "text"
 
       begin
@@ -383,12 +387,11 @@ module Pasto
         decipher.iv = Base64.decode_string(@encryption_iv.as(String))
 
         # Set the authentication tag before decryption
-        decipher.auth_tag = auth_tag
+        decipher.set_gcm_auth_tag(auth_tag.to_slice)
 
         # Decrypt the content
-        decrypted_content = decipher.update(ciphertext) + decipher.final
-
-        decrypted_content
+        decrypted_bytes = decipher.update(ciphertext) + decipher.final
+        String.new(decrypted_bytes)
       rescue ex
         raise "Failed to decrypt content: #{ex.message}"
       end
@@ -399,22 +402,8 @@ module Pasto
       return @content if @content.empty?
 
       begin
-        cipher = OpenSSL::Cipher.new("aes-256-gcm")
-        cipher.encrypt
-        cipher.key = Base64.decode_string(encryption_key)
-        cipher.iv = Base64.decode_string(encryption_iv)
-
-        # Encrypt the content
-        encrypted_data = cipher.update(@content) + cipher.final
-
-        # Get the authentication tag (16 bytes for GCM)
-        auth_tag = cipher.auth_tag
-
-        # Combine ciphertext + auth_tag for Web Crypto API compatibility
-        webcrypto_compatible_data = encrypted_data + auth_tag
-
-        # Return as Base64 for storage/transmission
-        Base64.strict_encode(webcrypto_compatible_data)
+        # Use our working GCM implementation that produces Web Crypto API compatible output
+        encrypt_for_pasto_webcrypto(@content, encryption_key, encryption_iv)
       rescue ex
         raise "Failed to encrypt content: #{ex.message}"
       end

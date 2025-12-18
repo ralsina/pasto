@@ -87,7 +87,9 @@ DOC
         host = web_bind == "0.0.0.0" ? "localhost" : web_bind
         @base_url = "http://#{host}:#{web_port}"
       else
+        # Fix 0.0.0.0 in provided base URL too
         @base_url = base_url_option.rstrip("/")
+        @base_url = @base_url.gsub("0.0.0.0", "localhost")
       end
     end
   end
