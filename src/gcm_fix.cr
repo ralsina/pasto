@@ -5,8 +5,8 @@ require "openssl"
 
 lib LibCrypto
   # Missing GCM control constants
-  EVP_CTRL_GCM_GET_TAG   = 0x10
-  EVP_CTRL_GCM_SET_TAG   = 0x11
+  EVP_CTRL_GCM_GET_TAG = 0x10
+  EVP_CTRL_GCM_SET_TAG = 0x11
 
   # Missing function binding for cipher context control
   fun evp_cipher_ctx_ctrl = EVP_CIPHER_CTX_ctrl(ctx : Void*, type : Int32, arg : Int32, ptr : Void*) : Int32

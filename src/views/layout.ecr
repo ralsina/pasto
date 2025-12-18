@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="/assets/manifest.json">
   <meta name="theme-color" content="#0172ad">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -75,6 +75,20 @@
   <!-- Shared editor functionality -->
   <script src="/assets/editor-shared.js" defer></script>
   <script src="/assets/mobile_controls.js" defer></script>
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/assets/sw.js')
+          .then(function(registration) {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          })
+          .catch(function(error) {
+            console.log('ServiceWorker registration failed: ', error);
+          });
+      });
+    }
+  </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
