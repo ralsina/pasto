@@ -1,5 +1,6 @@
 require "openssl"
 require "digest"
+require "./logging"
 
 module Pasto
   module SSHUtils
@@ -102,7 +103,7 @@ module Pasto
     # during SSH connection. We'll use the fingerprint passed by Shirk.
     def self.extract_fingerprint_from_pubkey(fingerprint : String) : String
       # Shirk passes us the fingerprint directly, so just return it
-      puts "SSH DEBUG: extract_fingerprint_from_pubkey called with: #{fingerprint}"
+      Pasto::Logging.debug("SSH DEBUG: extract_fingerprint_from_pubkey called with: #{fingerprint}")
       fingerprint
     end
   end

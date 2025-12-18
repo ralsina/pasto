@@ -2,6 +2,7 @@ require "docopt-config"
 require "sepia"
 require "./paste"
 require "./ssh_server"
+require "./logging"
 
 module PastoSshServer
   VERSION = "0.1.0"
@@ -24,6 +25,7 @@ Options:
   --base-url=<url>          Base URL for paste links [default: http://localhost:5000].
   --port=<port>             Web server port (used to construct base-url if not set) [default: 5000].
   --bind=<address>          Web server bind address (used to construct base-url if not set) [default: 0.0.0.0].
+  --log-level=<level>       Log level (debug, info, warn, error, fatal) [default: info in production, debug in development].
 
 SSH Rate Limiting Options:
   --rate-ssh-paste-limit=<n>          SSH paste limit per key [default: 20].
@@ -43,6 +45,7 @@ DOC
     property storage_dir : String
     property host_key : String
     property base_url : String
+    property environment : String
 
     # SSH rate limiting settings
     property rate_ssh_paste_limit : Int32
@@ -53,6 +56,7 @@ DOC
     property rate_ssh_conn_window : Int32
     property rate_ssh_key_limit : Int32
     property rate_ssh_key_window : Int32
+    property log_level : String?
 
     def initialize(args)
       docopt_options = Docopt.docopt_config(
@@ -67,6 +71,7 @@ DOC
       @ssh_bind = docopt_options["--ssh-bind"].to_s
       @storage_dir = docopt_options["--storage-dir"].to_s
       @host_key = docopt_options["--host-key"].to_s
+      @environment = "development" # SSH server defaults to development environment
 
       # SSH rate limiting settings
       @rate_ssh_paste_limit = docopt_options["--rate-ssh-paste-limit"].to_s.to_i
@@ -77,6 +82,8 @@ DOC
       @rate_ssh_conn_window = docopt_options["--rate-ssh-conn-window"].to_s.to_i
       @rate_ssh_key_limit = docopt_options["--rate-ssh-key-limit"].to_s.to_i
       @rate_ssh_key_window = docopt_options["--rate-ssh-key-window"].to_s.to_i
+      log_level_option = docopt_options["--log-level"].to_s
+      @log_level = log_level_option.empty? ? nil : log_level_option
 
       # Handle base_url - use provided value or construct from web server settings
       base_url_option = docopt_options["--base-url"].to_s
@@ -96,6 +103,9 @@ DOC
 
   def self.run(args)
     config = Config.new(args)
+
+    # Initialize logging system
+    Pasto::Logging.configure(config.environment, config.log_level)
 
     # Clear ARGV to prevent interference
     ARGV.clear
@@ -120,23 +130,22 @@ DOC
       config.rate_ssh_key_limit, config.rate_ssh_key_window
     )
 
-    puts "🔐 Starting Pasto SSH server on #{config.ssh_bind}:#{config.ssh_port}"
-    puts "📁 Storing pastes in: #{config.storage_dir}"
-    puts "🔑 Using host key: #{config.host_key}"
-    puts "🔗 Base URL: #{config.base_url}"
-    puts "⚡ Rate limits: paste=#{config.rate_ssh_paste_limit}/#{config.rate_ssh_paste_window}s, login=#{config.rate_ssh_login_limit}/#{config.rate_ssh_login_window}s, conn=#{config.rate_ssh_conn_limit}/#{config.rate_ssh_conn_window}s, key=#{config.rate_ssh_key_limit}/#{config.rate_ssh_key_window}s"
-    puts ""
-    puts "Usage examples:"
-    puts "  echo 'Hello World' | ssh -p #{config.ssh_port} #{config.ssh_bind}"
-    puts "  cat file.txt | ssh -p #{config.ssh_port} #{config.ssh_bind}"
-    puts "  ssh -p #{config.ssh_port} #{config.ssh_bind} login"
-    puts "  ssh -p #{config.ssh_port} #{config.ssh_bind} help"
+    Pasto::Logging.info("Starting Pasto SSH server on #{config.ssh_bind}:#{config.ssh_port}", "🔐")
+    Pasto::Logging.info("Storing pastes in: #{config.storage_dir}", "📁")
+    Pasto::Logging.info("Using host key: #{config.host_key}", "🔑")
+    Pasto::Logging.info("Base URL: #{config.base_url}", "🔗")
+    Pasto::Logging.info("Rate limits: paste=#{config.rate_ssh_paste_limit}/#{config.rate_ssh_paste_window}s, login=#{config.rate_ssh_login_limit}/#{config.rate_ssh_login_window}s, conn=#{config.rate_ssh_conn_limit}/#{config.rate_ssh_conn_window}s, key=#{config.rate_ssh_key_limit}/#{config.rate_ssh_key_window}s", "⚡")
+    Pasto::Logging.info("Usage examples:")
+    Pasto::Logging.info("  echo 'Hello World' | ssh -p #{config.ssh_port} #{config.ssh_bind}")
+    Pasto::Logging.info("  cat file.txt | ssh -p #{config.ssh_port} #{config.ssh_bind}")
+    Pasto::Logging.info("  ssh -p #{config.ssh_port} #{config.ssh_bind} login")
+    Pasto::Logging.info("  ssh -p #{config.ssh_port} #{config.ssh_bind} help")
 
     # Create and start SSH server
     ssh_server = PastoSSH.create_server(config.host_key, config.ssh_port, config.ssh_bind)
 
     # Keep main thread alive
-    puts "✅ SSH server started. Press Ctrl+C to stop."
+    Pasto::Logging.info("SSH server started. Press Ctrl+C to stop.", "✅")
 
     # Run the server (this blocks)
     ssh_server.run

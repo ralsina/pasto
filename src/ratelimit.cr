@@ -1,4 +1,5 @@
 require "rate_limiter"
+require "./logging"
 
 # Comprehensive rate limiting for the Pasto web server
 
@@ -41,14 +42,14 @@ module Pasto
         # Check global limit first
         global_result = paste_global.check("global")
         unless global_result.allowed?
-          puts "⚠️  Rate limit hit: global paste limit (IP: #{ip})"
+          Pasto::Logging.warn("Rate limit hit: global paste limit (IP: #{ip})", "⚠️")
           return {false, global_result}
         end
 
         # Check IP limit
         ip_result = paste_ip.check(ip)
         unless ip_result.allowed?
-          puts "⚠️  Rate limit hit: paste IP limit (IP: #{ip})"
+          Pasto::Logging.warn("Rate limit hit: paste IP limit (IP: #{ip})", "⚠️")
           return {false, ip_result}
         end
 
@@ -56,7 +57,7 @@ module Pasto
         if user_id && paste_user
           user_result = paste_user.check(user_id)
           unless user_result.allowed?
-            puts "⚠️  Rate limit hit: paste user limit (User: #{user_id})"
+            Pasto::Logging.warn("Rate limit hit: paste user limit (User: #{user_id})", "⚠️")
             return {false, user_result}
           end
           return {true, user_result}
@@ -72,7 +73,7 @@ module Pasto
         if highlight = @@highlight
           result = highlight.check(ip)
           unless result.allowed?
-            puts "⚠️  Rate limit hit: highlight limit (IP: #{ip})"
+            Pasto::Logging.warn("Rate limit hit: highlight limit (IP: #{ip})", "⚠️")
           end
           {result.allowed?, result}
         else
@@ -87,7 +88,7 @@ module Pasto
         if login = @@login
           result = login.check(ip)
           unless result.allowed?
-            puts "⚠️  Rate limit hit: login limit (IP: #{ip})"
+            Pasto::Logging.warn("Rate limit hit: login limit (IP: #{ip})", "⚠️")
           end
           {result.allowed?, result}
         else
@@ -102,7 +103,7 @@ module Pasto
         if http = @@http
           result = http.check(ip)
           unless result.allowed?
-            puts "⚠️  Rate limit hit: HTTP limit (IP: #{ip})"
+            Pasto::Logging.warn("Rate limit hit: HTTP limit (IP: #{ip})", "⚠️")
           end
           {result.allowed?, result}
         else

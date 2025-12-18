@@ -8,6 +8,7 @@ require "./help"
 require "./mimetypes"
 require "./models/*"
 require "./paste"
+require "./logging"
 require "./preview_generator"
 require "qr-code"
 require "./profile"
@@ -183,7 +184,7 @@ module Pasto
     # Clear the session using kemal-session
     env.session.destroy
 
-    puts "User logged out"
+    Pasto::Logging.info("User logged out")
 
     env.redirect "/?logout=success"
   end
@@ -238,15 +239,15 @@ module Pasto
       user.save             # Save first to get sepia_id
       user.add_key(ssh_key) # This sets owner_id and adds to keys array
       user.save             # Save again with the key added
-      puts "Created new user #{user.sepia_id} for SSH key #{token.fingerprint}"
+      Pasto::Logging.info("Created new user #{user.sepia_id} for SSH key #{token.fingerprint}")
     else
       # Make sure the key is in the user's keys array (in case of data inconsistency)
       unless user.keys.any? { |k| k.sepia_id == ssh_key.sepia_id }
         user.add_key(ssh_key)
         user.save
-        puts "Added SSH key #{token.fingerprint} to existing user #{user.sepia_id}"
+        Pasto::Logging.info("Added SSH key #{token.fingerprint} to existing user #{user.sepia_id}")
       end
-      puts "Existing user #{user.sepia_id} logging in via SSH key #{token.fingerprint}"
+      Pasto::Logging.info("Existing user #{user.sepia_id} logging in via SSH key #{token.fingerprint}")
     end
 
     # Create session
@@ -256,7 +257,7 @@ module Pasto
     # Delete the token (one-time use)
     token.delete
 
-    puts "SSH auth successful for user #{user.sepia_id} from #{client_ip}"
+    Pasto::Logging.info("SSH auth successful for user #{user.sepia_id} from #{client_ip}")
 
     # Redirect to home with success message
     env.redirect "/?ssh_login=success"
@@ -325,7 +326,7 @@ module Pasto
     env.response.content_type = "application/json"
     response_json
   rescue ex
-    puts "DEBUG: Highlighting failed for language '#{language}': #{ex.message}"
+    Pasto::Logging.error("Highlighting failed for language '#{language}': #{ex.message}")
     # Fallback to plain text with proper escaping
     escaped_content = HTML.escape(content.to_s)
     env.response.content_type = "application/json"
@@ -1028,7 +1029,7 @@ module Pasto
       css = formatter.style_defs
 
       # Add highlight.js classes for compatibility with CodeJar editor
-      puts "DEBUG: Generating CSS for theme: #{theme_name}"
+      Pasto::Logging.debug("Generating CSS for theme: #{theme_name}")
       enhanced_css = Pasto.add_highlightjs_classes(css, theme_name)
 
       env.response.content_type = "text/css"

@@ -4,6 +4,7 @@ require "hansa"
 require "tartrazine"
 require "html"
 require "./mimetypes"
+require "./logging"
 require "./data/tartrazine_hljs_mapping"
 require "./gcm_fix"
 
@@ -197,7 +198,7 @@ module Pasto
 
       # Check if paste has expired - if so, delete it and return nil
       if paste && paste.expired?
-        puts "⏰ Paste #{id} has expired - deleting permanently"
+        Pasto::Logging.info("Paste #{id} has expired - deleting permanently", "⏰")
         paste.delete_completely!
         return nil
       end
@@ -208,7 +209,7 @@ module Pasto
       paste = Sepia::Storage.load(Paste, id)
       # Check if paste has expired - if so, delete it and return nil
       if paste && paste.expired?
-        puts "⏰ Paste #{id} has expired - deleting permanently"
+        Pasto::Logging.info("Paste #{id} has expired - deleting permanently", "⏰")
         paste.delete_completely!
         return nil
       end
@@ -274,15 +275,15 @@ module Pasto
           lang = detected if detected
         end
 
-        puts "DEBUG: Highlighting with language: #{lang}, theme: #{@theme}"
+        Pasto::Logging.debug("Highlighting with language: #{lang}, theme: #{@theme}")
         formatter = Tartrazine::Html.new(theme: Tartrazine.theme(@theme))
         lexer = Tartrazine.lexer(name: lang)
         result = formatter.format(@content, lexer)
         css = formatter.style_defs
-        puts "DEBUG: Highlighting successful"
+        Pasto::Logging.debug("Highlighting successful")
         {result, css}
       rescue ex
-        puts "DEBUG: Highlighting failed for language '#{lang}' with theme '#{@theme}': #{ex.message}"
+        Pasto::Logging.error("Highlighting failed for language '#{lang}' with theme '#{@theme}': #{ex.message}")
         # Fallback: escape HTML and wrap in pre
         {HTML.escape(@content), ""}
       end

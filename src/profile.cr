@@ -1,4 +1,5 @@
 # Profile management endpoints for Pasto application
+require "./logging"
 
 module Pasto
   # Update user profile
@@ -37,7 +38,7 @@ module Pasto
     end
 
     if current_user.save
-      puts "User #{current_user.sepia_id} updated"
+      Pasto::Logging.info("User #{current_user.sepia_id} updated")
       if is_ajax
         env.response.content_type = "application/json"
         {"status" => "ok"}.to_json
@@ -94,10 +95,10 @@ module Pasto
           File.delete(api_key_file_path)
         end
       rescue ex
-        puts "Error deleting API key file #{api_key_id}: #{ex.message}"
+        Pasto::Logging.error("Error deleting API key file #{api_key_id}: #{ex.message}")
       end
 
-      puts "User #{current_user.sepia_id} revoked API key #{api_key_id}"
+      Pasto::Logging.info("User #{current_user.sepia_id} revoked API key #{api_key_id}")
 
       # Check if this is an AJAX request
       if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
@@ -165,10 +166,10 @@ module Pasto
           File.delete(ssh_key_file_path)
         end
       rescue ex
-        puts "Error deleting SSH key file #{file_safe_fingerprint}: #{ex.message}"
+        Pasto::Logging.error("Error deleting SSH key file #{file_safe_fingerprint}: #{ex.message}")
       end
 
-      puts "User #{current_user.sepia_id} revoked SSH key #{file_safe_fingerprint}"
+      Pasto::Logging.info("User #{current_user.sepia_id} revoked SSH key #{file_safe_fingerprint}")
 
       # Check if this is an AJAX request
       if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"

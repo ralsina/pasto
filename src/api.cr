@@ -1,3 +1,5 @@
+require "./logging"
+
 module Pasto
   # API documentation page
   get "/api-docs" do |env|
@@ -301,7 +303,7 @@ module Pasto
         "raw_url"            => "#{paste_url}/raw",
       }.to_json
     rescue ex
-      puts "API: Failed to create paste: #{ex.message}"
+      Pasto::Logging.error("API: Failed to create paste: #{ex.message}")
       env.response.status_code = 500
       {
         "error"   => "Internal Server Error",
@@ -603,7 +605,7 @@ module Pasto
         "message" => "Paste deleted successfully",
       }.to_json
     rescue ex
-      puts "API: Failed to delete paste: #{ex.message}"
+      Pasto::Logging.error("API: Failed to delete paste: #{ex.message}")
       env.response.status_code = 500
       {
         "error"   => "Internal Server Error",

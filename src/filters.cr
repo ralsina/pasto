@@ -2,6 +2,7 @@ require "../src/paste"
 require "../src/ratelimit"
 require "kemal"
 require "uri"
+require "./logging"
 
 # ============================================================================
 # Request Filters and Middleware
@@ -107,7 +108,7 @@ module Pasto
             paste.burn_now!
           end
         rescue ex
-          puts "Error burning paste #{burn_id}: #{ex.message}"
+          Pasto::Logging.error("Error burning paste #{burn_id}: #{ex.message}")
         end
       end
     end

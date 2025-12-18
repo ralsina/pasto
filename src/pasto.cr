@@ -2,6 +2,7 @@ require "docopt-config"
 require "sepia"
 require "kemal"
 require "./paste"
+require "./logging"
 require "./preview_generator"
 require "./server"
 require "./api"
@@ -43,6 +44,7 @@ Options:
   --storage-dir=<dir>       Directory to store pastes [default: ./data].
   --cache-dir=<dir>         Directory for cached files [default: ./public/cache].
   --env=<environment>       Environment (development or production) [default: development].
+  --log-level=<level>       Log level (debug, info, warn, error, fatal) [default: info in production, debug in development].
   --theme=<theme>           Syntax highlighting theme [default: default-dark].
   --max-paste-size=<size>   Maximum paste size in bytes [default: 102400].
   --base-url=<url>          Base URL for web interface [default: http://bind:port].
@@ -94,6 +96,7 @@ DOC
     property rate_login_window : Int32
     property rate_http_limit : Int32
     property rate_http_window : Int32
+    property log_level : String?
 
     def initialize(args)
       docopt_options = Docopt.docopt_config(
@@ -109,6 +112,8 @@ DOC
       @storage_dir = docopt_options["--storage-dir"].to_s
       @cache_dir = docopt_options["--cache-dir"].to_s
       @environment = docopt_options["--env"].to_s
+      log_level_option = docopt_options["--log-level"].to_s
+      @log_level = log_level_option.empty? ? nil : log_level_option
       @theme = docopt_options["--theme"].to_s
       @max_paste_size = docopt_options["--max-paste-size"].to_s.to_i
       @ssh_enabled = docopt_options["--ssh-enabled"].to_s.downcase.in?("true", "yes", "1")
@@ -321,12 +326,15 @@ DOC
       # No additional action needed - next load will fetch fresh data
     end
 
-    puts "👁️  File system watcher enabled for external changes"
+    Logging.info("File system watcher enabled for external changes", "👁️")
   end
 
   def self.run(args)
     # Parse config first before Kemal interferes with ARGV
     self.config = Config.new(args)
+
+    # Initialize logging system
+    Logging.configure(config.environment, config.log_level)
 
     # Clear ARGV to prevent Kemal from interfering
     ARGV.clear
@@ -382,7 +390,7 @@ DOC
     RateLimits.init(config)
 
     # Print web server rate limits
-    puts "⚡ HTTP Rate limits: paste=#{config.rate_paste_limit}/#{config.rate_paste_window}s, paste-user=#{config.rate_paste_user_limit}/#{config.rate_paste_user_window}s, highlight=#{config.rate_highlight_limit}/#{config.rate_highlight_window}s, login=#{config.rate_login_limit}/#{config.rate_login_window}s, http=#{config.rate_http_limit}/#{config.rate_http_window}s"
+    Logging.info("HTTP Rate limits: paste=#{config.rate_paste_limit}/#{config.rate_paste_window}s, paste-user=#{config.rate_paste_user_limit}/#{config.rate_paste_user_window}s, highlight=#{config.rate_highlight_limit}/#{config.rate_highlight_window}s, login=#{config.rate_login_limit}/#{config.rate_login_window}s, http=#{config.rate_http_limit}/#{config.rate_http_window}s", "⚡")
 
     # Configure Kemal
     config.add_kemal_config
@@ -406,11 +414,11 @@ DOC
     end
 
     # Start the web server
-    puts "🌐 Starting Pasto on #{config.bind}:#{config.port}"
-    puts "📁 Storage: #{config.storage_dir}"
-    puts "🎨 Theme: #{config.theme}"
+    Logging.info("Starting Pasto on #{config.bind}:#{config.port}", "🌐")
+    Logging.info("Storage: #{config.storage_dir}", "📁")
+    Logging.info("Theme: #{config.theme}", "🎨")
     if config.ssh_enabled?
-      puts "🔐 SSH: #{config.ssh_bind}:#{config.ssh_port}"
+      Logging.info("SSH: #{config.ssh_bind}:#{config.ssh_port}", "🔐")
     end
     Kemal.run
   end

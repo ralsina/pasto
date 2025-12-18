@@ -5,6 +5,7 @@ require "./models/api_key"
 require "./models/ssh_key_challenge"
 require "./paste"
 require "./gcm_fix"
+require "./logging"
 require "shirk"
 require "sepia"
 require "uri"
@@ -47,7 +48,7 @@ module PastoSSH
       if limiter = @@conn_limiter
         allowed = limiter.allow?(fingerprint)
         unless allowed
-          puts "⚠️  SSH rate limit hit: connection limit (Key: #{fingerprint})"
+          Pasto::Logging.warn("SSH rate limit hit: connection limit (Key: #{fingerprint})", "⚠️")
         end
         allowed
       else
@@ -62,7 +63,7 @@ module PastoSSH
       if limiter = @@paste_limiter
         allowed = limiter.allow?(fingerprint)
         unless allowed
-          puts "⚠️  SSH rate limit hit: paste limit (Key: #{fingerprint})"
+          Pasto::Logging.warn("SSH rate limit hit: paste limit (Key: #{fingerprint})", "⚠️")
         end
         allowed
       else
@@ -77,7 +78,7 @@ module PastoSSH
       if limiter = @@login_limiter
         allowed = limiter.allow?(fingerprint)
         unless allowed
-          puts "⚠️  SSH rate limit hit: login limit (Key: #{fingerprint})"
+          Pasto::Logging.warn("SSH rate limit hit: login limit (Key: #{fingerprint})", "⚠️")
         end
         allowed
       else
@@ -92,7 +93,7 @@ module PastoSSH
       if limiter = @@ssh_key_limiter
         allowed = limiter.allow?(fingerprint)
         unless allowed
-          puts "⚠️  SSH rate limit hit: SSH key operation limit (Key: #{fingerprint})"
+          Pasto::Logging.warn("SSH rate limit hit: SSH key operation limit (Key: #{fingerprint})", "⚠️")
         end
         allowed
       else
@@ -110,12 +111,12 @@ module PastoSSH
 
     # Accept all public keys and store the fingerprint (with rate limiting)
     server.on_auth_pubkey do |user, fingerprint|
-      puts "SSH auth: user '#{user}' with key #{fingerprint}"
-      puts "SSH DEBUG: Fingerprint received by SSH server: #{fingerprint}"
+      Pasto::Logging.info("SSH auth: user '#{user}' with key #{fingerprint}")
+      Pasto::Logging.debug("Fingerprint received by SSH server: #{fingerprint}")
 
       # Check connection rate limit
       unless allow_connection?(fingerprint)
-        puts "SSH auth: rejected due to rate limit"
+        Pasto::Logging.warn("SSH auth: rejected due to rate limit")
         next false
       end
 
@@ -125,7 +126,7 @@ module PastoSSH
 
     # Handle exec requests (ssh host command)
     server.on_exec do |ctx|
-      puts "SSH exec: command='#{ctx.command}' from user='#{ctx.user}'"
+      Pasto::Logging.info("SSH exec: command='#{ctx.command}' from user='#{ctx.user}'")
 
       # Parse command and arguments
       parts = ctx.command.split(/\s+/, 2)
@@ -250,7 +251,7 @@ DOC
 
     content = ctx.stdin
 
-    puts "SSH: received #{content.bytesize} bytes of content"
+    Pasto::Logging.debug("SSH: received #{content.bytesize} bytes of content")
 
     if content.strip.empty?
       ctx.write_stderr("No content provided. Usage: echo 'text' | ssh host\n")
@@ -359,7 +360,7 @@ DOC
         ctx.write("🔒 IV stored with paste: #{encryption_iv}\n")
       end
 
-      puts "SSH: created paste #{paste.sepia_id} (key has #{ssh_key.pastes.size} pastes)"
+      Pasto::Logging.info("SSH: created paste #{paste.sepia_id} (key has #{ssh_key.pastes.size} pastes)")
       0
     else
       ctx.write_stderr("Failed to save SSH key\n")
@@ -383,7 +384,7 @@ DOC
       ctx.write("To complete login, open this URL in your browser:\n")
       ctx.write("#{url}\n")
       ctx.write("\nThis link expires in 10 minutes.\n")
-      puts "SSH: created auth token #{token.sepia_id} for #{fingerprint}"
+      Pasto::Logging.info("SSH: created auth token #{token.sepia_id} for #{fingerprint}")
       0
     else
       ctx.write_stderr("Failed to create login token\n")
@@ -529,11 +530,11 @@ DOC
     ctx.write("Created: #{api_key.key_data.created_at.to_s("%Y-%m-%d %H:%M UTC")}\n")
     ctx.write("📋 Use it for API authentication: Authorization: Bearer #{api_key.id}\n")
 
-    puts "SSH: created API key #{api_key.id} for user #{user.sepia_id} (SSH key: #{fingerprint})"
+    Pasto::Logging.info("SSH: created API key #{api_key.id} for user #{user.sepia_id} (SSH key: #{fingerprint})")
     0
   rescue ex
     ctx.write_stderr("Failed to create API key: #{ex.message}\n")
-    puts "SSH: API key creation failed: #{ex.message}"
+    Pasto::Logging.error("SSH: API key creation failed: #{ex.message}")
     1
   end
 
@@ -859,7 +860,7 @@ DOC
     ctx.write("User: #{user.display_name}\n")
     ctx.write("You can now use this SSH key to create pastes and manage your account.\n")
 
-    puts "SSH: successfully added key #{challenge.fingerprint} to user #{user.sepia_id}"
+    Pasto::Logging.info("SSH: successfully added key #{challenge.fingerprint} to user #{user.sepia_id}")
     0
   rescue ex
     ctx.write_stderr("Error completing challenge: #{ex.message}\n")
