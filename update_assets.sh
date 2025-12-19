@@ -177,15 +177,17 @@ compress_asset() {
     fi
 }
 
-# Compress JavaScript files
-compress_asset "$ASSETS_DIR/bundle.js"
-compress_asset "$ASSETS_DIR/codejar.min.js"
-compress_asset "$ASSETS_DIR/editor-shared.js"
-compress_asset "$ASSETS_DIR/mobile-controls.js"
-
-# Compress CSS files
-for css in "$ASSETS_DIR"/*.css; do
-    compress_asset "$css"
+# Compress all uncompressed assets
+echo "Compressing all assets in $ASSETS_DIR..."
+for file in "$ASSETS_DIR"/*; do
+    # Skip if file is already compressed
+    if [[ "$file" == *.gz || "$file" == *.br ]]; then
+        continue
+    fi
+    # Only compress regular files
+    if [ -f "$file" ]; then
+        compress_asset "$file"
+    fi
 done
 
 echo "Asset compression completed (brotli + gzip) for all assets"

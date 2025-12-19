@@ -123,7 +123,7 @@ module Pasto
     SKIP_ACCESS_CONTROL_PREFIXES = [
       "/auth/", "/api/", "/assets/", "/cache/", "/preview/",
       "/api/qr/", "/api/languages", "/api/themes",
-      "/syntax", "/profile/",
+      "/syntax/", "/profile/",
     ]
 
     # Check if path needs paste access control

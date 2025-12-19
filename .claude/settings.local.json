@@ -75,7 +75,10 @@
       "Bash(PASTO_PORT=3000 ./bin/pasto:*)",
       "Bash(killall:*)",
       "Bash(sudo killall:*)",
-      "Bash(crystal tool unreachable:*)"
+      "Bash(crystal tool unreachable:*)",
+      "Bash(./bin/pasto-backup:*)",
+      "Bash(PASTO_PORT=6000 ./bin/pasto:*)",
+      "Bash(tar -xOf:*)"
     ],
     "deny": [],
     "ask": []

@@ -128,15 +128,16 @@
       <div class="mobile-controls" id="mobile-controls" style="padding: 0 1rem 1rem 1rem;">
       </div>
 
+  
       <div class="sidebar-section" style="padding: 0 1rem 1rem 1rem;">
 
         <div class="theme-group" style="margin-bottom: 1rem; margin-top: 0;">
           <label style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">UI Theme:</label>
-          <select id="pico-theme" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;">
-            <option value="auto" <%= theme_vars[:saved_pico_theme] == "auto" ? "selected" : "" %>>Auto (System)</option>
-            <option value="light" <%= theme_vars[:saved_pico_theme] == "light" ? "selected" : "" %>>Light</option>
-            <option value="dark" <%= theme_vars[:saved_pico_theme] == "dark" ? "selected" : "" %>>Dark</option>
-          </select>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i data-lucide="sun" style="width: 16px; height: 16px; color: var(--pico-muted-color);"></i>
+            <input type="checkbox" id="pico-theme" name="pico-theme" role="switch" <%= theme_vars[:saved_pico_theme] == "dark" ? "checked" : "" %> onchange="updateThemes()">
+            <i data-lucide="moon" style="width: 16px; height: 16px; color: var(--pico-muted-color);"></i>
+          </div>
         </div>
 
         <div class="theme-group" style="margin-bottom: 1rem;">
@@ -264,7 +265,7 @@
 
     // Theme update functions
     function updateThemes() {
-      const picoTheme = document.getElementById('pico-theme').value;
+      const picoTheme = document.getElementById('pico-theme').checked ? 'dark' : 'light';
       const picoColor = document.getElementById('pico-color').value;
       const syntaxTheme = document.getElementById('syntax-theme').value;
 
@@ -285,10 +286,8 @@
 
       // CodeJar theme is now handled by the enhanced /syntax endpoint
 
-      // Calculate resolved theme for data-theme attribute
-      const resolvedTheme = picoTheme === 'auto' ?
-        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') :
-        picoTheme;
+      // Use the theme directly since we no longer have auto
+      const resolvedTheme = picoTheme;
 
       // Save to server for logged-in users
       if (isUserLoggedIn) {
@@ -354,12 +353,17 @@
         // Make syntax theme available to JavaScript
         window.pastoSyntaxTheme = '<%= theme_vars[:saved_syntax_theme] %>';
       } else {
-        // For anonymous users, use localStorage preferences
-        const savedPicoTheme = localStorage.getItem('picoTheme') || 'auto';
+        // For anonymous users, use localStorage preferences or detect system theme on first visit
+        let savedPicoTheme = localStorage.getItem('picoTheme');
+        if (!savedPicoTheme || savedPicoTheme === 'auto') {
+          // No preference saved or has auto, detect system theme and set it permanently
+          savedPicoTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          localStorage.setItem('picoTheme', savedPicoTheme);
+        }
         const savedPicoColor = localStorage.getItem('picoColor') || 'slate';
         const savedSyntaxTheme = localStorage.getItem('syntaxTheme') || 'default';
 
-        document.getElementById('pico-theme').value = savedPicoTheme;
+        document.getElementById('pico-theme').checked = (savedPicoTheme === 'dark');
         document.getElementById('pico-color').value = savedPicoColor;
         // Don't set syntax theme value yet - will be set after themes load
 

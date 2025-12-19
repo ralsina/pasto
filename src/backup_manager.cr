@@ -19,7 +19,7 @@ module Pasto
       end
 
       # Ensure backup directory exists
-      backup_dir = Backup.ensure_backup_dir(user_id, storage_dir)
+      Backup.ensure_backup_dir(user_id, storage_dir)
       backup_path = Backup.backup_file_path(user_id, storage_dir)
       temp_tar_path = backup_path.gsub(/\.tar\.gz$/, ".tar")
 
@@ -200,7 +200,7 @@ module Pasto
               "file_path"    => JSON::Any.new(backup_path),
               "created_at"   => JSON::Any.new(created_at.to_rfc3339),
               "file_size"    => JSON::Any.new(file_size),
-              "object_count" => JSON::Any.new(manifest.all_objects.values.map(&.size).sum),
+              "object_count" => JSON::Any.new(manifest.all_objects.values.sum(&.size)),
             }
 
             {status: "available", backup: backup_info, error: nil}

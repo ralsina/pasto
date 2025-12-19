@@ -1,14 +1,11 @@
 require "baked_file_system"
 require "baked_file_handler"
 
-# Register the asset handler to serve baked assets via /assets/*
-add_handler BakedFileHandler::BakedFileHandler.new(Pasto::PastoAssets)
-
 # Asset handling for Pasto application
 module Pasto
   class PastoAssets
     extend BakedFileSystem
-    bake_folder "baked"
+    bake_folder "baked/assets"
   end
 
   # Favicon redirect for browsers that request /favicon without extension

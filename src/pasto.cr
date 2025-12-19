@@ -6,6 +6,10 @@ require "./logging"
 require "./preview_generator"
 require "./server"
 require "./api"
+
+# Register BakedFileHandler mounted on /assets path
+# This ensures it only handles /assets/* requests, leaving other paths to routes
+add_handler BakedFileHandler::BakedFileHandler.new(Pasto::PastoAssets, mount_path: "/assets")
 require "./theme_helper"
 require "./rate_limit_helper"
 require "pasto-cache"

@@ -26,7 +26,7 @@ module Pasto
                 when "test"
                   Log::Severity::Error
                 else
-                  Log::Severity::Debug
+                  Log::Severity::Info
                 end
               end
 

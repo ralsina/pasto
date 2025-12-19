@@ -1,11 +1,14 @@
 const CACHE_NAME = 'pasto-v1';
 const urlsToCache = [
   '/',
-  '/assets/bundle-entry.js',
-  '/assets/lucide.min.js',
-  '/assets/pico.min.css',
-  '/assets/pico.dark.min.css',
-  '/assets/pico.cyan.min.css'
+  '/assets/bundle.js',
+  '/assets/codejar.min.js',
+  '/assets/crypto.js',
+  '/assets/language-mapping.js',
+  '/assets/editor-shared.js',
+  '/assets/mobile_controls.js',
+  '/assets/manifest.json',
+  '/assets/favicon.png'
 ];
 
 // Install service worker and cache resources
