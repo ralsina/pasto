@@ -201,6 +201,16 @@ function showSharedSecurityModal(initialSettings, options = {}) {
     window.lucide.createIcons();
   }
 
+  // Add Escape key support to close modal without saving
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      modal.close();
+      document.body.removeChild(modal);
+    }
+  });
+
   modal.showModal();
 
   return modal; // Return modal for external manipulation if needed

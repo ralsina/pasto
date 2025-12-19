@@ -126,6 +126,17 @@ function showGenericModal(options = {}) {
     });
   }
 
+  // Add Escape key support to close modal without applying action
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      modal.close();
+      document.body.removeChild(modal);
+      if (opts.onClose) opts.onClose();
+    }
+  });
+
   modal.showModal();
 
   // Call onShow callback if provided

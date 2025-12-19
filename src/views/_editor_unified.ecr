@@ -405,6 +405,17 @@
         window.lucide.createIcons();
       }
 
+      // Add Escape key support to close modal without encrypting
+      modal.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          modal.close();
+          document.body.removeChild(modal);
+          reject(new Error('User cancelled encryption'));
+        }
+      });
+
       modal.showModal();
     });
   }
@@ -652,6 +663,16 @@ async function createPaste(event) {
     if (window.lucide) {
       window.lucide.createIcons();
     }
+
+    // Add Escape key support to close modal
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        modal.close();
+        document.body.removeChild(modal);
+      }
+    });
 
     modal.showModal();
   }
