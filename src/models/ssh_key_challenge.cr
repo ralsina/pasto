@@ -48,6 +48,7 @@ module Pasto
 
     # Clean up expired challenges
     def self.cleanup_expired
+      # ameba:disable Documentation/DocumentationAdmonition
       # TODO: implement cleanup of expired challenges
       # Can just traverse the storage directory and delete old files.
     end

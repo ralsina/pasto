@@ -15,7 +15,7 @@ end
 # Add GCM support methods to existing OpenSSL::Cipher class
 class OpenSSL::Cipher
   # Get the authentication tag for GCM mode
-  def get_gcm_auth_tag : Bytes
+  def gcm_auth_tag : Bytes
     unless authenticated?
       raise OpenSSL::Error.new("Cipher does not support authenticated mode")
     end
@@ -41,7 +41,7 @@ class OpenSSL::Cipher
     ciphertext = self.update(data) + self.final
 
     if authenticated?
-      auth_tag = get_gcm_auth_tag
+      auth_tag = gcm_auth_tag
       ciphertext + auth_tag
     else
       ciphertext
@@ -49,7 +49,7 @@ class OpenSSL::Cipher
   end
 
   # Set the authentication tag for GCM mode (for decryption)
-  def set_gcm_auth_tag(tag : Bytes)
+  def gcm_auth_tag=(tag : Bytes)
     unless authenticated?
       raise OpenSSL::Error.new("Cipher does not support authenticated mode")
     end
@@ -84,10 +84,10 @@ def encrypt_for_pasto_webcrypto(plaintext : String, key_b64 : String, iv_b64 : S
 
   # Get complete output with auth tag
   encrypted_data = cipher.encrypt_and_get_tag(plaintext)
-  
+
   # Clear sensitive data from memory
   key.fill(0)
   iv.fill(0)
-  
+
   Base64.strict_encode(encrypted_data)
 end

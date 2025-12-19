@@ -389,7 +389,7 @@ module Pasto
         decipher.iv = Base64.decode_string(@encryption_iv.as(String))
 
         # Set the authentication tag before decryption
-        decipher.set_gcm_auth_tag(auth_tag.to_slice)
+        decipher.gcm_auth_tag = auth_tag.to_slice
 
         # Decrypt the content
         decrypted_bytes = decipher.update(ciphertext) + decipher.final

@@ -38,7 +38,7 @@ describe "Emoji and Unicode Encryption" do
       decipher.iv = Base64.decode(iv)
 
       # Set the authentication tag
-      decipher.set_gcm_auth_tag(auth_tag)
+      decipher.gcm_auth_tag = auth_tag
 
       # Decrypt
       decrypted_bytes = decipher.update(ciphertext) + decipher.final
@@ -77,7 +77,7 @@ describe "Emoji and Unicode Encryption" do
         decipher.decrypt
         decipher.key = Base64.decode(key)
         decipher.iv = Base64.decode(iv)
-        decipher.set_gcm_auth_tag(auth_tag)
+        decipher.gcm_auth_tag = auth_tag
 
         decrypted_bytes = decipher.update(ciphertext) + decipher.final
         decrypted_text = String.new(decrypted_bytes)
