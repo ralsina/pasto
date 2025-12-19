@@ -369,7 +369,6 @@ module Pasto
       "encrypted"          => paste.is_encrypted?,
       "burn_after_reading" => paste.burn_after_reading?,
       "size"               => paste.content.bytesize,
-      "view_count"         => paste.view_count,
       "user_id"            => paste.user_id,
       "is_owner"           => paste.user_id == api_user.sepia_id,
       "ssh_fingerprint"    => paste.ssh_fingerprint,

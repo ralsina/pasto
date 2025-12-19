@@ -1139,9 +1139,6 @@ module Pasto
       language_override = paste.language_for_extension(stored_ext)
     end
 
-    # Note: For burn-after-reading pastes, we'll increment the view count AFTER showing the content
-    # This ensures the user can see the paste once before it gets deleted
-
     # Get all theme-related template variables
     theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
 

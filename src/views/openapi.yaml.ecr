@@ -36,7 +36,11 @@ paths:
               example:
                 id: "user_1234567890"
                 name: "John Doe"
+                display_name: "John Doe"
                 created_at: "2024-01-15T10:30:00Z"
+                pico_theme: "auto"
+                pico_color: "light"
+                syntax_theme: "monokai"
                 api_keys_count: 2
                 pastes_count: 15
         '401':
@@ -103,12 +107,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Paste'
+                $ref: '#/components/schemas/PasteSummary'
               example:
                 id: "paste_abcdef123456"
                 title: "My First Paste"
                 language: "javascript"
                 created_at: "2024-01-15T10:30:00Z"
+                private: false
+                encrypted: false
+                burn_after_reading: false
                 url: "https://your-pasto-server.com/paste_abcdef123456"
                 raw_url: "https://your-pasto-server.com/paste_abcdef123456/raw"
         '400':
@@ -178,7 +185,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Paste'
+                $ref: '#/components/schemas/PasteSummary'
         '404':
           $ref: '#/components/responses/NotFound'
         '401':
@@ -266,6 +273,10 @@ components:
           example: "user_1234567890"
         name:
           type: string
+          description: User name
+          example: "John Doe"
+        display_name:
+          type: string
           description: User display name
           example: "John Doe"
         created_at:
@@ -273,6 +284,18 @@ components:
           format: date-time
           description: Account creation timestamp
           example: "2024-01-15T10:30:00Z"
+        pico_theme:
+          type: string
+          description: UI theme preference
+          example: "auto"
+        pico_color:
+          type: string
+          description: UI color preference
+          example: "light"
+        syntax_theme:
+          type: string
+          description: Syntax highlighting theme preference
+          example: "monokai"
         api_keys_count:
           type: integer
           description: Number of API keys associated with the user
@@ -284,6 +307,98 @@ components:
 
     Paste:
       type: object
+      properties:
+        id:
+          type: string
+          description: Paste unique identifier
+          example: "paste_abcdef123456"
+        title:
+          type: string
+          description: Paste title (derived from content or filename)
+          example: "My First Paste"
+        content:
+          type: string
+          description: The actual paste content
+          example: "console.log('Hello, World!');"
+        filename:
+          type: string
+          description: Optional filename for the paste
+          example: "example.js"
+        language:
+          type: string
+          description: Programming language for syntax highlighting
+          example: "javascript"
+        theme:
+          type: string
+          description: Syntax highlighting theme
+          example: "monokai"
+        created_at:
+          type: string
+          format: date-time
+          description: Paste creation timestamp
+          example: "2024-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last modification timestamp
+          example: "2024-01-15T10:30:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          description: Expiration timestamp (if set)
+          example: "2024-01-16T10:30:00Z"
+        private:
+          type: boolean
+          description: Whether the paste is private (owner only)
+          example: false
+        encrypted:
+          type: boolean
+          description: Whether the paste is encrypted
+          example: false
+        burn_after_reading:
+          type: boolean
+          description: Whether the paste will be deleted after first access
+          example: false
+        size:
+          type: integer
+          description: Size of the paste content in bytes
+          example: 42
+        user_id:
+          type: string
+          description: ID of the user who owns the paste
+          example: "user_1234567890"
+        is_owner:
+          type: boolean
+          description: Whether the current user owns this paste
+          example: true
+        ssh_fingerprint:
+          type: string
+          description: SSH key fingerprint used to create the paste
+          example: "SHA256:abc123def456"
+        ssh_ip:
+          type: string
+          description: IP address used when creating via SSH
+          example: "192.168.1.1"
+        base_id:
+          type: string
+          description: Base paste ID for version tracking
+          example: "paste_base123"
+        generation:
+          type: integer
+          description: Version generation number
+          example: 1
+        url:
+          type: string
+          description: URL to view the paste
+          example: "https://your-pasto-server.com/paste_abcdef123456"
+        raw_url:
+          type: string
+          description: URL to get raw content
+          example: "https://your-pasto-server.com/paste_abcdef123456/raw"
+
+    PasteSummary:
+      type: object
+      description: Summary information returned by POST and PATCH operations
       properties:
         id:
           type: string
@@ -307,18 +422,6 @@ components:
           format: date-time
           description: Last modification timestamp
           example: "2024-01-15T10:30:00Z"
-        url:
-          type: string
-          description: URL to view the paste
-          example: "https://your-pasto-server.com/paste_abcdef123456"
-        raw_url:
-          type: string
-          description: URL to get raw content
-          example: "https://your-pasto-server.com/paste_abcdef123456/raw"
-        size:
-          type: integer
-          description: Size of the paste content in bytes
-          example: 42
         private:
           type: boolean
           description: Whether the paste is private (owner only)
@@ -331,11 +434,14 @@ components:
           type: boolean
           description: Whether the paste will be deleted after first access
           example: false
-        expires_at:
+        url:
           type: string
-          format: date-time
-          description: Expiration timestamp (if set)
-          example: "2024-01-16T10:30:00Z"
+          description: URL to view the paste
+          example: "https://your-pasto-server.com/paste_abcdef123456"
+        raw_url:
+          type: string
+          description: URL to get raw content
+          example: "https://your-pasto-server.com/paste_abcdef123456/raw"
 
     PasteList:
       type: object
