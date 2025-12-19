@@ -1,13 +1,12 @@
-<%# Include shared utilities and styles %>
-<%= render "src/views/_shared_utils.ecr" %>
-<%= render "src/views/_shared_styles.ecr" %>
-
 <!DOCTYPE html>
 <html lang="en" data-theme="<%= theme_vars[:resolved_pico_theme] %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto</title>
+  <%# Include shared utilities and styles %>
+  <%= render "src/views/_shared_utils.ecr" %>
+  <%= render "src/views/_shared_styles.ecr" %>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
 
   <!-- PWA Manifest -->
