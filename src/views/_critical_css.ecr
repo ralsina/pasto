@@ -279,7 +279,7 @@
   .codejar-editor {
     flex: 1;
     padding: 0;
-    font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: var(--pico-font-family-monospace);
     font-size: var(--pico-font-size) !important;
     line-height: 1.5;
     overflow: auto;
@@ -308,7 +308,7 @@
     flex: 1;
     margin: 0;
     padding: 0;
-    font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: var(--pico-font-family-monospace);
     font-size: var(--pico-font-size);
     line-height: 1.5;
     white-space: pre-wrap;
@@ -334,7 +334,16 @@
 
   /* Make all headings use Chivo fonts */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: var(--pico-font-family-sans-serif);
+  }
+
+  /* Global font adjustments for Chivo */
+  :root {
+    --pico-font-family-sans-serif: 'Chivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --pico-font-family: var(--pico-font-family-sans-serif);
+    --pico-font-family-monospace: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+    --pico-font-weight: 300;
+    --pico-font-size: 90%;
   }
 
   /* Mobile adjustments for editor */

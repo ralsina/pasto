@@ -2,9 +2,9 @@
   <hgroup>
     <h2><%= HTML.escape(paste.display_title) %></h2>
     <div class="paste-meta">
-      <span class="meta-item" title="Created date and time">
+      <span class="meta-item" title="<%= paste.created_at.to_s("%Y-%m-%d %H:%M") %> UTC">
         <i data-lucide="calendar"></i>
-        <%= paste.created_at.to_s("%Y-%m-%d %H:%M") %> UTC
+        <%= Pasto::TimeHelper.relative_time(paste.created_at) %>
       </span>
       
       <span class="meta-separator">•</span>
@@ -323,7 +323,8 @@
     color: var(--pico-muted-color);
     font-size: 0.9em;
   }
-</style>
+
+  </style>
 
 <%# Include shared utilities, styles, and security components %>
 <%= render "src/views/_shared_utils.ecr" %>
