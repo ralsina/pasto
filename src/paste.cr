@@ -300,15 +300,15 @@ module Pasto
           lang = detected if detected
         end
 
-        puts "DEBUG: Direct highlighting with language: #{lang}, theme: #{theme}, line_numbers: #{line_numbers}"
+        Pasto::Logging.debug("Direct highlighting with language: #{lang}, theme: #{theme}, line_numbers: #{line_numbers}")
         formatter = Tartrazine::Html.new(theme: Tartrazine.theme(theme), line_numbers: line_numbers)
         lexer = Tartrazine.lexer(name: lang)
         result = formatter.format(content, lexer)
         css = formatter.style_defs
-        puts "DEBUG: Direct highlighting successful"
+        Pasto::Logging.debug("Direct highlighting successful")
         {result, css}
       rescue ex
-        puts "DEBUG: Direct highlighting failed for language '#{lang}' with theme '#{theme}': #{ex.message}"
+        Pasto::Logging.error("Direct highlighting failed for language '#{lang}' with theme '#{theme}': #{ex.message}")
         # Fallback: escape HTML and wrap in pre
         {HTML.escape(content), ""}
       end
@@ -342,10 +342,10 @@ module Pasto
         end
 
         # No supported language found
-        puts "DEBUG: No Tartrazine-supported language found in Hansa results"
+        Pasto::Logging.debug("No Tartrazine-supported language found in Hansa results")
         nil
       rescue ex
-        puts "DEBUG: Error getting language from Hansa: #{ex.message}"
+        Pasto::Logging.error("Error getting language from Hansa: #{ex.message}")
         nil
       end
     end
@@ -445,7 +445,7 @@ module Pasto
 
     # Delete paste completely (for burn-after-reading)
     def burn_now! : Nil
-      puts "🔥 Burning paste #{@sepia_id} (burn-after-reading) - deleting permanently"
+      Pasto::Logging.info("Burning paste #{@sepia_id} (burn-after-reading) - deleting permanently", "🔥")
       delete_completely!
     end
 

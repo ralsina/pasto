@@ -158,7 +158,7 @@ module PastoSSH
 
     # Handle shell requests (ssh host without command - treat as paste)
     server.on_shell do |ctx|
-      puts "SSH shell: from user='#{ctx.user}' (treating as paste)"
+      Pasto::Logging.info("SSH shell: from user='#{ctx.user}' (treating as paste)", "🔐")
       handle_paste(ctx, @@current_fingerprint, @@base_url, "")
     end
 
@@ -231,7 +231,7 @@ DOC
         # Handle private paste
         private_paste = !!opts["--private"]
 
-        puts "SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}, expires_at=#{expires_at.inspect}, burn_after_reading=#{burn_after_reading}, private_paste=#{private_paste}"
+        Pasto::Logging.debug("SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}, expires_at=#{expires_at.inspect}, burn_after_reading=#{burn_after_reading}, private_paste=#{private_paste}")
       rescue ex : Docopt::DocoptException
         ctx.write_stderr("Invalid options: #{ex.message}\n")
         ctx.write_stderr(PASTE_DOC)
@@ -291,13 +291,13 @@ DOC
       # Use our working Crystal GCM implementation
       encrypted_b64 = encrypt_for_pasto_webcrypto(content, encryption_key_b64, encryption_iv)
       actual_content = encrypted_b64
-      puts "SSH: server-side AES-256-GCM encryption with PBKDF2 successful"
+      Pasto::Logging.info("SSH: server-side AES-256-GCM encryption with PBKDF2 successful", "🔐")
     elsif is_pre_encrypted
       # Content is already encrypted by user (true zero-trust)
-      puts "SSH: using pre-encrypted content (zero-trust mode)"
+      Pasto::Logging.info("SSH: using pre-encrypted content (zero-trust mode)", "🔐")
       actual_content = content.strip
       encryption_iv = iv
-      puts "SSH: pre-encrypted IV: #{iv}"
+      Pasto::Logging.debug("SSH: pre-encrypted IV: #{iv}")
     end
 
     # Create paste - language detection from filename happens in Paste constructor
@@ -316,13 +316,13 @@ DOC
     # Set encryption metadata if encrypted (server or pre-encrypted)
     if encrypted || is_pre_encrypted
       paste.encryption_iv = encryption_iv
-      puts "SSH: Setting encryption IV: #{encryption_iv}"
+      Pasto::Logging.debug("SSH: Setting encryption IV: #{encryption_iv}")
 
       # For server-side encryption, also set the salt (PBKDF2)
       if is_server_encrypted
         paste.encryption_salt = encryption_salt
         paste.encryption_iterations = 100000
-        puts "SSH: Setting encryption salt: #{encryption_salt}"
+        Pasto::Logging.debug("SSH: Setting encryption salt: #{encryption_salt}")
       end
       # is_pre_encrypted uses whatever user provided
 
@@ -330,21 +330,21 @@ DOC
       if !actual_content.empty?
         begin
           encrypted_bytes = Base64.decode_string(actual_content)
-          puts "SSH: Encrypted data size: #{encrypted_bytes.size} bytes"
+          Pasto::Logging.debug("SSH: Encrypted data size: #{encrypted_bytes.size} bytes")
           if encrypted_bytes.size >= 16
             # The last 16 bytes are the auth tag
             auth_tag_bytes = encrypted_bytes[-16..]
             paste.encryption_tag = Base64.strict_encode(auth_tag_bytes)
-            puts "SSH: Extracted auth tag: #{paste.encryption_tag.as(String).size} bytes"
-            puts "SSH: Auth tag (first 8 chars): #{paste.encryption_tag.as(String)[0..7]}"
+            Pasto::Logging.debug("SSH: Extracted auth tag: #{paste.encryption_tag.as(String).size} bytes")
+            Pasto::Logging.debug("SSH: Auth tag (first 8 chars): #{paste.encryption_tag.as(String)[0..7]}")
           end
         rescue ex
-          puts "SSH: warning - could not extract auth tag: #{ex.message}"
+          Pasto::Logging.warn("SSH: warning - could not extract auth tag: #{ex.message}", "⚠️")
         end
       end
       # Store the content as encrypted_content for web compatibility
       paste.encrypted_content = actual_content
-      puts "SSH: Stored encrypted_content (first 16 chars): #{actual_content[0..15]}..."
+      Pasto::Logging.debug("SSH: Stored encrypted_content (first 16 chars): #{actual_content[0..15]}...")
     end
 
     # Save the paste as a standalone object (so web server can find it)
@@ -659,7 +659,7 @@ DOC
 
   # Handle add-key command - create a challenge for adding a new SSH key
   private def self.handle_add_key(ctx, fingerprint : String, args : String) : Int32
-    puts "SSH: add-key called with fingerprint=#{fingerprint}, args=#{args.inspect}"
+    Pasto::Logging.info("SSH: add-key called with fingerprint=#{fingerprint}, args=#{args.inspect}", "🔐")
 
     # Check SSH key operation rate limit
     unless allow_ssh_key_operation?(fingerprint)
@@ -721,11 +721,11 @@ DOC
       ctx.write("ssh -i path/to/new/key -p 2222 #{URI.parse(@@base_url).host} ssh-key response #{challenge.sepia_id}\n\n")
       ctx.write("⏰ This challenge expires in 30 minutes.\n")
 
-      puts "SSH: created challenge #{challenge.sepia_id} for user #{current_user.sepia_id} (new key fingerprint: #{new_fingerprint})"
+      Pasto::Logging.info("SSH: created challenge #{challenge.sepia_id} for user #{current_user.sepia_id} (new key fingerprint: #{new_fingerprint})", "✅")
       0
     rescue ex
       ctx.write_stderr("Error processing SSH key: #{ex.message}\n")
-      puts "SSH: add-key failed: #{ex.message}"
+      Pasto::Logging.error("SSH: add-key failed: #{ex.message}")
       1
     end
   end
@@ -753,17 +753,17 @@ DOC
   # Handle ssh-key list command
   private def self.handle_ssh_key_list(ctx, fingerprint : String) : Int32
     # Find current user for this SSH key
-    puts "SSH DEBUG: Looking up SSH key with fingerprint: #{fingerprint}"
+    Pasto::Logging.debug("SSH: Looking up SSH key with fingerprint: #{fingerprint}")
     ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
-    puts "SSH DEBUG: Found SSH key: #{ssh_key.inspect}"
+    Pasto::Logging.debug("SSH: Found SSH key: #{ssh_key.inspect}")
 
     current_user = if owner_id = ssh_key.owner_id
-                     puts "SSH DEBUG: SSH key has owner_id: #{owner_id}"
+                     Pasto::Logging.debug("SSH: SSH key has owner_id: #{owner_id}")
                      user = Pasto::User.find(owner_id)
-                     puts "SSH DEBUG: Found user: #{user.inspect}"
+                     Pasto::Logging.debug("SSH: Found user: #{user.inspect}")
                      user
                    else
-                     puts "SSH DEBUG: SSH key has no owner_id"
+                     Pasto::Logging.debug("SSH: SSH key has no owner_id")
                      ctx.write("No SSH keys found. Create an account first: ssh host login\n")
                      return 0
                    end
@@ -873,7 +873,7 @@ DOC
     0
   rescue ex
     ctx.write_stderr("Error completing challenge: #{ex.message}\n")
-    puts "SSH: ssh-key response failed: #{ex.message}"
+    Pasto::Logging.error("SSH: ssh-key response failed: #{ex.message}")
     1
   end
 
