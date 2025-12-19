@@ -32,6 +32,7 @@ module Pasto
         resolved_pico_theme: themes[:pico_theme],
         pico_theme_file:     themes[:pico_color] == "css" ? "pico.min.css" : "pico.#{themes[:pico_color]}.min.css",
         theme:               config.theme,
+        version:             VERSION,
       }
     end
   end

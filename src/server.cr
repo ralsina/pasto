@@ -16,6 +16,7 @@ require "./ratelimit"
 require "./rate_limit_helper"
 require "./ssh_utils"
 require "./theme_helper"
+require "./time_helper"
 require "./user_session"
 require "ecr"
 require "file_utils"
@@ -26,6 +27,8 @@ require "qr-code/export/png"
 require "tartrazine"
 
 module Pasto
+  include TimeHelper
+
   # Extracts UserSession from Kemal session and fetches User from Sepia storage
   # Returns nil for unauthenticated users or invalid sessions
   def self.get_current_user(env) : User?
@@ -1197,6 +1200,7 @@ module Pasto
       enhanced_css = Pasto.add_highlightjs_classes(css, theme_name)
 
       env.response.content_type = "text/css"
+      env.response.headers["Cache-Control"] = "public, max-age=604800" # 1 week in seconds
       enhanced_css
     rescue ex
       env.response.status_code = 404
