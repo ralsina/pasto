@@ -46,11 +46,10 @@ module Pasto
       paste.burn_after_reading = burn_after_reading
       paste.private = private_paste
 
-      # Handle encryption
+      # Handle encryption (always password-based with PBKDF2)
       if encrypted
         paste.is_encrypted = true
         paste.encrypted_content = content
-        paste.password_based = !encryption_password.nil?
 
         # For password-based encryption, the server should handle encryption
         # For key-based encryption (SSH), this is handled in ssh_server.cr

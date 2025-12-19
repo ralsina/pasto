@@ -494,11 +494,8 @@ async function createPaste(event) {
       if (isEncrypted) {
         formData.append('is_encrypted', 'true');
         formData.append('encryption_iv', encryptionIv);
-        if (isPasswordBased) {
-          formData.append('password_based', 'true');
-          formData.append('encryption_salt', encryptionSalt);
-          formData.append('encryption_iterations', '100000');
-        }
+        formData.append('encryption_salt', encryptionSalt);
+        formData.append('encryption_iterations', '100000');
       }
 
       // For encrypted pastes, handle the redirect differently

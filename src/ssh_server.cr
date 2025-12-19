@@ -12,6 +12,7 @@ require "uri"
 require "docopt"
 require "rate_limiter"
 require "random/secure"
+require "openssl"
 
 module PastoSSH
   # Alternative AES-GCM encryption approach using Crystal's OpenSSL with a workaround
@@ -276,15 +277,21 @@ DOC
     is_pre_encrypted = pre_encrypted
 
     if is_server_encrypted
-      # Generate random key and IV for server-side encryption
-      encryption_key = Base64.strict_encode(Random::Secure.random_bytes(32))
+      # Generate secure password and salt for PBKDF2
+      # Generate a user-friendly password (base64 of random bytes for readability)
+      encryption_password = Base64.strict_encode(Random::Secure.random_bytes(24))[0..31] # 32 chars, trim if needed
+      encryption_salt = Base64.strict_encode(Random::Secure.random_bytes(16))
       encryption_iv = Base64.strict_encode(Random::Secure.random_bytes(12))
+
+      # Derive key using PBKDF2 (100,000 iterations)
+      encryption_key = derive_key_from_password(encryption_password, encryption_salt)
+      encryption_key_b64 = Base64.strict_encode(encryption_key)
 
       # Implement proper AES-256-GCM encryption using Crystal (Web Crypto API compatible)
       # Use our working Crystal GCM implementation
-      encrypted_b64 = encrypt_for_pasto_webcrypto(content, encryption_key, encryption_iv)
+      encrypted_b64 = encrypt_for_pasto_webcrypto(content, encryption_key_b64, encryption_iv)
       actual_content = encrypted_b64
-      puts "SSH: server-side Crystal AES-256-GCM encryption successful"
+      puts "SSH: server-side AES-256-GCM encryption with PBKDF2 successful"
     elsif is_pre_encrypted
       # Content is already encrypted by user (true zero-trust)
       puts "SSH: using pre-encrypted content (zero-trust mode)"
@@ -311,10 +318,12 @@ DOC
       paste.encryption_iv = encryption_iv
       puts "SSH: Setting encryption IV: #{encryption_iv}"
 
-      # Set password_based flag - false for key-based encryption
-      paste.password_based = false
-
-      # For server-side encryption, don't set encryption_iterations (only for password-based)
+      # For server-side encryption, also set the salt (PBKDF2)
+      if is_server_encrypted
+        paste.encryption_salt = encryption_salt
+        paste.encryption_iterations = 100000
+        puts "SSH: Setting encryption salt: #{encryption_salt}"
+      end
       # is_pre_encrypted uses whatever user provided
 
       # Store the authentication tag (extracted from the encrypted data)
@@ -351,9 +360,9 @@ DOC
 
       # Provide appropriate output based on encryption type
       if is_server_encrypted
-        ctx.write("🔒 Encryption key: #{encryption_key}\n")
-        ctx.write("⚠️  Save this key securely - it cannot be recovered!\n")
-        ctx.write("📋 To decrypt: Open the URL above and enter this key\n")
+        ctx.write("🔒 Encryption password: #{encryption_password}\n")
+        ctx.write("⚠️  Save this password securely - it cannot be recovered!\n")
+        ctx.write("📋 To decrypt: Open the URL above and enter this password\n")
       elsif is_pre_encrypted
         ctx.write("🔐 Zero-trust encrypted paste created\n")
         ctx.write("📋 To decrypt: Open the URL above and enter your encryption key\n")
@@ -866,5 +875,21 @@ DOC
     ctx.write_stderr("Error completing challenge: #{ex.message}\n")
     puts "SSH: ssh-key response failed: #{ex.message}"
     1
+  end
+
+  # Derive encryption key from password using PBKDF2
+  private def self.derive_key_from_password(password : String, salt : String, iterations : Int32 = 100000) : Bytes
+    # Treat password as UTF-8 string and decode base64 salt
+    password_bytes = password.to_slice
+    salt_bytes = Base64.decode_string(salt)
+
+    # Use PBKDF2-HMAC-SHA256 to derive a 32-byte (256-bit) key
+    OpenSSL::PKCS5.pbkdf2_hmac(
+      secret: password_bytes,
+      salt: salt_bytes,
+      iterations: iterations,
+      algorithm: OpenSSL::Algorithm::SHA256,
+      key_size: 32
+    )
   end
 end

@@ -146,7 +146,6 @@
   // Initialize shared security utilities
   const pasteData = {
     is_encrypted: <%= paste.is_encrypted? %>,
-    password_based: <%= paste.password_based? %>,
     encryption_iv: <%= paste.responds_to?(:encryption_iv) && paste.encryption_iv ? paste.encryption_iv.to_json : "null" %>
   };
   SharedSecurity.initialize(pasteData);
@@ -336,7 +335,8 @@
 
   // Show password dialog for encrypted content
   function showPasswordDialog() {
-    const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
+    // All encrypted pastes now use password-based encryption with PBKDF2 key derivation
+    const isPasswordBased = <%= paste.is_encrypted? ? "true" : "false" %>;
 
     // Check Web Crypto API availability first
     if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle !== 'object') {
@@ -403,8 +403,8 @@
 
       let decryptedContent;
 
-      // Check if this is password-based encryption
-      const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
+      // All encrypted pastes now use password-based encryption with PBKDF2 key derivation
+      const isPasswordBased = <%= paste.is_encrypted? ? "true" : "false" %>;
       console.log('isPasswordBased:', isPasswordBased);
 
       // Debug: Check if PastoCrypto is available
@@ -539,8 +539,8 @@
     const currentPath = window.location.pathname;
     const pasteSepiaId = currentPath.substring(1); // Remove leading '/'
 
-    // Check if this is password-based encryption
-    const isPasswordBased = <%= paste.password_based? ? "true" : "false" %>;
+    // All encrypted pastes now use password-based encryption with PBKDF2 key derivation
+    const isPasswordBased = <%= paste.is_encrypted? ? "true" : "false" %>;
 
     // Use whichever PastoCrypto is available
     const Crypto = typeof PastoCrypto !== 'undefined' ? PastoCrypto : window.PastoCrypto;

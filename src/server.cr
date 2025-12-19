@@ -508,7 +508,6 @@ module Pasto
     property? is_private : Bool
     property? is_encrypted : Bool
     property encryption_iv : String?
-    property? password_based : Bool
     property encryption_salt : String?
     property encryption_iterations : Int32
     property user_id : String?
@@ -543,8 +542,7 @@ module Pasto
       @is_encrypted = env.params.body["is_encrypted"]?.to_s == "true"
       @encryption_iv = env.params.body["encryption_iv"]?.to_s.strip.empty? ? nil : env.params.body["encryption_iv"]?.to_s
 
-      # Handle password-based encryption fields
-      @password_based = env.params.body["password_based"]?.to_s == "true"
+      # Handle encryption fields (always password-based now)
       @encryption_salt = env.params.body["encryption_salt"]?.to_s.strip.empty? ? nil : env.params.body["encryption_salt"]?.to_s
 
       encryption_iterations_str = env.params.body["encryption_iterations"]?.to_s
@@ -592,7 +590,6 @@ module Pasto
       paste.is_encrypted = true
       paste.encrypted_content = params.content
       paste.encryption_iv = params.encryption_iv
-      paste.password_based = params.password_based?
       paste.encryption_salt = params.encryption_salt
       paste.encryption_iterations = params.encryption_iterations
       paste.content = "" # Clear regular content for encrypted pastes

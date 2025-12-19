@@ -122,7 +122,6 @@ module Pasto
     property encryption_tag : String?
     property encryption_salt : String?
     property encryption_iterations : Int32 = 100000
-    property? password_based : Bool = false
 
     # Security features
     property expires_at : Time = Time.utc(9999, 1, 1)
