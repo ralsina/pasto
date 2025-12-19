@@ -90,11 +90,11 @@
     <div class="accordion-sections">
 
       <!-- Pastes Accordion -->
-      <details class="accordion">
+      <details class="accordion"<%= env.params.query.has_key?("page") ? " open" : "" %>>
         <summary class="accordion-summary">
           <span class="accordion-title">📋 Your Pastes</span>
-          <% user_pastes = current_user.all_pastes %>
-          <span class="accordion-count"><%= user_pastes.size %> items</span>
+          <% total_pastes = current_user ? current_user.all_pastes.size : 0 %>
+          <span class="accordion-count"><%= total_pastes %> items</span>
         </summary>
         <div class="accordion-content">
           <% if user_pastes.empty? %>
@@ -102,8 +102,33 @@
             <p>Create pastes via the web interface or using SSH:</p>
             <code class="command-example">echo "Hello World" | ssh -p <%= ssh_port %> <%= ssh_host %> paste</code>
           <% else %>
+            <% if page_count > 1 %>
+            <div class="pagination-info">
+              <span>Showing page <%= page_number %> of <%= page_count %></span>
+              <div class="pagination-controls">
+                <% if page_number > 1 %>
+                  <a href="/profile?page=<%= page_number - 1 %>" class="pagination-btn prev">
+                    <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                    Previous
+                  </a>
+                <% end %>
+
+                <span class="pagination-page-info">
+                  Page <%= page_number %> of <%= page_count %>
+                </span>
+
+                <% if page_number < page_count %>
+                  <a href="/profile?page=<%= page_number + 1 %>" class="pagination-btn next">
+                    Next
+                    <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                  </a>
+                <% end %>
+              </div>
+            </div>
+            <% end %>
+
             <div class="pastes-list">
-              <% user_pastes.sort_by(&.created_at).reverse.first(20).each do |paste| %>
+              <% user_pastes.each do |paste| %>
               <div class="paste-item <%= paste.burn_after_reading? ? "burn-after-reading" : "" %>">
                 <div class="paste-link">
                   <a href="/<%= paste.sepia_id %>" class="paste-content">
@@ -138,9 +163,29 @@
                 </div>
               </div>
               <% end %>
-              <% if user_pastes.size > 20 %>
-              <p class="more-pastes">Showing 20 of <%= user_pastes.size %> pastes</p>
-              <% end %>
+              <% if page_count > 1 %>
+            <div class="pagination-bottom">
+              <div class="pagination-controls">
+                <% if page_number > 1 %>
+                  <a href="/profile?page=<%= page_number - 1 %>" class="pagination-btn prev">
+                    <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                    Previous
+                  </a>
+                <% end %>
+
+                <span class="pagination-page-info">
+                  Page <%= page_number %> of <%= page_count %>
+                </span>
+
+                <% if page_number < page_count %>
+                  <a href="/profile?page=<%= page_number + 1 %>" class="pagination-btn next">
+                    Next
+                    <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                  </a>
+                <% end %>
+              </div>
+            </div>
+            <% end %>
             </div>
           <% end %>
         </div>
@@ -442,6 +487,7 @@ function downloadBackup() {
   // Trigger file download
   window.location.href = '/profile/backups/download';
 }
+
 </script>
 
 <style>
@@ -537,11 +583,12 @@ function downloadBackup() {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: var(--pico-contrast);
   }
 
   .accordion-count {
     background-color: var(--pico-code-background-color);
-    color: var(--pico-muted-color);
+    color: var(--pico-contrast);
     padding: 0.25rem 0.5rem;
     border-radius: 1rem;
     font-size: 0.8rem;
@@ -916,7 +963,7 @@ function downloadBackup() {
   }
 
   .no-items {
-    color: var(--pico-muted-color);
+    color: var(--pico-contrast);
     margin-bottom: 0.5rem;
   }
 
@@ -1162,7 +1209,7 @@ function downloadBackup() {
 
   .backup-status.none {
     background-color: var(--pico-code-background-color);
-    color: var(--pico-muted-color);
+    color: var(--pico-contrast);
   }
 
   .backup-status-icon {
@@ -1174,7 +1221,7 @@ function downloadBackup() {
   .backup-meta {
     margin-top: 0.75rem;
     font-size: 0.85rem;
-    color: var(--pico-muted-color);
+    color: var(--pico-contrast);
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -1191,7 +1238,7 @@ function downloadBackup() {
     border-radius: var(--pico-border-radius);
     font-size: 0.9rem;
     background-color: var(--pico-code-background-color);
-    color: var(--pico-muted-color);
+    color: var(--pico-contrast);
     border: 1px solid var(--pico-border-color);
     line-height: 1.4;
   }
@@ -1238,6 +1285,127 @@ function downloadBackup() {
 
     .backup-meta {
       margin-top: 0.5rem;
+    }
+  }
+
+  /* Pagination Styles */
+  .pagination-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--pico-secondary-background);
+    border: 1px solid var(--pico-secondary-border);
+    border-radius: var(--pico-border-radius);
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .pagination-info > span {
+    color: var(--pico-contrast);
+    font-weight: 500;
+  }
+
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--pico-primary-border);
+    border-radius: var(--pico-border-radius);
+    background-color: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    min-height: 32px;
+  }
+
+  .pagination-btn:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+    text-decoration: none;
+    color: var(--pico-primary-inverse);
+  }
+
+  .pagination-btn:active {
+    transform: translateY(1px);
+  }
+
+  .pagination-page-info {
+    font-size: 0.85rem;
+    color: var(--pico-contrast);
+    font-weight: 500;
+    padding: 0 0.5rem;
+  }
+
+  .pagination-bottom {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--pico-border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .per-page-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .per-page-selector label {
+    color: var(--pico-color);
+    font-weight: 500;
+  }
+
+  .per-page-selector select {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+    background-color: var(--pico-background-color);
+    color: var(--pico-color);
+    font-size: 0.85rem;
+  }
+
+  .per-page-selector select:focus {
+    outline: 2px solid var(--pico-primary);
+    outline-offset: 2px;
+  }
+
+  /* Responsive pagination */
+  @media (max-width: 768px) {
+    .pagination-info {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .pagination-controls {
+      justify-content: center;
+    }
+
+    .pagination-bottom {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .per-page-selector {
+      justify-content: center;
     }
   }
 </style>

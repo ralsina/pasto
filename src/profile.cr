@@ -196,8 +196,34 @@ module Pasto
     # Validate session to get current user
     current_user = Pasto.get_current_user(env)
 
+    # Parse pagination parameters (fixed 20 per page)
+    page = env.params.query["page"]?.try(&.to_i?) || 1
+    per_page = 20
+    page = [page, 1].max # Ensure page is at least 1
+
+    # Calculate pagination for user pastes
+    user_pastes = if current_user # ameba:disable Lint/UselessAssign
+                    all_pastes = current_user.all_pastes.sort_by(&.created_at).reverse!
+                    total_pastes = all_pastes.size
+                    total_pages = (total_pastes.to_f / per_page).ceil.to_i
+                    total_pages = 1 if total_pages == 0 # Ensure at least 1 page
+                    page = [page, total_pages].min      # Ensure page doesn't exceed total pages
+
+                    start_idx = (page - 1) * per_page
+                    end_idx = [start_idx + per_page, total_pastes].min
+                    all_pastes[start_idx...end_idx]
+                  else
+                    [] of Paste
+                  end
+
+    # Simple pagination data for template
+    page_number = page
+    page_count = current_user ? ((current_user.all_pastes.size.to_f / per_page).ceil.to_i) : 1
+    page_count = 1 if page_count == 0
+    page_number = [page_number, page_count].min
+
     # Get backup status server-side
-    backup_status = if current_user
+    backup_status = if current_user # ameba:disable Lint/UselessAssign
                       Pasto::Logging.info("Getting backup status for user #{current_user.sepia_id}")
                       status = BackupManager.get_backup_status(current_user.sepia_id)
                       Pasto::Logging.info("Backup status result: #{status}")
