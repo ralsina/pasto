@@ -1,7 +1,7 @@
 <div class="paste-header">
   <hgroup>
     <h2><%= HTML.escape(paste.display_title) %></h2>
-    <p class="paste-meta"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %> UTC</p>
+    <p class="paste-meta"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %> UTC<% if owner = paste.owner %><% display_name = owner.display_name.empty? ? "Unnamed User" : owner.display_name %> | Created by: <%= HTML.escape(display_name) %> <button class="user-id-info" title="Click to show user ID" aria-label="Show user ID"><i data-lucide="help-circle"></i></button><span class="user-id" style="display: none;"> (ID: <%= HTML.escape(owner.sepia_id) %>)</span><% else %> | Created by: Anonymous User<% end %></p>
   </hgroup>
 </div>
 
@@ -128,6 +128,33 @@
     width: 1.25rem;
     height: 1.25rem;
     color: var(--pico-contrast-inverse);
+  }
+
+  /* User ID info button styling */
+  .user-id-info {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 0 0 4px;
+    cursor: pointer;
+    display: inline-block;
+    vertical-align: middle;
+    color: var(--pico-muted-color);
+    transition: color 0.2s;
+  }
+
+  .user-id-info:hover {
+    color: var(--pico-primary);
+  }
+
+  .user-id-info i {
+    width: 14px;
+    height: 14px;
+  }
+
+  .user-id {
+    color: var(--pico-muted-color);
+    font-size: 0.9em;
   }
 </style>
 
@@ -736,5 +763,34 @@
     }
 
   
+  });
+
 });
+</script>
+
+<script>
+// Toggle user ID visibility - setup immediately
+(function() {
+  function setupUserIdToggle() {
+    const userIdInfos = document.querySelectorAll('.user-id-info');
+
+    userIdInfos.forEach(function(infoElement) {
+      infoElement.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const userIdSpan = this.nextElementSibling;
+        if (userIdSpan && userIdSpan.classList.contains('user-id')) {
+          userIdSpan.style.display = userIdSpan.style.display === 'none' ? 'inline' : 'none';
+        }
+      });
+    });
+  }
+
+  // Setup immediately if DOM is ready, otherwise wait for DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupUserIdToggle);
+  } else {
+    setupUserIdToggle();
+  }
+})();
 </script>

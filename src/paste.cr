@@ -463,5 +463,13 @@ module Pasto
       # Delete this paste itself
       Sepia::Storage.delete(self)
     end
+
+    # Get the owner user of this paste, if it has one
+    def owner : User?
+      return nil unless user_id
+      User.find(user_id.as(String))
+    rescue
+      nil
+    end
   end
 end
