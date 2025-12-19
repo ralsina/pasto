@@ -217,10 +217,9 @@ module Pasto
                   end
 
     # Simple pagination data for template
-    page_number = page
+    page_number = page # ameba:disable Lint/UselessAssign
     page_count = current_user ? ((current_user.all_pastes.size.to_f / per_page).ceil.to_i) : 1
-    page_count = 1 if page_count == 0
-    page_number = [page_number, page_count].min
+    page_count = 1 if page_count == 0 # ameba:disable Lint/UselessAssign
 
     # Get backup status server-side
     backup_status = if current_user # ameba:disable Lint/UselessAssign

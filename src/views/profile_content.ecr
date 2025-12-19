@@ -92,7 +92,10 @@
       <!-- Pastes Accordion -->
       <details class="accordion"<%= env.params.query.has_key?("page") ? " open" : "" %>>
         <summary class="accordion-summary">
-          <span class="accordion-title">📋 Your Pastes</span>
+          <span class="accordion-title">
+            <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+            Your Pastes
+          </span>
           <% total_pastes = current_user ? current_user.all_pastes.size : 0 %>
           <span class="accordion-count"><%= total_pastes %> items</span>
         </summary>
@@ -194,7 +197,10 @@
       <!-- API Keys Accordion -->
       <details class="accordion">
         <summary class="accordion-summary">
-          <span class="accordion-title">🔐 API Keys</span>
+          <span class="accordion-title">
+            <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
+            API Keys
+          </span>
           <% api_keys = current_user.all_api_keys %>
           <span class="accordion-count"><%= api_keys.size %> keys</span>
         </summary>
@@ -243,7 +249,10 @@
       <!-- SSH Keys Accordion -->
       <details class="accordion">
         <summary class="accordion-summary">
-          <span class="accordion-title">🔑 SSH Keys</span>
+          <span class="accordion-title">
+            <i data-lucide="key" style="width: 20px; height: 20px;"></i>
+            SSH Keys
+          </span>
           <span class="accordion-count"><%= current_user.keys.size %> keys</span>
         </summary>
         <div class="accordion-content">
@@ -274,7 +283,10 @@
       <!-- Backups Accordion -->
       <details class="accordion">
         <summary class="accordion-summary">
-          <span class="accordion-title">💾 Data Backups</span>
+          <span class="accordion-title">
+            <i data-lucide="database" style="width: 20px; height: 20px;"></i>
+            Data Backups
+          </span>
         </summary>
         <div class="accordion-content">
         <%
@@ -547,8 +559,9 @@ function downloadBackup() {
     cursor: pointer;
     font-weight: 600;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    gap: 1rem;
     transition: background-color 0.2s;
     list-style: none;
     user-select: none;
@@ -586,6 +599,10 @@ function downloadBackup() {
     color: var(--pico-contrast);
   }
 
+  .accordion-title i {
+    flex-shrink: 0;
+  }
+
   .accordion-count {
     background-color: var(--pico-code-background-color);
     color: var(--pico-contrast);
@@ -593,6 +610,7 @@ function downloadBackup() {
     border-radius: 1rem;
     font-size: 0.8rem;
     font-weight: 500;
+    margin-left: auto;
   }
 
   .accordion[open] > .accordion-summary .accordion-count {
