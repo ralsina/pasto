@@ -70,6 +70,25 @@ module Pasto
       end.compact
     end
 
+    # Get pastes for a specific range without loading all pastes first
+    def get_pastes_for_range(from : Int, to : Int) : Array(Paste)
+      all_paste_refs = @keys.flat_map(&.pastes).compact.reverse! # Already sorted by date
+
+      # Load ONLY the pastes for this range
+      all_paste_refs[from...to].compact_map do |paste|
+        begin
+          Paste.from_file(paste.sepia_id)
+        rescue
+          nil
+        end
+      end.compact
+    end
+
+    # Helper to get total count without loading all pastes
+    def all_pastes_count : Int32
+      @keys.flat_map(&.pastes).compact.size
+    end
+
     # Return all related objects for Sepia backup traversal
     def sepia_references : Array(Sepia::Object)
       references = [] of Sepia::Object
