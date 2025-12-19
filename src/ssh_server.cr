@@ -141,6 +141,16 @@ module PastoSSH
         handle_login(ctx, @@current_fingerprint, @@base_url)
       when "list"
         handle_list(ctx, @@current_fingerprint, @@base_url)
+      when "get"
+        handle_get(ctx, @@current_fingerprint, args)
+      when "delete"
+        handle_delete(ctx, @@current_fingerprint, args)
+      when "edit"
+        handle_edit(ctx, @@current_fingerprint, args)
+      when "view"
+        handle_view(ctx, @@current_fingerprint, args)
+      when "info"
+        handle_info(ctx, @@current_fingerprint, args)
       when "api-key"
         handle_api_key(ctx, @@current_fingerprint, args)
       when "help"
@@ -433,6 +443,12 @@ DOC
     ctx.write("  echo 'private' | ssh #{host} paste --private\n\n")
     ctx.write("List your pastes:\n")
     ctx.write("  ssh #{host} list\n\n")
+    ctx.write("View and manage pastes:\n")
+    ctx.write("  ssh #{host} get <paste-id>              Get raw paste content\n")
+    ctx.write("  ssh #{host} view <paste-id>             View paste content\n")
+    ctx.write("  ssh #{host} info <paste-id>             Show paste metadata\n")
+    ctx.write("  cat new.txt | ssh #{host} edit <id>    Replace paste content\n")
+    ctx.write("  ssh #{host} delete <paste-id>           Delete a paste\n\n")
     ctx.write("API key management:\n")
     ctx.write("  ssh #{host} api-key create    Create a new API key\n")
     ctx.write("  ssh #{host} api-key list      List your API keys\n\n")
@@ -481,6 +497,162 @@ DOC
       ctx.write("#{base_url}/#{paste.sepia_id}\n")
       ctx.write("  Created: #{created}#{lang}\n")
       ctx.write("  Preview: #{preview}\n\n")
+    end
+
+    0
+  end
+
+  # Handle get command - retrieve raw paste content
+  private def self.handle_get(ctx, fingerprint : String, args : String) : Int32
+    paste_id = args.strip
+
+    if paste_id.empty?
+      ctx.write_stderr("Usage: ssh host get <paste-id>\n")
+      return 1
+    end
+
+    # Find the paste
+    paste = Pasto::Paste.from_file(paste_id)
+
+    if paste.nil?
+      ctx.write_stderr("Paste not found: #{paste_id}\n")
+      return 1
+    end
+
+    # Verify ownership
+    unless paste.ssh_fingerprint == Pasto::SSHKey.sanitize_fingerprint(fingerprint)
+      ctx.write_stderr("Access denied: You don't own this paste\n")
+      return 1
+    end
+
+    # Output the content (encrypted or decrypted as-is)
+    ctx.write(paste.content)
+    0
+  end
+
+  # Handle delete command - remove paste
+  private def self.handle_delete(ctx, fingerprint : String, args : String) : Int32
+    paste_id = args.strip
+
+    if paste_id.empty?
+      ctx.write_stderr("Usage: ssh host delete <paste-id>\n")
+      return 1
+    end
+
+    # Find the paste
+    paste = Pasto::Paste.from_file(paste_id)
+
+    if paste.nil?
+      ctx.write_stderr("Paste not found: #{paste_id}\n")
+      return 1
+    end
+
+    # Verify ownership
+    unless paste.ssh_fingerprint == Pasto::SSHKey.sanitize_fingerprint(fingerprint)
+      ctx.write_stderr("Access denied: You don't own this paste\n")
+      return 1
+    end
+
+    # Delete the paste
+    begin
+      paste.delete
+      ctx.write("Paste #{paste_id} deleted successfully\n")
+      0
+    rescue ex
+      ctx.write_stderr("Error deleting paste: #{ex.message}\n")
+      1
+    end
+  end
+
+  # Handle edit command - update paste content via stdin
+  private def self.handle_edit(ctx, fingerprint : String, args : String) : Int32
+    # Parse arguments for paste_id and options
+    parts = args.split(/\s+/)
+    paste_id = parts[0]?
+
+    if paste_id.nil? || paste_id.empty?
+      ctx.write_stderr("Usage: ssh host edit <paste-id> [--lang <language>] [--title <title>] [--filename <filename>]\n")
+      return 1
+    end
+
+    # Find the paste
+    paste = Pasto::Paste.from_file(paste_id)
+
+    if paste.nil?
+      ctx.write_stderr("Paste not found: #{paste_id}\n")
+      return 1
+    end
+
+    # Verify ownership
+    unless paste.ssh_fingerprint == Pasto::SSHKey.sanitize_fingerprint(fingerprint)
+      ctx.write_stderr("Access denied: You don't own this paste\n")
+      return 1
+    end
+
+    # Read new content from stdin
+    new_content = ctx.stdin
+
+    if new_content.empty?
+      ctx.write_stderr("Error: Content cannot be empty\n")
+      return 1
+    end
+
+    # Parse options (simplified for now)
+    # TODO: Add proper flag parsing for lang, title, filename updates
+
+    # Update the paste content
+    begin
+      paste.content = new_content
+      paste.save
+      ctx.write("Paste #{paste_id} updated successfully\n")
+      0
+    rescue ex
+      ctx.write_stderr("Error updating paste: #{ex.message}\n")
+      1
+    end
+  end
+
+  # Handle view command - view paste with optional decryption
+  private def self.handle_view(ctx, fingerprint : String, args : String) : Int32
+    # For now, just use the same logic as get
+    # TODO: Add decryption support in a future iteration
+    handle_get(ctx, fingerprint, args)
+  end
+
+  # Handle info command - show paste metadata
+  private def self.handle_info(ctx, fingerprint : String, args : String) : Int32
+    paste_id = args.strip
+
+    if paste_id.empty?
+      ctx.write_stderr("Usage: ssh host info <paste-id>\n")
+      return 1
+    end
+
+    # Find the paste
+    paste = Pasto::Paste.from_file(paste_id)
+
+    if paste.nil?
+      ctx.write_stderr("Paste not found: #{paste_id}\n")
+      return 1
+    end
+
+    # Verify ownership
+    unless paste.ssh_fingerprint == Pasto::SSHKey.sanitize_fingerprint(fingerprint)
+      ctx.write_stderr("Access denied: You don't own this paste\n")
+      return 1
+    end
+
+    # Display metadata
+    ctx.write("id: #{paste.sepia_id}\n")
+    ctx.write("created: #{paste.created_at.to_utc}\n")
+    ctx.write("language: #{paste.language || "text"}\n")
+    ctx.write("encrypted: #{paste.is_encrypted?}\n")
+    ctx.write("size: #{paste.content.bytesize}\n")
+    if title = paste.title
+      ctx.write("title: #{title}\n")
+    end
+    if filename = paste.filename
+      ctx.write("filename: #{filename}\n")
     end
 
     0

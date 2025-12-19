@@ -1,9 +1,176 @@
 <div class="paste-header">
   <hgroup>
     <h2><%= HTML.escape(paste.display_title) %></h2>
-    <p class="paste-meta"><%= paste.created_at.to_s("%Y-%m-%d %H:%M") %> UTC<% if owner = paste.owner %><% display_name = owner.display_name.empty? ? "Unnamed User" : owner.display_name %> | Created by: <%= HTML.escape(display_name) %> <button class="user-id-info" title="Click to show user ID" aria-label="Show user ID"><i data-lucide="help-circle"></i></button><span class="user-id" style="display: none;"> (ID: <%= HTML.escape(owner.sepia_id) %>)</span><% else %> | Created by: Anonymous User<% end %></p>
+    <div class="paste-meta">
+      <span class="meta-item" title="Created date and time">
+        <i data-lucide="calendar"></i>
+        <%= paste.created_at.to_s("%Y-%m-%d %H:%M") %> UTC
+      </span>
+      
+      <span class="meta-separator">•</span>
+      
+      <span class="meta-item" title="Paste creator">
+        <i data-lucide="user"></i>
+        <% if owner = paste.owner %>
+          <% display_name = owner.display_name.empty? ? "Unnamed User" : owner.display_name %>
+          <%= HTML.escape(display_name) %>
+          <button class="user-id-info" title="Click to show user ID" aria-label="Show user ID">
+            <i data-lucide="help-circle"></i>
+          </button>
+          <span class="user-id" style="display: none;"> (ID: <%= HTML.escape(owner.sepia_id) %>)</span>
+        <% else %>
+          Anonymous User
+        <% end %>
+      </span>
+      
+      <% if paste.language %>
+        <span class="meta-separator">•</span>
+        <span class="meta-item" title="Programming language">
+          <i data-lucide="code-2"></i>
+          <%= HTML.escape(paste.language.try(&.capitalize) || "Text") %>
+        </span>
+      <% end %>
+      
+      <% if paste.private? || paste.is_encrypted? || paste.burn_after_reading? || paste.expired? %>
+        <span class="meta-separator">•</span>
+        <span class="meta-badges">
+          <% if paste.private? %>
+            <span class="badge badge-private" title="This paste is private - only you can view it">
+              <i data-lucide="lock"></i>
+              Private
+            </span>
+          <% end %>
+          
+          <% if paste.is_encrypted? %>
+            <span class="badge badge-encrypted" title="This paste is end-to-end encrypted">
+              <i data-lucide="shield"></i>
+              Encrypted
+            </span>
+          <% end %>
+          
+          <% if paste.burn_after_reading? %>
+            <span class="badge badge-burn" title="This paste will be deleted after first view">
+              <i data-lucide="flame"></i>
+              Burn After Reading
+            </span>
+          <% end %>
+          
+          <% if !paste.expired? && paste.expires_at < Time.utc(9999, 1, 1) %>
+            <span class="badge badge-expires" title="Expires on <%= paste.expires_at.to_s("%Y-%m-%d %H:%M") %> UTC">
+              <i data-lucide="clock"></i>
+              Expires <%= paste.expires_at.to_s("%Y-%m-%d") %>
+            </span>
+          <% end %>
+        </span>
+      <% end %>
+    </div>
   </hgroup>
 </div>
+
+<style>
+  .paste-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--pico-muted-color);
+    margin-top: 0.5rem;
+  }
+  
+  .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  
+  .meta-item i {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+  }
+  
+  .meta-separator {
+    opacity: 0.5;
+  }
+  
+  .meta-badges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  
+  .badge i {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .badge-private {
+    background: var(--pico-primary-background);
+    color: var(--pico-primary);
+    border: 1px solid var(--pico-primary);
+  }
+  
+  .badge-encrypted {
+    background: rgba(34, 197, 94, 0.1);
+    color: rgb(34, 197, 94);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+  
+  .badge-burn {
+    background: rgba(239, 68, 68, 0.1);
+    color: rgb(239, 68, 68);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+  
+  .badge-expires {
+    background: rgba(251, 191, 36, 0.1);
+    color: rgb(251, 191, 36);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+  }
+  
+  .user-id-info {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 0 0 0.25rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    vertical-align: middle;
+  }
+  
+  .user-id-info:hover {
+    opacity: 1;
+  }
+  
+  .user-id-info i {
+    width: 14px;
+    height: 14px;
+  }
+  
+  @media (max-width: 768px) {
+    .paste-meta {
+      font-size: 0.8rem;
+    }
+    
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+    }
+  }
+</style>
 
 <% is_markdown = (paste.language == "markdown") || paste.filename.to_s.ends_with?(".md") %>
 <div class="paste-content-wrapper">

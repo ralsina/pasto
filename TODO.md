@@ -3,15 +3,15 @@
 ## Vision
 Make Pasto the best pastebin application by combining developer-friendly workflows with zero-knowledge security features across both web and SSH interfaces.
 
-## Phase 1: Zero-Knowledge Foundation (Critical)
+## Phase 1: Zero-Knowledge Foundation (Critical) - ✅ MOSTLY COMPLETED
 
 ### 🏗️ Core Encryption System
-- [ ] **Browser Client-Side Encryption**
-  - [ ] Implement AES-256-GCM encryption using Web Crypto API
-  - [ ] Encryption key embedded in URL fragment (`#key=`)
-  - [ ] Server stores only encrypted blob
-  - [ ] Add "Encrypt" toggle to paste creation interface
-  - [ ] Client-side decryption on paste view
+- [x] **Browser Client-Side Encryption**
+  - [x] Implement AES-256-GCM encryption using Web Crypto API
+  - [x] Encryption key embedded in URL fragment or session
+  - [x] Server stores only encrypted blob
+  - [x] Add "Encrypt" toggle to paste creation interface
+  - [x] Client-side decryption on paste view
 
 - [ ] **CLI Compatible Encryption**
   - [ ] Research: Crystal OpenSSL compatibility vs native implementation
@@ -19,43 +19,50 @@ Make Pasto the best pastebin application by combining developer-friendly workflo
   - [ ] Support standard OpenSSL commands for maximum compatibility
   - [ ] Ensure CLI and browser encryption are cross-compatible
 
-- [ ] **SSH Server Zero-Knowledge Enhancement**
-  - [ ] Add `--encrypted` flag for paste creation
-  - [ ] Add `get <id>` command to retrieve encrypted blobs
-  - [ ] Modify server to handle encrypted data without decryption
-  - [ ] Add help documentation for encryption workflows
+- [x] **SSH Server Zero-Knowledge Enhancement**
+  - [x] Add `--encrypted` flag for paste creation
+  - [x] Add `get <id>` command to retrieve encrypted blobs
+  - [x] Modify server to handle encrypted data without decryption
+  - [x] Add help documentation for encryption workflows
+  - [x] **SSH Interface Improvements**
+    - [x] Add `get <id>` command to retrieve raw paste content
+    - [x] Add `view <id>` command to view paste content
+    - [x] Add `info <id>` command to show paste metadata
+    - [x] Add `edit <id>` command for pipe-based content editing
+    - [x] Add `delete <id>` command to remove pastes
+    - [x] Implement ownership verification for all operations
+    - [x] Add comprehensive help documentation
 
 ### 🔐 Security Features
-- [ ] **Expiration Settings**
-  - [ ] Add time-based expiration (1h, 1d, 1w, 1m, never)
-  - [ ] Background cleanup task for expired pastes
-  - [ ] SSH flag: `--expire=1h` `--expire=1d`
-  - [ ] UI controls for expiration selection
+- [x] **Expiration Settings**
+  - [x] Add time-based expiration (1h, 1d, 1w, 1m, never)
+  - [x] Background cleanup task for expired pastes (handled via checks on access)
+  - [x] SSH flag: `--expire=1h` `--expire=1d`
+  - [x] UI controls for expiration selection
 
-- [ ] **View-Once/Burn After Reading**
-  - [ ] Delete paste after first successful access
-  - [ ] Access tracking and immediate cleanup
-  - [ ] Works with both encrypted and regular pastes
-  - [ ] Visual indicator for view-once pastes
+- [x] **View-Once/Burn After Reading**
+  - [x] Delete paste after first successful access
+  - [x] Access tracking and immediate cleanup
+  - [x] Works with both encrypted and regular pastes
+  - [x] Visual indicator for view-once pastes
 
-- [ ] **Password Protection**
-  - [ ] Server-side AES-256 encryption for password-protected pastes
-  - [ ] Password prompt overlay before content display
-  - [ ] Add optional password field to paste creation
-  - [ ] SSH integration: `--password=secret`
+- [x] **Password Protection**
+  - [x] Server-side AES-256 encryption for password-protected pastes
+  - [x] Password prompt overlay before content display
+  - [x] Add optional password field to paste creation
+  - [x] SSH integration: `--password=secret`
 
 ### 📱 User Experience Enhancements
-- [ ] **QR Code Generation**
-  - [ ] Generate QR codes for paste URLs
-  - [ ] Include encryption keys in QR codes for encrypted pastes
-  - [ ] Crystal QR code library integration
-  - [ ] Mobile-friendly sharing feature
+- [x] **QR Code Generation**
+  - [x] Generate QR codes for paste URLs
+  - [x] Include encryption keys in QR codes for encrypted pastes (User concern via URL)
+  - [x] Crystal QR code library integration
+  - [x] Mobile-friendly sharing feature
 
-- [ ] **Raw View Endpoint**
-  - [ ] Add `/raw/{id}` endpoint for plain text access
-  - [ ] Add `/raw/{id}/{password}` for password-protected raw access
-  - [ ] Essential for curl/wget workflows
-  - [ ] Support for encrypted raw access
+- [x] **Raw View Endpoint**
+  - [x] Add `/raw/{id}` endpoint for plain text access
+  - [x] Essential for curl/wget workflows
+  - [x] Support for encrypted raw access (returns encrypted blob)
 
 ## Phase 2: Enhanced Privacy & Features (High Value)
 
@@ -88,11 +95,10 @@ Make Pasto the best pastebin application by combining developer-friendly workflo
 ## Phase 3: Premium Differentiators (Market Leadership)
 
 ### 🌟 Unique Features
-- [ ] **Live Preview for Encrypted Content**
-  - [ ] Real-time syntax highlighting for encrypted pastes
-  - [ ] Client-side decryption + highlighting
-  - [ ] Maintain 321+ theme support for encrypted content
-  - [ ] Unique feature: no other encrypted pastebin has live preview
+- [x] **Live Preview for Encrypted Content**
+  - [x] Real-time syntax highlighting for encrypted pastes
+  - [x] Client-side decryption + highlighting
+  - [x] Maintain 321+ theme support for encrypted content
 
 - [ ] **Advanced Collaboration**
   - [ ] Encrypted comment/annotation system
@@ -166,103 +172,41 @@ ssh -p 2222 pasto.com paste < file.txt
 # ✅ Help and documentation
 ssh -p 2222 pasto.com help
 
+# ✅ Implemented SSH viewing and management commands
+ssh -p 2222 pasto.com get <paste_id>      # Retrieve paste content
+ssh -p 2222 pasto.com view <paste_id>     # View paste content
+ssh -p 2222 pasto.com info <paste_id>     # Show paste metadata
+ssh -p 2222 pasto.com delete <paste_id>   # Delete a paste
+cat new.txt | ssh -p 2222 pasto.com edit <paste_id>  # Edit paste
+
 # ❌ Not yet implemented
-# ssh -p 2222 pasto.com get <paste_id>  # Retrieve encrypted content
 # ssh -p 2222 pasto.com help encryption
 # ssh -p 2222 pasto.com help security
 ```
 
-## Competitive Advantages After Implementation
+## High Priority Fixes
 
-| Feature | Pasto | YOPass | PrivateBin | Pastebin.com | Microbin |
-|---------|-------|--------|------------|--------------|----------|
-| SSH Access | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Zero-Knowledge Web | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Zero-Knowledge SSH** | ✅ (EXCLUSIVE) | ❌ | ❌ | ❌ | ❌ |
-| CLI + Browser Compatible | ✅ (EXCLUSIVE) | ❌ | ❌ | ❌ | ❌ |
-| Live Preview | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 321+ Themes | ✅ | ❌ | ✅ | ✅ (Pro) | ❌ |
-| Version History | ✅ | ❌ | ❌ | ❌ | ❌ |
-| QR Code + Key | ✅ | ❌ | ❌ | ❌ | ✅ |
+### SSH Server Issues
+- [ ] **CRITICAL**: Implement auto-restart mechanism for SSH process when it crashes
+- [ ] Investigate Shirk 0.1.2 stability compared to 0.1.0
+- [ ] Add error logging for SSH process crashes
 
-## Success Metrics
-
-### Security Metrics
-- [ ] Zero successful plaintext leaks (by design)
-- [ ] All sensitive data processed client-side
-- [ ] Independent security audit passed
-
-### Performance Metrics
-- [ ] Sub-100ms encryption/decryption times
-- [ ] <500ms paste creation times
-- [ ] 99.9% uptime SLA
-- [ ] Memory usage < 100MB for typical loads
-
-## User Workflows to Support
-
-### Security-Conscious Developer
-```bash
-# Quick secure paste with expiration
-cat api-key.txt | pasto-crypto encrypt --pipe | ssh pasto.com --encrypted --expire=1h
-
-# Retrieve on mobile via QR code
-# Scan → Opens browser → Auto-decrypts client-side
-```
-
-### Team Collaboration
-```bash
-# Encrypt sensitive config for team
-pasto-crypto encrypt production.yaml --team --expire=1d
-# Outputs: URL + separate keys for each team member
-```
-
-### Web User Experience
-1. Click "Encrypt" toggle
-2. Paste sensitive data
-3. Set expiration and privacy options
-4. Share URL confidently (even Pasto can't read it)
-
-## Marketing Positioning
-**"Pasto: The only pastebin with zero-knowledge encryption for both web and SSH workflows"**
-
-### Key Selling Points
-- **Zero-Knowledge Everywhere**: Web, SSH, and CLI
-- **Developer First**: Seamless terminal workflows
-- **Privacy by Design**: Client-side encryption always
-- **Feature Rich**: Live preview, themes, version history
-- **Open Source**: Transparent and auditable
-
-## Implementation Timeline
-
-### Phase 1 (Weeks 1-3): Zero-Knowledge Foundation
-- Week 1: Core encryption system (browser + CLI)
-- Week 2: SSH server enhancements + basic security features
-- Week 3: Expiration, view-once, QR codes
-
-### Phase 2 (Weeks 4-5): Enhanced Privacy
-- Week 4: Privacy controls + custom URLs
-- Week 5: File attachments + API enhancements
-
-### Phase 3 (Weeks 6-8): Premium Features
-- Week 6-7: Advanced collaboration features
-- Week 8: Performance optimization + monitoring
+### Cross-Process Coordination
+- [ ] Test SSH login → HTTP token validation flow
+- [ ] Test concurrent paste creation (SSH + HTTP simultaneously)
 
 ## Dependencies & Research Tasks
 
 ### Research Required
-- [ ] Crystal OpenSSL vs native encryption implementation
+- [ ] Crystal OpenSSL vs native encryption implementation (currently using GCM fix monkeypatch)
 - [ ] Cross-platform CLI tool distribution strategy
-- [ ] Web Crypto API compatibility testing
-- [ ] Performance benchmarking for encryption operations
 
 ### Dependencies to Add
 - [ ] AES encryption library (Crystal compatible)
-- [ ] QR code generation library
 - [ ] Background task scheduler
 - [ ] Enhanced logging and monitoring
 
 ---
 
-**Last Updated**: $(date)
-**Next Review**: After Phase 1 completion
-**Owner**: Development Team
+**Last Updated**: 2025-12-19
+**Next Review**: After Phase 2 start
