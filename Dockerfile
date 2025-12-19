@@ -56,7 +56,7 @@ RUN shards build --release -Dinotify --static --link-flags '-lssh -lssl -lcrypto
 
 # Compress binaries with UPX for smaller image size
 RUN apk add --no-cache upx && \
-    upx --best --lzma /app/bin/pasto /app/bin/pasto-ssh
+    upx --best --lzma /app/bin/pasto /app/bin/pasto-ssh /app/bin/pasto-backup
 
 # ============================================
 # Stage 2: Minimal scratch runtime
@@ -72,6 +72,7 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 # Copy binaries
 COPY --from=builder /app/bin/pasto /app/bin/pasto
 COPY --from=builder /app/bin/pasto-ssh /app/bin/pasto-ssh
+COPY --from=builder /app/bin/pasto-backup /app/bin/pasto-backup
 
 # Create directories for persistent data (will be created as volumes)
 VOLUME ["/app/data", "/app/public/cache", "/app/sessions"]
