@@ -179,6 +179,167 @@ module Pasto
     end
   end
 
+  # Create backup for current user
+  post "/profile/backups/create" do |env|
+    current_user = Pasto.get_current_user(env)
+
+    unless current_user
+      env.response.status_code = 401
+      if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+        env.response.content_type = "application/json"
+        {"status" => "error", "message" => "Unauthorized"}.to_json
+      else
+        env.redirect "/profile?error=unauthorized"
+      end
+      next
+    end
+
+    # Check backup rate limiting
+    allowed, rate_limit_result = RateLimits.allow_backup?(current_user.sepia_id)
+    unless allowed
+      Pasto::Logging.warn("Backup rate limit exceeded for user #{current_user.sepia_id}")
+      env.response.status_code = 429
+      if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+        env.response.content_type = "application/json"
+        {"status" => "error", "message" => "Rate limit exceeded. You can create one backup per day."}.to_json
+      else
+        env.redirect "/profile?error=rate_limit"
+      end
+      next
+    end
+
+    # Get config for storage directory
+    config = Pasto.config
+
+    # Spawn backup process asynchronously
+    spawn do
+      backup_binary = File.join(Dir.current, "bin", "pasto-backup")
+      args = [
+        "--user-id=#{current_user.sepia_id}",
+        "--storage-dir=#{config.storage_dir}",
+        "--log-level=#{config.log_level || "info"}",
+      ]
+
+      result = Process.run(
+        backup_binary,
+        args,
+        output: Process::Redirect::Pipe,
+        error: Process::Redirect::Pipe
+      )
+
+      unless result.success?
+        Pasto::Logging.error("Backup creation failed for user #{current_user.sepia_id}: exit code #{result.exit_code}")
+      end
+    end
+
+    # Return immediate response
+    if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+      env.response.content_type = "application/json"
+      {"status" => "success", "message" => "Backup creation started. This may take a few minutes to complete."}.to_json
+    else
+      env.redirect "/profile?backup=started"
+    end
+  end
+
+  # Get backup status for current user
+  get "/profile/backups" do |env|
+    current_user = Pasto.get_current_user(env)
+
+    unless current_user
+      env.response.status_code = 401
+      next {"status" => "error", "message" => "Unauthorized"}.to_json
+    end
+
+    backup_status = Pasto::BackupManager.get_backup_status(current_user.sepia_id)
+
+    case backup_status[:status]
+    when "available"
+      backup = backup_status[:backup]
+      if backup
+        env.response.content_type = "application/json"
+        {
+          "status"       => "available",
+          "created_at"   => backup["created_at"].as_s,
+          "file_size"    => backup["file_size"].as_i64,
+          "download_url" => "/profile/backups/download",
+        }.to_json
+      else
+        {"status" => "none", "message" => "No backup available"}.to_json
+      end
+    when "in_progress"
+      {"status" => "in_progress", "message" => "Backup creation in progress"}.to_json
+    when "none"
+      {"status" => "none", "message" => "No backup available"}.to_json
+    when "corrupted"
+      {"status" => "corrupted", "message" => "Backup file is corrupted: #{backup_status[:error]}"}.to_json
+    when "error"
+      env.response.status_code = 500
+      {"status" => "error", "message" => "Error checking backup status: #{backup_status[:error]}"}.to_json
+    else
+      env.response.status_code = 500
+      {"status" => "error", "message" => "Unknown backup status"}.to_json
+    end
+  end
+
+  # Download backup for current user
+  get "/profile/backups/download" do |env|
+    current_user = Pasto.get_current_user(env)
+
+    Pasto::Logging.info("Download request - current_user: #{current_user ? current_user.sepia_id : "nil"}")
+
+    unless current_user
+      env.response.status_code = 401
+      next "Unauthorized"
+    end
+
+    # Get backup status
+    backup_status = Pasto::BackupManager.get_backup_status(current_user.sepia_id)
+
+    if backup_status[:status] != "available" || !backup_status[:backup]
+      env.response.status_code = 404
+      next "No backup available for download"
+    end
+
+    backup = backup_status[:backup]
+
+    Pasto::Logging.info("Download validation - backup_status: #{backup_status[:status]}, backup: #{backup ? "exists" : "nil"}")
+
+    # Verify backup accessibility
+    unless backup && backup["user_id"].as_s == current_user.sepia_id
+      env.response.status_code = 403
+      Pasto::Logging.warn("Unauthorized backup download attempt by user #{current_user.sepia_id} - backup_user_id: #{backup ? backup["user_id"].as_s : "nil"}")
+      next "Access denied"
+    end
+
+    # Get backup file path
+    backup_file_path = backup["file_path"].as_s
+
+    # Verify backup file exists
+    unless File.exists?(backup_file_path)
+      env.response.status_code = 404
+      Pasto::Logging.warn("Backup file not found for user #{current_user.sepia_id}: #{backup_file_path}")
+      next "Backup file not found"
+    end
+
+    # Serve backup file
+    begin
+      env.response.content_type = "application/gzip"
+      env.response.headers["Content-Disposition"] = "attachment; filename=\"pasto_backup_#{current_user.sepia_id}.sepia.tar.gz\""
+      env.response.headers["Content-Length"] = File.size(backup_file_path).to_s
+
+      Pasto::Logging.info("User #{current_user.sepia_id} downloaded backup: #{backup_file_path}")
+
+      # Stream file content
+      File.open(backup_file_path, "rb") do |file|
+        IO.copy(file, env.response)
+      end
+    rescue ex
+      env.response.status_code = 500
+      Pasto::Logging.error("Error serving backup file: #{ex.message}")
+      "Error downloading backup file"
+    end
+  end
+
   # Logout route - clear session
   post "/logout" do |env|
     # Clear the session using kemal-session

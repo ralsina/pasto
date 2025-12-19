@@ -66,6 +66,8 @@ Rate Limiting Options:
   --rate-login-window=<s>             Login rate limit window in seconds [default: 300].
   --rate-http-limit=<n>               HTTP request limit per IP [default: 200].
   --rate-http-window=<s>              HTTP rate limit window in seconds [default: 60].
+  --rate-backup-limit=<n>             Backup creation limit per user [default: 1].
+  --rate-backup-window=<s>            Backup rate limit window in seconds [default: 86400].
 
 DOC
 
@@ -96,6 +98,8 @@ DOC
     property rate_login_window : Int32
     property rate_http_limit : Int32
     property rate_http_window : Int32
+    property rate_backup_limit : Int32
+    property rate_backup_window : Int32
     property log_level : String?
 
     def initialize(args)
@@ -134,6 +138,8 @@ DOC
       @rate_login_window = docopt_options["--rate-login-window"].to_s.to_i
       @rate_http_limit = docopt_options["--rate-http-limit"].to_s.to_i
       @rate_http_window = docopt_options["--rate-http-window"].to_s.to_i
+      @rate_backup_limit = docopt_options["--rate-backup-limit"].to_s.to_i
+      @rate_backup_window = docopt_options["--rate-backup-window"].to_s.to_i
 
       # Handle base_url - use provided value or construct default
       base_url_option = docopt_options["--base-url"].to_s
@@ -383,7 +389,7 @@ DOC
     # Cache test endpoint - cache for 5 seconds
     Pasto::Cache.add_cache_config(/^\/api\/cache-test$/, "text/x-cache-test", 5)
 
-    # Add caching middleware
+    # Add caching middleware (backup routes will bypass cache automatically if no config matches)
     PastoCache.add_cache_middleware
 
     # Initialize rate limiters with config values

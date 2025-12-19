@@ -13,6 +13,7 @@ module Pasto
     class_property highlight : RateLimiter?
     class_property login : RateLimiter?
     class_property http : RateLimiter?
+    class_property backup : RateLimiter?
 
     @@mutex = Mutex.new
 
@@ -24,6 +25,7 @@ module Pasto
         @@highlight = RateLimiter.new(config.rate_highlight_limit, config.rate_highlight_window)
         @@login = RateLimiter.new(config.rate_login_limit, config.rate_login_window)
         @@http = RateLimiter.new(config.rate_http_limit, config.rate_http_window)
+        @@backup = RateLimiter.new(config.rate_backup_limit, config.rate_backup_window)
       end
     end
 
@@ -104,6 +106,21 @@ module Pasto
           result = http.check(ip)
           unless result.allowed?
             Pasto::Logging.warn("Rate limit hit: HTTP limit (IP: #{ip})", "⚠️")
+          end
+          {result.allowed?, result}
+        else
+          {true, RateLimitResult.new(allowed: true, remaining: 0, reset_time: Time.utc, total_requests: 0)}
+        end
+      end
+    end
+
+    # Check backup creation - returns {allowed, result}
+    def self.allow_backup?(user_id : String) : {Bool, RateLimitResult}
+      @@mutex.synchronize do
+        if backup = @@backup
+          result = backup.check(user_id)
+          unless result.allowed?
+            Pasto::Logging.warn("Rate limit hit: backup limit (User: #{user_id})", "⚠️")
           end
           {result.allowed?, result}
         else

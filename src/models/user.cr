@@ -70,6 +70,19 @@ module Pasto
       end.compact
     end
 
+    # Return all related objects for Sepia backup traversal
+    def sepia_references : Array(Sepia::Object)
+      references = [] of Sepia::Object
+
+      # Add SSH keys
+      references.concat(@keys)
+
+      # Add API keys
+      references.concat(all_api_keys)
+
+      references
+    end
+
     # Sepia serialization methods
     def to_sepia : String
       {

@@ -1,5 +1,7 @@
 # Profile management endpoints for Pasto application
 require "./logging"
+require "./backup_manager"
+require "./ratelimit"
 
 module Pasto
   # Update user profile
@@ -193,6 +195,17 @@ module Pasto
   get "/profile" do |env|
     # Validate session to get current user
     current_user = Pasto.get_current_user(env)
+
+    # Get backup status server-side
+    backup_status = if current_user
+                      Pasto::Logging.info("Getting backup status for user #{current_user.sepia_id}")
+                      status = BackupManager.get_backup_status(current_user.sepia_id)
+                      Pasto::Logging.info("Backup status result: #{status}")
+                      status
+                    else
+                      Pasto::Logging.info("No current user for backup status")
+                      {status: "none", backup: nil, error: nil}
+                    end
 
     # SSH variables are used in profile_content.ecr template
     ssh_host = if config && config.try(&.bind) == "0.0.0.0" # ameba:disable Lint/UselessAssign

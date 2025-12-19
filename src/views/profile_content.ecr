@@ -90,7 +90,7 @@
     <div class="accordion-sections">
 
       <!-- Pastes Accordion -->
-      <details class="accordion" open>
+      <details class="accordion">
         <summary class="accordion-summary">
           <span class="accordion-title">📋 Your Pastes</span>
           <% user_pastes = current_user.all_pastes %>
@@ -226,6 +226,63 @@
         </div>
       </details>
 
+      <!-- Backups Accordion -->
+      <details class="accordion">
+        <summary class="accordion-summary">
+          <span class="accordion-title">💾 Data Backups</span>
+        </summary>
+        <div class="accordion-content">
+        <%
+        backup_status_result = backup_status[:status]
+        backup = backup_status[:backup]
+        %>
+
+        <% if backup_status_result == "available" && backup %>
+          <div class="backup-status success">
+            <i data-lucide="check-circle" class="backup-status-icon"></i>
+            <span>Backup available</span>
+          </div>
+
+          <div class="backup-meta">
+            <strong>Created:</strong> <%= Time.parse_rfc3339(backup["created_at"].as_s).to_s("%Y-%m-%d %H:%M:%S UTC") %>
+          </div>
+
+          <div class="backup-controls">
+            <button onclick="downloadBackup()" class="primary">
+              <i data-lucide="download" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+              Download Backup
+            </button>
+            <button onclick="createBackup()">
+              <i data-lucide="refresh-cw" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+              Create New Backup
+            </button>
+          </div>
+        <% else %>
+          <div class="backup-status none">
+            <i data-lucide="file-minus" class="backup-status-icon"></i>
+            <span>No backup available</span>
+          </div>
+
+          <div class="backup-controls">
+            <button onclick="createBackup()" class="primary">
+              <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+              Create Backup
+            </button>
+          </div>
+        <% end %>
+
+        <div class="backup-info-text">
+          <p><strong>Backup Information:</strong></p>
+          <ul class="backup-info-list">
+            <li>Backups contain all your pastes, SSH keys, API keys, and profile settings</li>
+            <li>Backups are limited to one per day to prevent abuse</li>
+            <li>Only the most recent backup is kept (new backups replace old ones)</li>
+            <li>Backups are retained permanently until you create a new one</li>
+          </ul>
+        </div>
+      </div>
+      </details>
+
     </div>
   <% else %>
     <div class="not-logged-in">
@@ -341,6 +398,49 @@ function copyToClipboard(text, type = 'api') {
     successMessage: `${itemType} copied to clipboard!`,
     errorMessage: `Failed to copy ${itemType}`
   });
+}
+
+// Simple backup functions
+function createBackup() {
+  // Show loading state
+  const button = event.target.closest('button');
+  const originalText = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<i data-lucide="loader" class="spin" style="width: 16px; height: 16px; margin-right: 6px;"></i> Creating...';
+
+  fetch('/profile/backups/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      // Success, reload page to show updated status
+      window.location.reload();
+    } else {
+      // Error occurred
+      showError(data.message || 'Failed to create backup');
+    }
+  })
+  .catch(error => {
+    console.error('Error creating backup:', error);
+    showError('Failed to create backup. Please try again.');
+  })
+  .finally(() => {
+    // Restore button state if not reloading
+    if (!data || data.status !== 'success') {
+      button.disabled = false;
+      button.innerHTML = originalText;
+    }
+  });
+}
+
+function downloadBackup() {
+  // Trigger file download
+  window.location.href = '/profile/backups/download';
 }
 </script>
 
@@ -965,6 +1065,179 @@ function copyToClipboard(text, type = 'api') {
     .edit-btn, .delete-btn {
       min-width: 32px;
       height: 32px;
+    }
+  }
+
+  /* Backup Management */
+  .backup-controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .backup-controls button {
+    padding: 0.75rem 1.25rem;
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+    background-color: var(--pico-background-color);
+    color: var(--pico-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 44px;
+  }
+
+  .backup-controls button:hover:not(:disabled) {
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-primary);
+  }
+
+  .backup-controls button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--pico-muted-color);
+  }
+
+  .backup-controls button.loading {
+    background-color: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+    border-color: var(--pico-primary-border);
+  }
+
+  .backup-controls button.primary {
+    background-color: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+    border-color: var(--pico-primary-border);
+  }
+
+  .backup-controls button.primary:hover:not(:disabled) {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+  }
+
+  .backup-controls button.secondary {
+    background-color: var(--pico-secondary-background);
+    color: var(--pico-secondary-inverse);
+    border-color: var(--pico-secondary-border);
+  }
+
+  .backup-controls button.secondary:hover:not(:disabled) {
+    background-color: var(--pico-secondary-hover-background);
+    border-color: var(--pico-secondary-hover-border);
+  }
+
+  .backup-status {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--pico-border-radius);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .backup-status.success {
+    background-color: var(--pico-ins-background);
+    border: 1px solid var(--pico-ins-border);
+    color: var(--pico-ins-color);
+  }
+
+  .backup-status.error {
+    background-color: var(--pico-del-background);
+    border: 1px solid var(--pico-del-border);
+    color: var(--pico-del-color);
+  }
+
+  .backup-status.in-progress {
+    background-color: var(--pico-secondary-background);
+    border: 1px solid var(--pico-secondary-border);
+    color: var(--pico-secondary-color);
+  }
+
+  .backup-status.none {
+    background-color: var(--pico-code-background-color);
+    color: var(--pico-muted-color);
+  }
+
+  .backup-status-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .backup-meta {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .backup-meta strong {
+    color: var(--pico-color);
+    font-weight: 600;
+  }
+
+  .backup-message {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--pico-border-radius);
+    font-size: 0.9rem;
+    background-color: var(--pico-code-background-color);
+    color: var(--pico-muted-color);
+    border: 1px solid var(--pico-border-color);
+    line-height: 1.4;
+  }
+
+  .backup-message.error {
+    background-color: var(--pico-del-background);
+    border-color: var(--pico-del-border);
+    color: var(--pico-del-color);
+  }
+
+  .backup-message.warning {
+    background-color: var(--pico-amber-background);
+    border-color: var(--pico-amber-border);
+    color: var(--pico-amber-color);
+  }
+
+  /* Loading spinner animation */
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Responsive design for backup controls */
+  @media (max-width: 768px) {
+    .backup-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .backup-controls button {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .backup-status {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .backup-meta {
+      margin-top: 0.5rem;
     }
   }
 </style>
