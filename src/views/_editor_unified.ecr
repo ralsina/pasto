@@ -219,7 +219,10 @@
       formData.append('private', 'true');
     }
 
-    
+    if (securitySettings.anonymous) {
+      formData.append('anonymous', 'true');
+    }
+
     fetch('/' + pasteId + '/edit', {
       method: 'POST',
       body: formData
@@ -482,6 +485,10 @@ async function createPaste(event) {
 
       if (securitySettings.accessControl === 'private') {
         formData.append('private', 'true');
+      }
+
+      if (securitySettings.anonymous) {
+        formData.append('anonymous', 'true');
       }
 
       if (isEncrypted) {

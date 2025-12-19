@@ -512,6 +512,7 @@ module Pasto
     property encryption_salt : String?
     property encryption_iterations : Int32
     property user_id : String?
+    property? anonymous : Bool
 
     # Initialize from HTTP request environment
     def initialize(env : HTTP::Server::Context)
@@ -536,6 +537,7 @@ module Pasto
       # Handle security fields
       @burn_after_reading = env.params.body["burn_after_reading"]?.to_s == "true"
       @is_private = env.params.body["private"]?.to_s == "true"
+      @anonymous = env.params.body["anonymous"]?.to_s == "true"
 
       # Handle encryption fields
       @is_encrypted = env.params.body["is_encrypted"]?.to_s == "true"
@@ -577,7 +579,8 @@ module Pasto
     paste.language = params.language
     paste.title = params.title
     paste.theme = params.syntax_theme
-    paste.user_id = params.user_id
+    # Only set user_id if not anonymous (even for logged-in users)
+    paste.user_id = params.anonymous? ? nil : params.user_id
     if expires_at = params.expires_at
       paste.expires_at = expires_at
     end
@@ -616,6 +619,12 @@ module Pasto
       next "You must be logged in to create private pastes"
     end
 
+    # Prevent anonymous private pastes (even for logged-in users)
+    if params.is_private? && params.anonymous?
+      env.response.status_code = 403
+      next "Anonymous pastes cannot be private"
+    end
+
     # Validate content and size
     is_valid, error_message = validate_paste_content(params.content)
     unless is_valid
@@ -634,8 +643,8 @@ module Pasto
     apply_paste_params(paste, params)
 
     if paste.save
-      # If user has SSH keys, add paste to their first key for consistency
-      if current_user && !current_user.keys.empty?
+      # If user has SSH keys and this is not an anonymous paste, add paste to their first key for consistency
+      if current_user && !current_user.keys.empty? && !params.anonymous?
         ssh_key = current_user.keys.first
         paste.ssh_fingerprint = ssh_key.sepia_id
         paste.save

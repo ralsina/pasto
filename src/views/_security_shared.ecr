@@ -13,7 +13,8 @@ window.SharedSecurity = {
     encryptionEnabled: false,
     encryptionPassword: null,
     expiration: null,
-    burnAfterReading: false
+    burnAfterReading: false,
+    anonymous: false
   },
 
   // Initialize security settings from paste data
@@ -232,6 +233,10 @@ window.SharedSecurity = {
 
     if (this.settings.accessControl === 'private') {
       data.append('private', 'true');
+    }
+
+    if (this.settings.anonymous) {
+      data.append('anonymous', 'true');
     }
 
     return data;
