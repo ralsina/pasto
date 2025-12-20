@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto - Modern Pastebin with Live Syntax Highlighting</title>
   <meta name="description" content="Modern pastebin with end-to-end encryption, SSH interface, API access, and 321+ syntax themes. Self-host your secure code sharing platform.">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.green.min.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -361,6 +361,43 @@
       font-weight: 700;
       color: var(--pico-primary);
       text-decoration: none;
+      display: inline-block;
+      position: relative;
+    }
+
+    /* Animated grass logo in nav */
+    .logo-svg {
+      height: 2.5rem;
+      width: auto;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .grass-blade {
+      stroke-dasharray: 22;
+      stroke-dashoffset: 22;
+      opacity: 0;
+      animation: grassGrow 2s ease-out forwards, sway 3s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    @keyframes grassGrow {
+      to {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+    }
+
+    @keyframes sway {
+      0%, 100% {
+        transform: skewX(0deg);
+      }
+      25% {
+        transform: skewX(-1deg);
+      }
+      75% {
+        transform: skewX(1deg);
+      }
     }
 
     .nav-links {
@@ -395,7 +432,6 @@
   <!-- Navigation -->
   <nav>
     <div class="nav-container">
-      <a href="#" class="nav-logo">Pasto</a>
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#ssh">SSH Usage</a>
@@ -409,13 +445,19 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">
-      <h1>Pasto</h1>
-      <p style="font-size:1.2rem; font-weight:700; color:var(--pico-primary); margin-bottom:1rem;">
-        <a href="https://pasto1.ralsina.me" style="color:var(--pico-primary);text-decoration:underline;">Try the public instance: pasto1.ralsina.me</a>
-      </p>
+      <div style="margin-bottom: 1rem;">
+        <svg class="hero-logo-svg" viewBox="0 0 400 100" preserveAspectRatio="xMidYMid meet" style="width: 100%; max-width: 500px; height: auto;">
+          <text x="10" y="70" font-family="inherit" font-size="84" font-weight="700" fill="var(--pico-primary)">Pasto</text>
+          <g id="hero-grass-container"></g>
+        </svg>
+      </div>
       <p class="hero-subtitle">Self-hosted pastebin with end-to-end encryption, full SSH interface, and 321+ syntax themes</p>
       <div class="hero-actions">
-        <a href="https://github.com/ralsina/pasto#quick-start" class="button primary" role="button">
+        <a href="https://pasto1.ralsina.me" class="button primary" role="button" target="_blank" rel="noopener">
+          <i data-lucide="globe" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+          Try Public Instance
+        </a>
+        <a href="https://github.com/ralsina/pasto#quick-start" class="button secondary" role="button">
           <i data-lucide="download" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
           Get Started
         </a>
@@ -670,9 +712,40 @@ ssh pasto.example.com help</code></pre>
   </footer>
 
   <script>
+    // Generate animated grass for hero logo
+    function generateHeroGrass() {
+      const grassContainer = document.getElementById('hero-grass-container');
+      if (!grassContainer) return;
+
+      const grassColors = ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534'];
+
+      for (let i = 0; i < 300; i++) {
+        const x = 15 + Math.random() * 370;
+        const height = 6 + Math.random() * 12;
+        const curve = Math.random() * 6 - 3;
+        const strokeWidth = 0.8 + Math.random() * 2;
+        const color = grassColors[Math.floor(Math.random() * grassColors.length)];
+        const growDelay = Math.random() * 2;
+        const swayDelay = Math.random() * 3; // Independent sway delay
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const d = `M${x},70 Q${x + curve},${70 - height/2} ${x + curve/2},${70 - height} Q${x - curve/2},${70 - height/2} ${x},70`;
+
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', strokeWidth);
+        path.classList.add('grass-blade');
+        path.style.animationDelay = `${growDelay}s, ${growDelay + 2 + swayDelay}s`;
+
+        grassContainer.appendChild(path);
+      }
+    }
+
     // Initialize Lucide icons when the page loads
     document.addEventListener('DOMContentLoaded', function() {
       lucide.createIcons();
+      generateHeroGrass();
 
       // Smooth scrolling for navigation links
       document.querySelectorAll('a[href^="#"]').forEach(anchor => {
