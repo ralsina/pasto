@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasto - Modern Pastebin with Live Syntax Highlighting</title>
-  <meta name="description" content="A Crystal-based pastebin application with live syntax highlighting, SSH access, user accounts, and extensive theme support.">
+  <meta name="description" content="Modern pastebin with end-to-end encryption, SSH interface, API access, and 321+ syntax themes. Self-host your secure code sharing platform.">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -215,12 +215,33 @@
 
     .quickstart-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2.5rem;
     }
 
     .quickstart-step {
       text-align: center;
+      padding: 1rem;
+    }
+
+    .quickstart-step h3 {
+      margin-bottom: 0.75rem;
+      min-height: 2.5rem;
+    }
+
+    .quickstart-step p {
+      margin-bottom: 1rem;
+      min-height: 3rem;
+    }
+
+    .quickstart-step code {
+      display: block;
+      word-break: break-all;
+      padding: 0.75rem;
+      background: var(--pico-code-background-color);
+      border-radius: var(--pico-border-radius);
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
     }
 
     .step-number {
@@ -235,6 +256,7 @@
       font-size: 1.5rem;
       font-weight: bold;
       margin: 0 auto 1rem auto;
+      flex-shrink: 0;
     }
 
     /* CTA Section */
@@ -391,7 +413,7 @@
       <p style="font-size:1.2rem; font-weight:700; color:var(--pico-primary); margin-bottom:1rem;">
         <a href="https://pasto1.ralsina.me" style="color:var(--pico-primary);text-decoration:underline;">Try the public instance: pasto1.ralsina.me</a>
       </p>
-      <p class="hero-subtitle">Modern pastebin with live syntax highlighting and SSH access</p>
+      <p class="hero-subtitle">Self-hosted pastebin with end-to-end encryption, full SSH interface, and 321+ syntax themes</p>
       <div class="hero-actions">
         <a href="https://github.com/ralsina/pasto#quick-start" class="button primary" role="button">
           <i data-lucide="download" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
@@ -405,87 +427,38 @@
     </div>
     <div class="hero-visual">
       <div class="code-preview">
-        <pre><code>def hello_world():
-    """A simple Python function"""
-    print("Hello, Pasto! 🎉")
-    return "Modern pastebin with security!"
-
-# ✅ End-to-end encryption
-# 🔑 API key authentication
-# 🔒 Private & burn-after-reading
-# 🔑 SSH key management
+        <pre><code># 🔐 Zero-knowledge encryption
+# 🔥 Burn after reading
+# 🔑 Full SSH interface (13 commands)
 # 🌐 321+ syntax themes
-# 📱 Responsive design</code></pre>
+# 📡 RESTful API with auth
+# ⏱️  Custom expiration times
+# 🔒 Private pastes
+# 📝 Markdown rendering
+# 🎨 Live syntax preview
+# ⚡ Crystal-powered performance</code></pre>
       </div>
     </div>
   </section>
 
   <!-- Features Section -->
   <section id="features" class="features">
-    <h2>Features</h2>
+    <h2>Why Choose Pasto?</h2>
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon">
-          <i data-lucide="zap" style="width: 32px; height: 32px;"></i>
+          <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
         </div>
-        <h3>Fast & Lightweight</h3>
-        <p>Built with Crystal for excellent performance and minimal resource usage</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i data-lucide="eye" style="width: 32px; height: 32px;"></i>
-        </div>
-        <h3>Live Preview</h3>
-        <p>Real-time syntax highlighting as you type with automatic language detection</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i data-lucide="palette" style="width: 32px; height: 32px;"></i>
-        </div>
-        <h3>321+ Themes</h3>
-        <p>Extensive syntax highlighting themes from Tartrazine including all popular favorites</p>
+        <h3>Zero-Knowledge Encryption</h3>
+        <p>True end-to-end encryption with Web Crypto API. Your encrypted pastes never touch the server in plain text.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="terminal" style="width: 32px; height: 32px;"></i>
         </div>
-        <h3>SSH Access</h3>
-        <p>Create pastes directly from your terminal with simple SSH commands</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i data-lucide="user" style="width: 32px; height: 32px;"></i>
-        </div>
-        <h3>User Accounts</h3>
-        <p>Manage your pastes with profiles, edit history, and version control</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i data-lucide="shield" style="width: 32px; height: 32px;"></i>
-        </div>
-        <h3>Encrypted Pastes</h3>
-        <p>End-to-end encrypted pastes with client-side encryption and password-based authentication</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i data-lucide="key" style="width: 32px; height: 32px;"></i>
-        </div>
-        <h3>API Keys</h3>
-        <p>Generate API keys for programmatic paste creation and management</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i data-lucide="lock" style="width: 32px; height: 32px;"></i>
-        </div>
-        <h3>Private Pastes</h3>
-        <p>Create private pastes that only you can access and manage through your profile</p>
+        <h3>Full SSH Interface</h3>
+        <p>13 commands including paste, edit, delete, list, get, view, and SSH key management. Fully scriptable and pipe-friendly.</p>
       </div>
 
       <div class="feature-card">
@@ -493,46 +466,109 @@
           <i data-lucide="flame" style="width: 32px; height: 32px;"></i>
         </div>
         <h3>Burn After Reading</h3>
-        <p>Self-destructing pastes that are automatically deleted after first viewing</p>
+        <p>Self-destructing pastes that automatically delete after first view. Perfect for sharing sensitive one-time information.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="palette" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>321+ Syntax Themes</h3>
+        <p>Massive theme library via Tartrazine. From Dracula to Monokai to GitHub, plus separate UI theming.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="code" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>RESTful API</h3>
+        <p>Full API with key-based authentication. Create, list, retrieve, update, and delete pastes programmatically.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="eye" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Live Syntax Preview</h3>
+        <p>Real-time syntax highlighting as you type with automatic language detection for 200+ languages.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="clock" style="width: 32px; height: 32px;"></i>
         </div>
-        <h3>Expiration Control</h3>
-        <p>Set custom expiration times for pastes with flexible scheduling options</p>
+        <h3>Flexible Expiration</h3>
+        <p>Set expiration times from 10 minutes to 1 month, or use view-once for instant deletion.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="lock" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Private Pastes</h3>
+        <p>Create private pastes visible only to you. Perfect for personal notes and snippets.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="file-text" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Markdown Rendering</h3>
+        <p>Client-side markdown rendering with toggle between source and rendered view. Great for documentation.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="user" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>User Accounts</h3>
+        <p>Manage pastes across devices with user profiles. Edit, delete, and organize your paste history.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="zap" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3>Crystal-Powered</h3>
+        <p>Built with Crystal for blazing performance and low memory footprint. Fast compilation and runtime.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="smartphone" style="width: 32px; height: 32px;"></i>
         </div>
-        <h3>Responsive Design</h3>
-        <p>Works beautifully on desktop, tablet, and mobile devices</p>
+        <h3>Fully Responsive</h3>
+        <p>Beautiful on desktop, tablet, and mobile with Pico CSS. Dark mode support built-in.</p>
       </div>
     </div>
   </section>
 
   <!-- SSH Section -->
   <section id="ssh" class="ssh-section">
-    <h2>SSH Usage & Key Management</h2>
-    <p>Create pastes directly from your terminal and manage your SSH keys securely</p>
+    <h2>Powerful SSH Interface (13 Commands)</h2>
+    <p>Full paste lifecycle management from your terminal. No web browser required.</p>
     <div class="code-example">
-      <pre><code># Create pastes from terminal
-cat myfile.py | ssh -p 2222 pasto.example.com
-echo "Hello, World!" | ssh -p 2222 pasto.example.com
+      <pre><code># Create pastes with options
+echo "Hello World" | ssh pasto.example.com
+cat code.py | ssh pasto.example.com paste -l python -t "My Script"
+echo "secret" | ssh pasto.example.com paste --encrypted --burn --expire 1h
 
-# SSH key management (challenge-response)
-ssh -i new_key -p 2222 pasto.example.com add-key
-ssh -i current_key -p 2222 pasto.example.com ssh-key response &lt;code&gt;
+# View and manage pastes
+ssh pasto.example.com list                    # List all your pastes
+ssh pasto.example.com get abc123 > file.txt   # Download paste content
+ssh pasto.example.com info abc123             # Show paste metadata
+cat new.txt | ssh pasto.example.com edit abc123  # Update content
+ssh pasto.example.com delete abc123           # Remove paste
 
-# List your SSH keys
-ssh -p 2222 pasto.example.com ssh-key list
+# API & SSH key management
+ssh pasto.example.com api-key create          # Generate API key
+ssh pasto.example.com ssh-key list            # List SSH keys
+ssh pasto.example.com login                   # Link to web account
 
-# Login to link with web account
-ssh -p 2222 pasto.example.com login</code></pre>
+# See all commands
+ssh pasto.example.com help</code></pre>
     </div>
+    <p style="margin-top: 1.5rem; color: var(--pico-muted-color);">✨ Fully scriptable, pipe-friendly, and rate-limited for security</p>
   </section>
 
   <!-- Quick Start Section -->
@@ -609,12 +645,18 @@ ssh -p 2222 pasto.example.com login</code></pre>
 
   <!-- CTA Section -->
   <section class="cta">
-    <h2>Ready to share your code?</h2>
-    <p>Try Pasto for fast, modern code sharing with live syntax highlighting</p>
-    <a href="https://github.com/ralsina/pasto" class="button primary" role="button" target="_blank" rel="noopener">
-      <i data-lucide="external-link" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-      Get Started on GitHub
-    </a>
+    <h2>Self-Host Your Secure Pastebin</h2>
+    <p>Open source, encrypted, and fully featured. Deploy Pasto on your infrastructure in minutes.</p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <a href="https://github.com/ralsina/pasto" class="button primary" role="button" target="_blank" rel="noopener">
+        <i data-lucide="download" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+        Get Started on GitHub
+      </a>
+      <a href="https://pasto1.ralsina.me" class="button secondary" role="button" target="_blank" rel="noopener">
+        <i data-lucide="globe" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+        Try Public Instance
+      </a>
+    </div>
   </section>
 
   <!-- Footer -->
