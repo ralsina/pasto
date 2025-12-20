@@ -285,7 +285,7 @@ DOC
   end
 
   # ameba:disable Metrics/CyclomaticComplexity
-  private def self.handle_paste(ctx, fingerprint : String, base_url : String, args : Array(String)) : Int32
+  def self.handle_paste(ctx, fingerprint : String, base_url : String, args : Array(String)) : Int32
     # Check paste rate limit
     unless allow_paste?(fingerprint)
       ctx.write_stderr("Rate limit exceeded. Please wait before creating another paste.\n")
@@ -420,7 +420,7 @@ DOC
   end
 
   # Handle login command
-  private def self.handle_login(ctx, fingerprint : String, base_url : String) : Int32
+  def self.handle_login(ctx, fingerprint : String, base_url : String) : Int32
     # Check login rate limit
     unless allow_login?(fingerprint)
       ctx.write_stderr("Too many login attempts. Please wait before trying again.\n")
@@ -444,7 +444,7 @@ DOC
   end
 
   # Handle help command
-  private def self.handle_help(ctx, base_url : String) : Int32
+  def self.handle_help(ctx, base_url : String) : Int32
     # Extract host and port from base_url for examples
     uri = URI.parse(base_url)
     host = uri.host || "localhost"
@@ -496,7 +496,7 @@ DOC
   end
 
   # Handle list command - show all pastes for this SSH key
-  private def self.handle_list(ctx, fingerprint : String, base_url : String) : Int32
+  def self.handle_list(ctx, fingerprint : String, base_url : String) : Int32
     ssh_key = Pasto::SSHKey.find(Pasto::SSHKey.sanitize_fingerprint(fingerprint))
 
     unless ssh_key
@@ -535,7 +535,7 @@ DOC
   end
 
   # Handle get command - retrieve raw paste content
-  private def self.handle_get(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_get(ctx, fingerprint : String, args : Array(String)) : Int32
     paste_id = args.first?.try(&.strip) || ""
 
     if paste_id.empty?
@@ -563,7 +563,7 @@ DOC
   end
 
   # Handle delete command - remove paste
-  private def self.handle_delete(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_delete(ctx, fingerprint : String, args : Array(String)) : Int32
     paste_id = args.first?.try(&.strip) || ""
 
     if paste_id.empty?
@@ -597,7 +597,7 @@ DOC
   end
 
   # Handle edit command - update paste content via stdin
-  private def self.handle_edit(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_edit(ctx, fingerprint : String, args : Array(String)) : Int32
     # Parse arguments for paste_id and options
     paste_id = args.first?
 
@@ -644,14 +644,14 @@ DOC
   end
 
   # Handle view command - view paste with optional decryption
-  private def self.handle_view(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_view(ctx, fingerprint : String, args : Array(String)) : Int32
     # For now, just use the same logic as get
     # TODO: Add decryption support in a future iteration
     handle_get(ctx, fingerprint, args)
   end
 
   # Handle info command - show paste metadata
-  private def self.handle_info(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_info(ctx, fingerprint : String, args : Array(String)) : Int32
     paste_id = args.first?.try(&.strip) || ""
 
     if paste_id.empty?
@@ -690,7 +690,7 @@ DOC
   end
 
   # Handle api-key command - manage API keys for the current user
-  private def self.handle_api_key(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_api_key(ctx, fingerprint : String, args : Array(String)) : Int32
     # Parse subcommand (create, list, etc.)
     subcommand = args.first? || ""
 
@@ -712,7 +712,7 @@ DOC
   end
 
   # Handle api-key create command
-  private def self.handle_api_key_create(ctx, fingerprint : String) : Int32
+  def self.handle_api_key_create(ctx, fingerprint : String) : Int32
     # Find or create SSH key and user
     ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
 
@@ -750,7 +750,7 @@ DOC
   end
 
   # Handle api-key list command
-  private def self.handle_api_key_list(ctx, fingerprint : String) : Int32
+  def self.handle_api_key_list(ctx, fingerprint : String) : Int32
     # Find SSH key and associated user
     ssh_key = Pasto::SSHKey.find(Pasto::SSHKey.sanitize_fingerprint(fingerprint))
 
@@ -793,7 +793,7 @@ DOC
   end
 
   # Handle api-key revoke command
-  private def self.handle_api_key_revoke(ctx, fingerprint : String, key_to_revoke : String) : Int32
+  def self.handle_api_key_revoke(ctx, fingerprint : String, key_to_revoke : String) : Int32
     # Find SSH key and associated user
     ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
 
@@ -860,7 +860,7 @@ DOC
   end
 
   # Handle add-key command - create a challenge for adding a new SSH key
-  private def self.handle_add_key(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_add_key(ctx, fingerprint : String, args : Array(String)) : Int32
     Pasto::Logging.info("SSH: add-key called with fingerprint=#{fingerprint}, args=#{args.inspect}", "🔐")
 
     # Check SSH key operation rate limit
@@ -935,7 +935,7 @@ DOC
   end
 
   # Handle ssh-key command - manage existing SSH keys and respond to challenges
-  private def self.handle_ssh_key(ctx, fingerprint : String, args : Array(String)) : Int32
+  def self.handle_ssh_key(ctx, fingerprint : String, args : Array(String)) : Int32
     # Parse subcommand (list, response, etc.)
     subcommand = args.first? || ""
 
@@ -954,7 +954,7 @@ DOC
   end
 
   # Handle ssh-key list command
-  private def self.handle_ssh_key_list(ctx, fingerprint : String) : Int32
+  def self.handle_ssh_key_list(ctx, fingerprint : String) : Int32
     # Find current user for this SSH key
     Pasto::Logging.debug("SSH: Looking up SSH key with fingerprint: #{fingerprint}")
     ssh_key = Pasto::SSHKey.find_or_create(fingerprint)
@@ -1000,7 +1000,7 @@ DOC
   end
 
   # Handle ssh-key response command - validate challenge and add key
-  private def self.handle_ssh_key_response(ctx, fingerprint : String, challenge_code : String) : Int32
+  def self.handle_ssh_key_response(ctx, fingerprint : String, challenge_code : String) : Int32
     # Check SSH key operation rate limit
     unless allow_ssh_key_operation?(fingerprint)
       ctx.write_stderr("Rate limit exceeded. Please wait before completing another challenge.\n")
