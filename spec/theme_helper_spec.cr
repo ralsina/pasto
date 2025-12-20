@@ -52,7 +52,7 @@ describe Pasto::ThemeHelper do
         preferences = Pasto::ThemeHelper.get_theme_preferences(user, config)
 
         preferences[:pico_theme].should eq("dark")
-        preferences[:pico_color].should eq("slate")
+        preferences[:pico_color].should eq("green")
         preferences[:syntax_theme].should eq(config.theme)
       end
     end
@@ -64,7 +64,7 @@ describe Pasto::ThemeHelper do
         preferences = Pasto::ThemeHelper.get_theme_preferences(nil, config)
 
         preferences[:pico_theme].should eq("dark")
-        preferences[:pico_color].should eq("slate")
+        preferences[:pico_color].should eq("green")
         preferences[:syntax_theme].should eq(config.theme)
       end
     end
@@ -151,7 +151,7 @@ describe Pasto::ThemeHelper do
       vars = Pasto::ThemeHelper.setup_vars(nil, config)
 
       vars[:saved_pico_theme].should eq("dark")
-      vars[:saved_pico_color].should eq("slate")
+      vars[:saved_pico_color].should eq("green")
       vars[:saved_syntax_theme].should eq("monokai")
       vars[:resolved_pico_theme].should eq("dark")
       vars[:theme].should eq("monokai")
