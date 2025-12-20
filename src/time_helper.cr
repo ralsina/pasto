@@ -5,7 +5,7 @@ module Pasto
     def self.relative_time(time : Time) : String
       now = Time.utc
       diff = (now - time).total_seconds
-      
+
       case
       when diff < 60
         "just now"

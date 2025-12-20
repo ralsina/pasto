@@ -33,3 +33,5 @@ test-results/
 /playwright-report/
 test-results.xml
 /playwright/.cache/
+
+/coverage/

@@ -16,7 +16,7 @@ module Pasto
 
       {
         pico_theme:   pico_theme,
-        pico_color:   current_user.try(&.pico_color) || "slate",
+        pico_color:   current_user.try(&.pico_color) || "green",
         syntax_theme: current_user.try(&.syntax_theme) || config.theme,
       }
     end

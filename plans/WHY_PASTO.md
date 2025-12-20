@@ -119,7 +119,7 @@ It's definitely overkill if you're just sharing "Hello World" examples on Stack 
 
 ## Try It
 
-There's a public instance at [pasto1.ralsina.me](https://pasto1.ralsina.me) if you want to kick the tires. Obviously don't put anything actually secret there, because I can read it (and so can anyone else who guesses the URL).
+There's a public instance at [pasto1.ralsina.me](https://pasto1.ralsina.me) if you want to kick the tires. Obviously don't put anything actually secret there without encryption, because I can read it (and so can anyone else who guesses the URL).
 
 For real use, though, run your own. The code is on [GitHub](https://github.com/ralsina/pasto). MIT licensed. Do whatever you want with it.
 
