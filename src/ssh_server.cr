@@ -132,33 +132,33 @@ module PastoSSH
       # Parse command and arguments using POSIX-compliant parsing
       argv = Process.parse_arguments_posix(ctx.command)
       cmd = argv.first? || ""
+      args = argv[1..]? || [] of String
 
       case cmd
       when "paste"
-        Pasto::Logging.debug("SSH: handling paste command with argv=#{argv.inspect}")
-        handle_paste(ctx, @@current_fingerprint, @@base_url, argv[1..]? || [] of String)
+        handle_paste(ctx, @@current_fingerprint, @@base_url, args)
       when "login"
-        handle_login(ctx, @@current_fingerprint, @@base_url, argv[1..]? || [] of String)
+        handle_login(ctx, @@current_fingerprint, @@base_url)
       when "list"
-        handle_list(ctx, @@current_fingerprint, @@base_url, argv[1..]? || [] of String)
+        handle_list(ctx, @@current_fingerprint, @@base_url)
       when "get"
-        handle_get(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_get(ctx, @@current_fingerprint, args)
       when "delete"
-        handle_delete(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_delete(ctx, @@current_fingerprint, args)
       when "edit"
-        handle_edit(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_edit(ctx, @@current_fingerprint, args)
       when "view"
-        handle_view(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_view(ctx, @@current_fingerprint, args)
       when "info"
-        handle_info(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_info(ctx, @@current_fingerprint, args)
       when "api-key"
-        handle_api_key(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_api_key(ctx, @@current_fingerprint, args)
       when "help"
         handle_help(ctx, @@base_url)
       when "add-key"
-        handle_add_key(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_add_key(ctx, @@current_fingerprint, args)
       when "ssh-key"
-        handle_ssh_key(ctx, @@current_fingerprint, argv[1..]? || [] of String)
+        handle_ssh_key(ctx, @@current_fingerprint, args)
       else
         ctx.write_stderr("Unknown command: #{ctx.command}\n")
         ctx.write_stderr("Use 'help' for usage information.\n")
@@ -179,56 +179,53 @@ module PastoSSH
 Create a paste.
 
 Usage:
-  paste [options]
+  paste [-l LANG] [-f FILE] [-t TITLE] [-e] [--iv IV] [--expire TIME] [--burn] [--private]
 
 Options:
-  -l <lang>, --language <lang>         Set the language for syntax highlighting
-  -f <file>, --filename <file>         Set a filename (used for language detection)
-  -t <title>, --title <title>          Set a title for the paste
+  -l LANG, --language LANG         Set the language for syntax highlighting
+  -f FILE, --filename FILE         Set a filename (used for language detection)
+  -t TITLE, --title TITLE          Set a title for the paste
   -e, --encrypted                  Create an encrypted paste (server encrypts)
-  --iv <iv>                          Pre-encrypted content with IV (base64). Content must be Web Crypto API compatible.
-  --expire <time>                    Set expiration time (10m, 1h, 1d, 1w, 1M, view-once)
+  --iv IV                          Pre-encrypted content with IV (base64). Content must be Web Crypto API compatible.
+  --expire TIME                    Set expiration time (10m, 1h, 1d, 1w, 1M, view-once)
   --burn                           Burn after reading (delete after first view)
   --private                        Create a private paste (not listed in public feeds)
 
 DOC
 
-  # Preprocess SSH arguments to join multi-word values after options
-  # This handles cases like: paste -t Why You Should Try Pasto
-  # where the title should be "Why You Should Try Pasto" not just "Why"
+  # Preprocess SSH arguments to join consecutive non-option words
+  # This handles the case where client shell consumes quotes, so "Why You Should Try Pasto"
+  # becomes separate words "Why", "You", "Should", "Try", "Pasto"
   private def self.preprocess_ssh_args(argv : Array(String)) : Array(String)
-    result = [] of String
+    return argv if argv.empty?
+
+    processed = [] of String
     i = 0
 
     while i < argv.size
       arg = argv[i]
 
-      case arg
-      when "-t", "--title", "-f", "--filename", "-l", "--language", "--iv"
-        # These options expect a single value, so join all remaining arguments until next option
-        result << arg
+      # If it's an option (starts with -), add it as-is
+      if arg.starts_with?("-")
+        processed << arg
         i += 1
-        value_parts = [] of String
-
-        # Collect all non-option arguments as the value
+      else
+        # It's a non-option argument, collect consecutive non-option words
+        words = [] of String
         while i < argv.size && !argv[i].starts_with?("-")
-          value_parts << argv[i]
+          words << argv[i]
           i += 1
         end
-
-        result << value_parts.join(" ") unless value_parts.empty?
-      else
-        # Regular argument, just add it
-        result << arg
-        i += 1
+        # Join the collected words into a single argument
+        processed << words.join(" ")
       end
     end
 
-    result
+    processed
   end
 
   # ameba:disable Metrics/CyclomaticComplexity
-  private def self.parse_paste_args(argv : Array(String), ctx) : {String?, String?, String?, Bool, Bool, String?, Time?, Bool, Bool}
+  private def self.parse_paste_args(args : Array(String), ctx) : {String?, String?, String?, Bool, Bool, String?, Time?, Bool, Bool}
     language = nil
     filename = nil
     title = nil
@@ -239,112 +236,56 @@ DOC
     burn_after_reading = false
     private_paste = false
 
-    unless argv.empty?
-      # Parse arguments manually since docopt is having issues
-      # For options that expect values, collect all consecutive non-option words as the value
-      language = nil
-      filename = nil
-      title = nil
-      encrypted = false
-      pre_encrypted = false
-      iv = nil
-      expires_at = nil
-      burn_after_reading = false
-      private_paste = false
-      error_msg = nil
+    unless args.empty?
+      begin
+        # Preprocess arguments to join consecutive non-option words before docopt
+        processed_argv = preprocess_ssh_args(args)
+        Pasto::Logging.debug("SSH: preprocessing args: #{args.inspect} -> #{processed_argv.inspect}")
+        opts = Docopt.docopt(PASTE_DOC, argv: processed_argv, exit: false)
 
-      i = 0
-      while i < argv.size
-        case argv[i]
-        when "-l", "--language"
-          i += 1
-          # Collect all consecutive non-option words as the language value
-          words = [] of String
-          while i < argv.size && !argv[i].starts_with?("-")
-            words << argv[i]
-            i += 1
-          end
-          language = words.join(" ")
-          language = nil if language.empty?
-        when "-f", "--filename"
-          i += 1
-          # Collect all consecutive non-option words as the filename value
-          words = [] of String
-          while i < argv.size && !argv[i].starts_with?("-")
-            words << argv[i]
-            i += 1
-          end
-          filename = words.join(" ")
-          filename = nil if filename.empty?
-        when "-t", "--title"
-          i += 1
-          # Collect all consecutive non-option words as the title value
-          words = [] of String
-          while i < argv.size && !argv[i].starts_with?("-")
-            words << argv[i]
-            i += 1
-          end
-          title = words.join(" ")
-          title = nil if title.empty?
-        when "-e", "--encrypted"
-          encrypted = true
-          i += 1
-        when "--iv"
-          i += 1
-          # Collect all consecutive non-option words as the iv value
-          words = [] of String
-          while i < argv.size && !argv[i].starts_with?("-")
-            words << argv[i]
-            i += 1
-          end
-          iv = words.join(" ")
-          pre_encrypted = true if !iv.empty?
-          iv = nil if iv.empty?
-        when "--expire"
-          i += 1
-          # Collect all consecutive non-option words as the expiration value
-          words = [] of String
-          while i < argv.size && !argv[i].starts_with?("-")
-            words << argv[i]
-            i += 1
-          end
-          expire_value = words.join(" ")
-          if !expire_value.empty?
-            begin
-              expires_at = Pasto::Paste.parse_expiration(expire_value)
-            rescue ex
-              error_msg = "Invalid expiration time: #{expire_value}"
-            end
-          else
-            error_msg = "Error: --expire requires a value"
-          end
-        when "--burn"
-          burn_after_reading = true
-          i += 1
-        when "--private"
-          private_paste = true
-          i += 1
-        else
-          error_msg = "Error: Unknown option #{argv[i]}"
-          i += 1
+        # Docopt returns long option names as keys
+        language = opts["--language"]?.try(&.to_s)
+        language = nil if language.nil? || language == "false" || language == "" || language == "nil"
+
+        filename = opts["--filename"]?.try(&.to_s)
+        filename = nil if filename.nil? || filename == "false" || filename == "" || filename == "nil"
+
+        title = opts["--title"]?.try(&.to_s)
+        title = nil if title.nil? || title == "false" || title == "" || title == "nil"
+
+        # Handle encrypted flags
+        encrypted = !!opts["--encrypted"]
+        iv = opts["--iv"]?.try(&.to_s)
+        iv = nil if iv.nil? || iv == "false" || iv == "" || iv == "nil"
+
+        # If --iv is provided, this is pre-encrypted content (true zero-trust)
+        pre_encrypted = !iv.nil?
+
+        # Handle expiration time
+        expire_str = opts["--expire"]?.try(&.to_s)
+        if expire_str && expire_str != "false" && expire_str != "" && expire_str != "nil"
+          expires_at = Pasto::Paste.parse_expiration(expire_str)
         end
-      end
 
-      if error_msg
-        ctx.write_stderr("#{error_msg}\n")
+        # Handle burn after reading
+        burn_after_reading = !!opts["--burn"]
+
+        # Handle private paste
+        private_paste = !!opts["--private"]
+
+        Pasto::Logging.debug("SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}, expires_at=#{expires_at.inspect}, burn_after_reading=#{burn_after_reading}, private_paste=#{private_paste}")
+      rescue ex : Docopt::DocoptException
+        ctx.write_stderr("Invalid options: #{ex.message}\n")
         ctx.write_stderr(PASTE_DOC)
-        return {nil, nil, nil, false, false, nil, nil, false, false}
+        raise ex
       end
-
-      Pasto::Logging.info("SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}, expires_at=#{expires_at.inspect}, burn_after_reading=#{burn_after_reading}, private_paste=#{private_paste}")
     end
 
     {language, filename, title, encrypted, pre_encrypted, iv, expires_at, burn_after_reading, private_paste}
   end
 
   # ameba:disable Metrics/CyclomaticComplexity
-  private def self.handle_paste(ctx, fingerprint : String, base_url : String, argv : Array(String)) : Int32
-    Pasto::Logging.debug("SSH: handle_paste called with argv=#{argv.inspect}")
+  private def self.handle_paste(ctx, fingerprint : String, base_url : String, args : Array(String)) : Int32
     # Check paste rate limit
     unless allow_paste?(fingerprint)
       ctx.write_stderr("Rate limit exceeded. Please wait before creating another paste.\n")
@@ -361,10 +302,9 @@ DOC
     end
 
     # Parse options with docopt
-    language, filename, title, encrypted, pre_encrypted, iv, expires_at, burn_after_reading, private_paste = parse_paste_args(argv, ctx)
-
-    # If parsing failed (all nil values), exit with error
-    if language.nil? && filename.nil? && title.nil? && !encrypted && !pre_encrypted && iv.nil? && expires_at.nil? && !burn_after_reading && !private_paste && !argv.empty?
+    begin
+      language, filename, title, encrypted, pre_encrypted, iv, expires_at, burn_after_reading, private_paste = parse_paste_args(args, ctx)
+    rescue ex : Docopt::DocoptException
       return 1
     end
 
@@ -480,7 +420,7 @@ DOC
   end
 
   # Handle login command
-  private def self.handle_login(ctx, fingerprint : String, base_url : String, argv : Array(String)) : Int32
+  private def self.handle_login(ctx, fingerprint : String, base_url : String) : Int32
     # Check login rate limit
     unless allow_login?(fingerprint)
       ctx.write_stderr("Too many login attempts. Please wait before trying again.\n")
@@ -517,10 +457,6 @@ DOC
     ctx.write("Create paste from file:\n")
     ctx.write("  cat file.txt | ssh #{host}\n")
     ctx.write("  ssh #{host} < file.txt\n\n")
-    ctx.write("Important note about quoting:\n")
-    ctx.write("  When using options with spaces, wrap the entire command in single quotes:\n")
-    ctx.write("  echo 'test' | ssh #{host} 'paste -t \"My Test Title\"'\n")
-    ctx.write("  This prevents the client shell from consuming the inner quotes.\n\n")
     ctx.write("Paste options:\n")
     ctx.write("  -l LANG      Set language (e.g., -l python)\n")
     ctx.write("  -f FILE      Set filename (used for language detection)\n")
@@ -530,13 +466,13 @@ DOC
     ctx.write("  --burn         Burn after reading (delete after first view)\n")
     ctx.write("  --private      Create a private paste\n\n")
     ctx.write("Examples with options:\n")
-    ctx.write("  cat code.py | ssh #{host} 'paste -l python'\n")
-    ctx.write("  cat code | ssh #{host} 'paste -f script.rb'\n")
-    ctx.write("  echo 'test' | ssh #{host} 'paste -t \"My Test\"'\n")
-    ctx.write("  echo 'secret' | ssh #{host} 'paste --encrypted'\n")
-    ctx.write("  echo 'temp' | ssh #{host} 'paste --expire 10m'\n")
-    ctx.write("  echo 'sensitive' | ssh #{host} 'paste --burn --encrypted'\n")
-    ctx.write("  echo 'private' | ssh #{host} 'paste --private'\n\n")
+    ctx.write("  cat code.py | ssh #{host} paste -l python\n")
+    ctx.write("  cat code | ssh #{host} paste -f script.rb\n")
+    ctx.write("  echo 'test' | ssh #{host} paste -t 'My Test'\n")
+    ctx.write("  echo 'secret' | ssh #{host} paste --encrypted\n")
+    ctx.write("  echo 'temp' | ssh #{host} paste --expire 10m\n")
+    ctx.write("  echo 'sensitive' | ssh #{host} paste --burn --encrypted\n")
+    ctx.write("  echo 'private' | ssh #{host} paste --private\n\n")
     ctx.write("List your pastes:\n")
     ctx.write("  ssh #{host} list\n\n")
     ctx.write("View and manage pastes:\n")
@@ -560,7 +496,7 @@ DOC
   end
 
   # Handle list command - show all pastes for this SSH key
-  private def self.handle_list(ctx, fingerprint : String, base_url : String, argv : Array(String)) : Int32
+  private def self.handle_list(ctx, fingerprint : String, base_url : String) : Int32
     ssh_key = Pasto::SSHKey.find(Pasto::SSHKey.sanitize_fingerprint(fingerprint))
 
     unless ssh_key
@@ -599,13 +535,8 @@ DOC
   end
 
   # Handle get command - retrieve raw paste content
-  private def self.handle_get(ctx, fingerprint : String, argv : Array(String)) : Int32
-    if argv.empty?
-      ctx.write_stderr("Usage: ssh host get <paste-id>\n")
-      return 1
-    end
-
-    paste_id = argv.first?.to_s.strip
+  private def self.handle_get(ctx, fingerprint : String, args : Array(String)) : Int32
+    paste_id = args.first?.try(&.strip) || ""
 
     if paste_id.empty?
       ctx.write_stderr("Usage: ssh host get <paste-id>\n")
@@ -632,13 +563,8 @@ DOC
   end
 
   # Handle delete command - remove paste
-  private def self.handle_delete(ctx, fingerprint : String, argv : Array(String)) : Int32
-    if argv.empty?
-      ctx.write_stderr("Usage: ssh host delete <paste-id>\n")
-      return 1
-    end
-
-    paste_id = argv.first?.to_s.strip
+  private def self.handle_delete(ctx, fingerprint : String, args : Array(String)) : Int32
+    paste_id = args.first?.try(&.strip) || ""
 
     if paste_id.empty?
       ctx.write_stderr("Usage: ssh host delete <paste-id>\n")
@@ -671,13 +597,14 @@ DOC
   end
 
   # Handle edit command - update paste content via stdin
-  private def self.handle_edit(ctx, fingerprint : String, argv : Array(String)) : Int32
-    if argv.empty?
+  private def self.handle_edit(ctx, fingerprint : String, args : Array(String)) : Int32
+    # Parse arguments for paste_id and options
+    paste_id = args.first?
+
+    if paste_id.nil? || paste_id.empty?
       ctx.write_stderr("Usage: ssh host edit <paste-id> [--lang <language>] [--title <title>] [--filename <filename>]\n")
       return 1
     end
-
-    paste_id = argv.first?.to_s.strip
 
     # Find the paste
     paste = Pasto::Paste.from_file(paste_id)
@@ -717,20 +644,20 @@ DOC
   end
 
   # Handle view command - view paste with optional decryption
-  private def self.handle_view(ctx, fingerprint : String, argv : Array(String)) : Int32
+  private def self.handle_view(ctx, fingerprint : String, args : Array(String)) : Int32
     # For now, just use the same logic as get
     # TODO: Add decryption support in a future iteration
-    handle_get(ctx, fingerprint, argv)
+    handle_get(ctx, fingerprint, args)
   end
 
   # Handle info command - show paste metadata
-  private def self.handle_info(ctx, fingerprint : String, argv : Array(String)) : Int32
-    if argv.empty?
+  private def self.handle_info(ctx, fingerprint : String, args : Array(String)) : Int32
+    paste_id = args.first?.try(&.strip) || ""
+
+    if paste_id.empty?
       ctx.write_stderr("Usage: ssh host info <paste-id>\n")
       return 1
     end
-
-    paste_id = argv.first?.to_s.strip
 
     # Find the paste
     paste = Pasto::Paste.from_file(paste_id)
@@ -763,9 +690,9 @@ DOC
   end
 
   # Handle api-key command - manage API keys for the current user
-  private def self.handle_api_key(ctx, fingerprint : String, argv : Array(String)) : Int32
-    # Parse subcommand (create, list, etc.) from argv
-    subcommand = argv.first? || ""
+  private def self.handle_api_key(ctx, fingerprint : String, args : Array(String)) : Int32
+    # Parse subcommand (create, list, etc.)
+    subcommand = args.first? || ""
 
     case subcommand
     when "create"
@@ -773,7 +700,7 @@ DOC
     when "list"
       handle_api_key_list(ctx, fingerprint)
     when "revoke"
-      key_to_revoke = argv[1]? || ""
+      key_to_revoke = args[1]? || ""
       handle_api_key_revoke(ctx, fingerprint, key_to_revoke)
     else
       ctx.write_stderr("API key usage:\n")
@@ -933,8 +860,8 @@ DOC
   end
 
   # Handle add-key command - create a challenge for adding a new SSH key
-  private def self.handle_add_key(ctx, fingerprint : String, argv : Array(String)) : Int32
-    Pasto::Logging.info("SSH: add-key called with fingerprint=#{fingerprint}, argv=#{argv.inspect}", "🔐")
+  private def self.handle_add_key(ctx, fingerprint : String, args : Array(String)) : Int32
+    Pasto::Logging.info("SSH: add-key called with fingerprint=#{fingerprint}, args=#{args.inspect}", "🔐")
 
     # Check SSH key operation rate limit
     unless allow_ssh_key_operation?(fingerprint)
@@ -957,15 +884,16 @@ DOC
       return 1
     end
 
-    # Extract the public key from argv - join remaining args to preserve quoted content
-    public_key = argv.join(" ").strip
-    if public_key.empty?
+    # Extract the public key from args (join all args since public key may contain spaces)
+    public_key = args.join(" ")
+
+    if public_key.strip.empty?
       ctx.write_stderr("Error: Please provide a public key.\n")
       ctx.write_stderr("Usage: ssh host add-key \"ssh-rsa AAAAB3NzaC1yc2E...\"\n")
       return 1
     end
 
-    # public_key was already set above
+    public_key = public_key.strip
 
     # Validate the SSH key format
     begin
@@ -1007,15 +935,15 @@ DOC
   end
 
   # Handle ssh-key command - manage existing SSH keys and respond to challenges
-  private def self.handle_ssh_key(ctx, fingerprint : String, argv : Array(String)) : Int32
-    # Parse subcommand (list, response, etc.) from argv
-    subcommand = argv.first? || ""
+  private def self.handle_ssh_key(ctx, fingerprint : String, args : Array(String)) : Int32
+    # Parse subcommand (list, response, etc.)
+    subcommand = args.first? || ""
 
     case subcommand
     when "list"
       handle_ssh_key_list(ctx, fingerprint)
     when "response"
-      challenge_code = argv[1]? || ""
+      challenge_code = args[1]? || ""
       handle_ssh_key_response(ctx, fingerprint, challenge_code)
     else
       ctx.write_stderr("SSH key management:\n")
