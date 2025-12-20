@@ -53,42 +53,44 @@ if [ -f "coverage/index.html" ]; then
     echo -e "${GREEN}✅ Coverage report generated successfully!${NC}"
 
     # Extract coverage percentage from the JSON data
-    COVERAGE_DATA=$(find coverage/ -name "coverage.json" -exec grep -l "percent_covered" {} \; | head -1)
-    if [ -n "$COVERAGE_DATA" ] && [ -f "$COVERAGE_DATA" ]; then
-        COVERAGE_PERCENT=$(grep -o '"percent_covered":"[^"]*"' "$COVERAGE_DATA" | head -1 | cut -d'"' -f4)
-        COVERED_LINES=$(grep -o '"covered_lines":[0-9]*' "$COVERAGE_DATA" | head -1 | cut -d':' -f2)
-        TOTAL_LINES=$(grep -o '"total_lines":[0-9]*' "$COVERAGE_DATA" | head -1 | cut -d':' -f2)
+    COVERAGE_JSON=$(find coverage/ -path "*/run_tests.*/coverage.json" | head -1)
+    
+    if [ -n "$COVERAGE_JSON" ] && [ -f "$COVERAGE_JSON" ]; then
+        # Get overall coverage (not from files array)
+        COVERAGE_PERCENT=$(grep '"percent_covered":' "$COVERAGE_JSON" | grep -v '"file"' | grep -o '[0-9.]*' | head -1)
+        COVERED_LINES=$(grep '"covered_lines":' "$COVERAGE_JSON" | grep -v '"file"' | grep -o '[0-9]*' | head -1)
+        TOTAL_LINES=$(grep '"total_lines":' "$COVERAGE_JSON" | grep -v '"file"' | grep -o '[0-9]*' | head -1)
+    fi
+    
+    if [ -n "$COVERAGE_PERCENT" ]; then
 
         echo -e "${GREEN}📈 Current test coverage: ${COVERAGE_PERCENT}%${NC}"
-        echo -e "${BLUE}📊 Coverage details: ${COVERED_LINES}/${TOTAL_LINES} lines covered${NC}"
+        if [ -n "$COVERED_LINES" ] && [ -n "$TOTAL_LINES" ]; then
+            echo -e "${BLUE}📊 Coverage details: ${COVERED_LINES}/${TOTAL_LINES} lines covered${NC}"
+        fi
 
         # Show file-by-file coverage
         echo -e "${BLUE}📁 File-by-file coverage:${NC}"
-        grep -o '"file":"[^"]*","percent_covered":"[^"]*"' "$COVERAGE_DATA" | \
-        sed 's|"file":"\([^"]*\)","percent_covered":"\([^"]*\)"|\1: \2%|' | \
-        while read -r line; do
-            if [[ "$line" =~ ([^:]*):\s*([0-9.]+) ]]; then
-                file="${BASH_REMATCH[1]}"
-                percent="${BASH_REMATCH[2]}"
+        if [ -f "$COVERAGE_JSON" ]; then
+            grep -o '"file": "[^"]*", "percent_covered": "[^"]*"' "$COVERAGE_JSON" | \
+            sed 's|"file": "\([^"]*\)", "percent_covered": "\([^"]*\)"|\1 \2|' | \
+            while read -r file percent; do
                 filename=$(basename "$file")
-
+                
                 # Color code based on coverage percentage
-                if (( $(echo "$percent >= 75" | bc -l) )); then
+                percent_int=$(echo "$percent" | cut -d'.' -f1)
+                if [ "$percent_int" -ge 75 ]; then
                     echo -e "  ${GREEN}✓${NC} $filename: ${percent}%"
-                elif (( $(echo "$percent >= 50" | bc -l) )); then
+                elif [ "$percent_int" -ge 50 ]; then
                     echo -e "  ${YELLOW}⚠${NC} $filename: ${percent}%"
                 else
                     echo -e "  ${RED}✗${NC} $filename: ${percent}%"
                 fi
-            fi
-        done
+            done
+        fi
     else
         echo -e "${YELLOW}⚠️ Could not extract coverage percentage${NC}"
     fi
-
-    # Show coverage summary
-    echo -e "${BLUE}📋 Coverage Summary:${NC}"
-    kcov --report --include-pattern="${PROJECT_ROOT}/src/" coverage/ 2>/dev/null || true
 
     echo -e "${BLUE}📁 Detailed HTML report available at: ${PROJECT_ROOT}/coverage/index.html${NC}"
 
