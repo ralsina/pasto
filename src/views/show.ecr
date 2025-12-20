@@ -174,47 +174,59 @@
 
 <% is_markdown = (paste.language == "markdown") || paste.filename.to_s.ends_with?(".md") %>
 <div class="paste-content-wrapper">
-  <div class="paste-content" id="paste-content">
-    <%= highlighted_content %>
-  </div>
   <% if is_markdown %>
-    <div id="rendered-markdown"></div>
-        <script>
+    <div id="rendered-markdown" class="markdown-content"></div>
+    <div class="paste-content" id="paste-content" style="display: none;">
+      <%= highlighted_content %>
+    </div>
+    <script>
       let showingMarkdown = true;
+      let renderedHTML = null; // Cache rendered HTML
+      
       document.addEventListener('DOMContentLoaded', function() {
         // Show rendered markdown by default
-        const src = document.getElementById('paste-content');
         const rendered = document.getElementById('rendered-markdown');
-        rendered.innerHTML = marked.parse(rawContent);
-        src.style.display = 'none';
-        rendered.style.display = '';
+        renderedHTML = marked.parse(rawContent);
+        rendered.innerHTML = renderedHTML;
+        
         const btn = document.getElementById('toggle-md-render');
         btn.innerHTML = '<i data-lucide="file-code-2"></i>';
         btn.title = 'Show source';
         if (window.lucide) lucide.createIcons();
       });
+      
       function toggleMarkdownView() {
         const btn = document.getElementById('toggle-md-render');
         const src = document.getElementById('paste-content');
         const rendered = document.getElementById('rendered-markdown');
+        
         if (!showingMarkdown) {
-          rendered.innerHTML = marked.parse(rawContent);
+          // Switch to rendered view
+          if (!renderedHTML) {
+            renderedHTML = marked.parse(rawContent);
+          }
+          rendered.innerHTML = renderedHTML;
           src.style.display = 'none';
-          rendered.style.display = '';
+          rendered.style.display = 'block';
           btn.innerHTML = '<i data-lucide="file-code-2"></i>';
           btn.title = 'Show source';
-          if (window.lucide) lucide.createIcons();
           showingMarkdown = true;
         } else {
+          // Switch to source view
           rendered.style.display = 'none';
-          src.style.display = '';
+          src.style.display = 'block';
           btn.innerHTML = '<i data-lucide="eye"></i>';
-          btn.title = 'Show rendered Markdown';
-          if (window.lucide) lucide.createIcons();
+          btn.title = 'Show rendered';
           showingMarkdown = false;
         }
+        
+        if (window.lucide) lucide.createIcons();
       }
     </script>
+  <% else %>
+    <div class="paste-content" id="paste-content">
+      <%= highlighted_content %>
+    </div>
   <% end %>
 
   <div class="overlay-buttons-container">
@@ -258,8 +270,10 @@
   }
 
   .overlay-btn {
-    background: var(--pico-contrast-background);
-    border: 1px solid var(--pico-primary);
+    background: rgba(var(--pico-contrast-background-rgb, 0, 0, 0), 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(var(--pico-primary-rgb, 255, 255, 255), 0.3);
     border-radius: var(--pico-border-radius);
     width: 40px;
     height: 40px;
@@ -267,7 +281,7 @@
     min-height: 40px;
     padding: 0;
     cursor: pointer;
-    opacity: 0.8;
+    opacity: 0.5;
     transform: translateZ(0);
     will-change: opacity, background-color;
     transition: opacity 0.2s, background-color 0.2s;
@@ -278,7 +292,9 @@
 
   .overlay-btn:hover {
     opacity: 1;
-    background: var(--pico-primary);
+    background: rgba(var(--pico-primary-rgb, 255, 255, 255), 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .copy-btn.copied {
