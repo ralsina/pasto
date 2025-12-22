@@ -274,19 +274,30 @@ export class PastoTestHelpers {
 
       // Handle different flows for special paste types vs regular pastes
       if (options.isEncrypted) {
-        // For encrypted pastes, wait for either encryption key dialog or encryption options dialog
+        // For encrypted pastes, wait for the encryption dialog and handle password input
         try {
-          await this.page.waitForSelector('dialog:has-text("Encryption Key")', { timeout: 8000 });
+          await this.page.waitForSelector('dialog:has-text("Encrypt Paste")', { timeout: 8000 });
+
+          // Click Generate button to auto-generate a password
+          await this.page.locator('#generatePasswordBtn').click();
+
+          // Wait for password field to be filled (or give it a moment)
+          await this.page.waitForTimeout(500);
+
+          // Click the Encrypt Paste button to proceed
+          await this.page.locator('#encryptBtn').click();
+
+          // Wait for the dialog to close and paste to be created
+          await this.page.waitForSelector('dialog', { state: 'hidden', timeout: 8000 });
+
         } catch (e) {
-          // Try waiting for encryption options dialog instead
-          try {
-            await this.page.waitForSelector('dialog:has-text("Encrypt Paste")', { timeout: 8000 });
-          } catch (e2) {
-            // Check if we might have gotten a different dialog
-            const anyDialog = await this.page.locator('dialog').isVisible();
-            if (!anyDialog) {
-              console.log('No encryption dialog appeared, checking if paste was created anyway');
-            }
+          console.log('Encryption dialog handling failed:', e);
+          // Check if we might have gotten a different dialog
+          const anyDialog = await this.page.locator('dialog').isVisible();
+          if (anyDialog) {
+            // Try to close any dialog and continue
+            await this.page.keyboard.press('Escape');
+            await this.page.waitForTimeout(500);
           }
         }
       } else if (options.burnAfterReading) {
@@ -474,6 +485,37 @@ export class PastoTestHelpers {
   async isMobileView(): Promise<boolean> {
     const viewport = this.page.viewportSize();
     return (viewport?.width || 0) < 768;
+  }
+
+  /**
+   * Check if auth-debug-mode is enabled by looking for the HTTP header
+   */
+  async isAuthDebugMode(): Promise<boolean> {
+    try {
+      const response = await this.page.goto('/', { waitUntil: 'domcontentloaded' });
+      if (!response) return false;
+
+      const authDebugHeader = response.headers()['x-pasto-auth-debug-mode'];
+      return authDebugHeader === 'enabled';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Check if user is authenticated by checking for current_user elements
+   */
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      // Look for elements that only appear when user is logged in
+      const hasProfileLink = await this.page.locator('a[href="/profile"]').count() > 0;
+      const hasLogoutButton = await this.page.locator('a[href*="logout"]').count() > 0;
+      const hasPrivateOption = await this.page.locator('#security-access-control option[value="private"]').count() > 0;
+
+      return hasProfileLink || hasLogoutButton || hasPrivateOption;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**

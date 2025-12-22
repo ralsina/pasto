@@ -54,7 +54,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'cd /home/ralsina/code/pasto && ./bin/pasto --port 3000 --rate-paste-limit=9999 --rate-paste-user-limit=9999 --rate-highlight-limit=9999 --rate-login-limit=9999 --rate-http-limit=9999',
+    command: `cd /home/ralsina/code/pasto && ./bin/pasto --port 3000 ${process.env.AUTH_DEBUG_MODE ? '--auth-debug-mode' : ''} --rate-paste-limit=9999 --rate-paste-user-limit=9999 --rate-highlight-limit=9999 --rate-login-limit=9999 --rate-http-limit=9999`,
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

@@ -80,7 +80,10 @@
       "Bash(PASTO_PORT=6000 ./bin/pasto:*)",
       "Bash(tar -xOf:*)",
       "Bash(./scripts/coverage.sh:*)",
-      "Bash(crystal build:*)"
+      "Bash(crystal build:*)",
+      "Bash(AUTH_DEBUG_MODE=true npm test:*)",
+      "Bash(npm test:*)",
+      "Bash(npx playwright test:*)"
     ],
     "deny": [],
     "ask": []

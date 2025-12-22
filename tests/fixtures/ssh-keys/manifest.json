@@ -1,0 +1,32 @@
+{
+  "test_keys": [
+    {
+      "index": 1,
+      "name": "test_user_1",
+      "private_key": "test_user_1",
+      "public_key": "test_user_1.pub",
+      "fingerprint": "SHA256:vMLoaZnDYw0F5lRSE8gChC8J0tyLzq9yP7qzpE5FzN0",
+      "comment": "test-user-1@pasto-tests.local"
+    },
+    {
+      "index": 2,
+      "name": "test_user_2",
+      "private_key": "test_user_2",
+      "public_key": "test_user_2.pub",
+      "fingerprint": "SHA256:8OHOpMZqhuHx6ofqAmHwErizGdUxguktxmy8DZlnJIQ",
+      "comment": "test-user-2@pasto-tests.local"
+    },
+    {
+      "index": 3,
+      "name": "test_user_3",
+      "private_key": "test_user_3",
+      "public_key": "test_user_3.pub",
+      "fingerprint": "SHA256:dTL3iIx5FTls4rxcW0iadkA7sm5nXIgGIjH/sB4ifGQ",
+      "comment": "test-user-3@pasto-tests.local"
+    }
+  ],
+  "usage": {
+    "description": "Pre-generated SSH keys for Playwright tests",
+    "instructions": "Use the fingerprint values in tests for reliable SSH key identification"
+  }
+}

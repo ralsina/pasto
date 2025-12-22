@@ -83,23 +83,6 @@ for css in "${PICO_FILES[@]}"; do
 	fi
 done
 
-# Download highlight.js CSS themes
-HIGHLIGHT_THEMES=(
-	"atom-one-dark.min.css"
-	"atom-one-light.min.css"
-)
-
-for theme in "${HIGHLIGHT_THEMES[@]}"; do
-	url="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/$theme"
-	dest="src/baked/assets/$theme"
-	echo "Downloading highlight.js theme: $theme ..."
-	if ! curl -fsSL "$url" -o "$dest"; then
-		echo "Error: Failed to download highlight.js theme $theme from $url" >&2
-		rm -rf "$TMPDIR"
-		exit 1
-	fi
-done
-
 # Download CodeJar as separate ES module
 CODEJAR_DEST="src/baked/assets/codejar.min.js"
 echo "Downloading CodeJar ES module..."

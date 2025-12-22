@@ -15,6 +15,11 @@ module Pasto
       env.response.headers["X-Content-Type-Options"] = "nosniff"
       env.response.headers["X-Frame-Options"] = "DENY"
       env.response.headers["X-XSS-Protection"] = "1; mode=block"
+
+      # Auth debug mode detection header
+      if Pasto.config.auth_debug_mode?
+        env.response.headers["X-Pasto-Auth-Debug-Mode"] = "enabled"
+      end
     end
 
     # CORS headers filter for API endpoints

@@ -52,10 +52,12 @@ Options:
   --theme=<theme>           Syntax highlighting theme [default: default-dark].
   --max-paste-size=<size>   Maximum paste size in bytes [default: 102400].
   --base-url=<url>          Base URL for web interface [default: http://bind:port].
+  --auth-debug-mode         Enable authentication debug mode - auto-authenticate all requests (DO NOT USE IN PRODUCTION).
   --ssh-enabled=<bool>      Enable SSH server [default: false].
   --ssh-port=<port>         SSH port to listen on [default: 2222].
   --ssh-bind=<address>      SSH address to bind to [default: 0.0.0.0].
   --host-key=<file>         SSH host key file [default: ssh_host_rsa_key].
+  --disable-rate-limit      DISABLE ALL RATE LIMITING - ONLY FOR TESTING (DO NOT USE IN PRODUCTION).
 
 Rate Limiting Options:
   --rate-paste-limit=<n>              Paste creation limit per IP [default: 10].
@@ -84,10 +86,12 @@ DOC
     property theme : String
     property max_paste_size : Int32
     property base_url : String
+    property? auth_debug_mode : Bool
     property? ssh_enabled : Bool
     property ssh_port : Int32
     property ssh_bind : String
     property host_key : String
+    property? disable_rate_limit : Bool
 
     # Rate limiting settings
     property rate_paste_limit : Int32
@@ -124,10 +128,12 @@ DOC
       @log_level = log_level_option.empty? ? nil : log_level_option
       @theme = docopt_options["--theme"].to_s
       @max_paste_size = docopt_options["--max-paste-size"].to_s.to_i
+      @auth_debug_mode = docopt_options["--auth-debug-mode"]?.to_s.downcase.in?("true", "yes", "1")
       @ssh_enabled = docopt_options["--ssh-enabled"].to_s.downcase.in?("true", "yes", "1")
       @ssh_port = docopt_options["--ssh-port"].to_s.to_i
       @ssh_bind = docopt_options["--ssh-bind"].to_s
       @host_key = docopt_options["--host-key"].to_s
+      @disable_rate_limit = docopt_options["--disable-rate-limit"]?.to_s.downcase.in?("true", "yes", "1")
 
       # Rate limiting settings
       @rate_paste_limit = docopt_options["--rate-paste-limit"].to_s.to_i
@@ -430,6 +436,31 @@ DOC
     if config.ssh_enabled?
       Logging.info("SSH: #{config.ssh_bind}:#{config.ssh_port}", "🔐")
     end
+
+    # Prominent warning for auth debug mode
+    if config.auth_debug_mode?
+      puts "\n" + "="*80
+      puts "🚨🚨🚨  AUTHENTICATION DEBUG MODE IS ENABLED  🚨🚨🚨".center(80)
+      puts "".center(80)
+      puts "⚠️  ALL REQUESTS WILL BE AUTOMATICALLY AUTHENTICATED  ⚠️".center(80)
+      puts "⚠️  THIS BYPASSES ALL NORMAL AUTHENTICATION MECHANISMS  ⚠️".center(80)
+      puts "".center(80)
+      puts "🛑 DO NOT USE IN PRODUCTION - SERIOUS SECURITY RISK 🛑".center(80)
+      puts "="*80 + "\n"
+    end
+
+    # Prominent warning for rate limit disable
+    if config.disable_rate_limit?
+      puts "\n" + "="*80
+      puts "🚨🚨🚨  ALL RATE LIMITING IS DISABLED  🚨🚨🚨".center(80)
+      puts "".center(80)
+      puts "⚠️  ALL API ENDPOINTS HAVE UNLIMITED ACCESS  ⚠️".center(80)
+      puts "⚠️  NO PROTECTION AGAINST ABUSE OR DoS ATTACKS  ⚠️".center(80)
+      puts "".center(80)
+      puts "🛑 DO NOT USE IN PRODUCTION - SERIOUS ABUSE RISK 🛑".center(80)
+      puts "="*80 + "\n"
+    end
+
     Kemal.run
   end
 end

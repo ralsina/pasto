@@ -2,7 +2,7 @@ require "spec"
 require "../src/theme_helper"
 require "../src/models/user"
 
-# Mock Config class for testing
+# Mock Config class and VERSION for testing
 module Pasto
   VERSION = "0.1.0"
 

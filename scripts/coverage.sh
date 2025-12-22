@@ -12,6 +12,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}🔍 Running code coverage analysis for Pasto...${NC}"
+echo -e "${YELLOW}⚠️  Note: Coverage only includes code compiled into test binary${NC}"
+echo -e "${YELLOW}   Server routes, entry points, and some modules excluded${NC}"
 
 # Check if kcov is installed
 if ! command -v kcov &> /dev/null; then
@@ -67,6 +69,7 @@ if [ -f "coverage/index.html" ]; then
         echo -e "${GREEN}📈 Current test coverage: ${COVERAGE_PERCENT}%${NC}"
         if [ -n "$COVERED_LINES" ] && [ -n "$TOTAL_LINES" ]; then
             echo -e "${BLUE}📊 Coverage details: ${COVERED_LINES}/${TOTAL_LINES} lines covered${NC}"
+            echo -e "${YELLOW}   (Excludes server.cr, api.cr, and other files not in test binary)${NC}"
         fi
 
         # Show file-by-file coverage

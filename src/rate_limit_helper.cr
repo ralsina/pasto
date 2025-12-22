@@ -3,6 +3,13 @@ module Pasto
   module RateLimitHelper
     # Check rate limits and handle exceeded limits with proper response
     def self.check_and_handle_rate_limit(env, rate_limit_type : Symbol, extra_args = nil, return_mode : Symbol = :next)
+      # If rate limiting is disabled, allow all requests
+      if Pasto.config.disable_rate_limit?
+        result = RateLimitResult.new(allowed: true, remaining: -1, reset_time: Time.utc + Time::Span.new(hours: 1), total_requests: 0)
+        add_rate_limit_headers(env, result)
+        return true, nil
+      end
+
       client_ip = Pasto.get_client_ip(env)
 
       case rate_limit_type

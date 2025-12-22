@@ -29,9 +29,70 @@ require "tartrazine"
 module Pasto
   include TimeHelper
 
+  # Cached debug user for auth debug mode
+  @@debug_user : User?
+
+  # Creates or retrieves the debug user for auth debug mode
+  private def self.debug_user : User
+    if debug_user = @@debug_user
+      return debug_user
+    end
+
+    # Look for existing debug SSH key first
+    debug_fingerprint = "SHA256:debug_auth_debug_mode_key_for_testing"
+    if existing_ssh_key = SSHKey.find_or_create(debug_fingerprint)
+      if owner_id = existing_ssh_key.owner_id
+        # Found existing debug user, load it
+        if existing_user = User.find(owner_id)
+          # Rebuild SSH key's paste references by finding pastes with this fingerprint
+          existing_ssh_key.pastes.clear
+
+          # Find all pastes that belong to this user
+          if Dir.exists?("./data/Pasto::Paste/")
+            Dir.each_child("./data/Pasto::Paste/") do |paste_id|
+              begin
+                paste = Paste.from_file(paste_id)
+                if paste && paste.ssh_fingerprint == debug_fingerprint
+                  existing_ssh_key.add_paste(paste)
+                end
+              rescue
+                # Skip invalid paste files
+              end
+            end
+          end
+
+          existing_ssh_key.save
+
+          @@debug_user = existing_user
+          return existing_user
+        end
+      end
+    end
+
+    # Create new debug user and cache it
+    debug_user = User.new("Debug User")
+    debug_user.save
+
+    # Create a debug SSH key so pastes can be associated with the user
+    debug_ssh_key = SSHKey.new(debug_fingerprint)
+    debug_ssh_key.owner_id = debug_user.sepia_id
+    debug_ssh_key.save
+    debug_user.add_key(debug_ssh_key)
+
+    @@debug_user = debug_user
+    debug_user
+  end
+
   # Extracts UserSession from Kemal session and fetches User from Sepia storage
   # Returns nil for unauthenticated users or invalid sessions
+  # In auth debug mode, always returns the debug user
   def self.get_current_user(env) : User?
+    # Auth debug mode: always return debug user
+    if Pasto.config.auth_debug_mode?
+      return debug_user
+    end
+
+    # Normal authentication logic
     if user_session = env.session.object?("user").as(Pasto::UserSession?)
       User.find(user_session.user_id)
     else
@@ -197,18 +258,20 @@ module Pasto
       next
     end
 
-    # Check backup rate limiting
-    allowed, rate_limit_result = RateLimits.allow_backup?(current_user.sepia_id)
-    unless allowed
-      Pasto::Logging.warn("Backup rate limit exceeded for user #{current_user.sepia_id}")
-      env.response.status_code = 429
-      if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
-        env.response.content_type = "application/json"
-        {"status" => "error", "message" => "Rate limit exceeded. You can create one backup per day."}.to_json
-      else
-        env.redirect "/profile?error=rate_limit"
+    # Check backup rate limiting (skip if rate limiting is disabled)
+    unless Pasto.config.disable_rate_limit?
+      allowed, rate_limit_result = RateLimits.allow_backup?(current_user.sepia_id)
+      unless allowed
+        Pasto::Logging.warn("Backup rate limit exceeded for user #{current_user.sepia_id}")
+        env.response.status_code = 429
+        if env.request.headers["X-Requested-With"]? == "XMLHttpRequest"
+          env.response.content_type = "application/json"
+          {"status" => "error", "message" => "Rate limit exceeded. You can create one backup per day."}.to_json
+        else
+          env.redirect "/profile?error=rate_limit"
+        end
+        next
       end
-      next
     end
 
     # Get config for storage directory
@@ -650,6 +713,15 @@ module Pasto
         paste.save
         ssh_key.add_paste(paste)
         ssh_key.save
+        Logging.info("Paste #{paste.sepia_id} associated with user #{current_user.sepia_id} via SSH key #{ssh_key.sepia_id}")
+      else
+        if current_user.nil?
+          Logging.warn("Paste #{paste.sepia_id} not associated: no current_user")
+        elsif current_user.keys.empty?
+          Logging.warn("Paste #{paste.sepia_id} not associated: user has no SSH keys (keys count: #{current_user.keys.size})")
+        elsif params.anonymous?
+          Logging.warn("Paste #{paste.sepia_id} not associated: anonymous=true")
+        end
       end
 
       # Invalidate any existing cache for this paste
