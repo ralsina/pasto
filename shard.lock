@@ -63,7 +63,7 @@ shards:
 
   pasto-cache:
     git: https://github.com/ralsina/pasto-cache.git
-    version: 0.1.0+git.commit.44159da5e04f82889f65debf105c2dd94f4aec1d
+    version: 0.1.1
 
   pcf-parser:
     git: https://github.com/l3kn/pcf-parser.git
