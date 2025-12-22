@@ -1,0 +1,215 @@
+/* Pico Matrix Theme - Terminal Aesthetic & Code Rain */
+/* This theme is COLOR-AGNOSTIC - works with any pico.*.css variant */
+
+/* Import terminal fonts */
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
+
+/* Apply fonts to elements */
+body {
+  font-family: 'VT323', monospace !important;
+  font-size: 20px !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Share Tech Mono', monospace !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Matrix rain background */
+.matrix-rain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.1;
+}
+
+/* Terminal container effect */
+body {
+  background-color: #000 !important;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 255, 0, 0.03) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(0, 255, 0, 0.03) 3px
+    );
+  pointer-events: none;
+  z-index: 9998;
+  animation: matrixFlicker 0.15s infinite;
+}
+
+@keyframes matrixFlicker {
+  0% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.95;
+  }
+}
+
+/* CRT flicker effect */
+.matrix-flicker {
+  animation: matrixTextFlicker 0.1s infinite;
+}
+
+@keyframes matrixTextFlicker {
+  0% {
+    opacity: 0.98;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.99;
+  }
+}
+
+/* Terminal border style */
+.matrix-border {
+  border: 2px solid !important;
+  border-style: dashed !important;
+  position: relative;
+}
+
+.matrix-border::before {
+  content: '> ';
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background: #000;
+  padding: 0 5px;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+}
+
+/* Glowing text effect */
+.matrix-glow {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor;
+}
+
+/* Typing cursor effect */
+.matrix-cursor {
+  display: inline-block;
+  width: 10px;
+  height: 1em;
+  background: currentColor;
+  animation: matrixBlink 1s infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes matrixBlink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Scanline effect */
+.matrix-scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Code block styling */
+pre, code {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px dashed currentColor;
+  padding: 1em;
+  font-family: 'VT323', monospace !important;
+  line-height: 1.2;
+}
+
+/* Button styling */
+button, .button {
+  font-family: 'Share Tech Mono', monospace !important;
+  text-transform: uppercase;
+  border: 2px solid !important;
+  position: relative;
+  overflow: hidden;
+}
+
+button::before, .button::before {
+  content: '[ ';
+  opacity: 0.7;
+}
+
+button::after, .button::after {
+  content: ' ]';
+  opacity: 0.7;
+}
+
+/* Terminal prompt style */
+.matrix-prompt {
+  color: currentColor;
+}
+
+.matrix-prompt::before {
+  content: 'root@matrix:~$ ';
+  opacity: 0.7;
+}
+
+/* Vignette for depth */
+.matrix-vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.8) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Apply base effects */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}

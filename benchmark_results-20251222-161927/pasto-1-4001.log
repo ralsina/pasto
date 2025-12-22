@@ -1,0 +1,34 @@
+🔍 Looking for pasto-ssh binary...
+   Trying: /home/ralsina/code/pasto/bin/pasto-ssh
+
+================================================================================
+                    🚨🚨🚨  ALL RATE LIMITING IS DISABLED  🚨🚨🚨                     
+                                                                                
+                ⚠️  ALL API ENDPOINTS HAVE UNLIMITED ACCESS  ⚠️                 
+rting SSH server on 0.0.0.0:2222
+                ⚠️  ALL API ENDPOINTS HAVE UNLIMITED ACCESS  ⚠️                 
+               ⚠️  NO PROTECTION AGAINST ABUSE OR DoS ATTACKS  ⚠️               
+                                                                                
+               🛑 DO NOT USE IN PRODUCTION - SERIOUS ABUSE RISK 🛑                
+================================================================================
+2025-12-22T19:19:27.165061Z   INFO - 👁️ File system watcher enabled for external changes
+2025-12-22T19:19:27.165218Z   INFO - ⚡ HTTP Rate limits: paste=10/60s, paste-user=30/60s, highlight=300/60s, login=5/300s, http=200/60s
+2025-12-22T19:19:27.165298Z   INFO - 🌐 Starting Pasto on 0.0.0.0:4001
+2025-12-22T19:19:27.165299Z   INFO - 📁 Storage: ./data-bench-4001
+2025-12-22T19:19:27.165301Z   INFO - 🎨 Theme: chicago-day
+2025-12-22T19:19:27.165303Z   INFO - 🔐 SSH: 0.0.0.0:2222
+2025-12-22T19:19:27.166274Z   INFO - kemal: [development] Kemal is ready to lead at http://0.0.0.0:4001
+2025-12-22T19:19:27.301925Z   INFO - 🔐 Starting Pasto SSH server on 0.0.0.0:2222
+2025-12-22T19:19:27.301926Z   INFO - 📁 Storing pastes in: ./data-bench-4001
+2025-12-22T19:19:27.301927Z   INFO - 🔑 Using host key: ssh_host_rsa_key
+2025-12-22T19:19:27.301929Z   INFO - 🔗 Base URL: http://localhost:4001
+2025-12-22T19:19:27.301931Z   INFO - ⚡ Rate limits: paste=20/60s, login=3/600s, conn=30/60s, key=5/300s
+2025-12-22T19:19:27.301932Z   INFO - Usage examples:
+2025-12-22T19:19:27.301934Z   INFO -   echo 'Hello World' | ssh -p 2222 0.0.0.0
+2025-12-22T19:19:27.301935Z   INFO -   cat file.txt | ssh -p 2222 0.0.0.0
+2025-12-22T19:19:27.301937Z   INFO -   ssh -p 2222 0.0.0.0 login
+2025-12-22T19:19:27.301939Z   INFO -   ssh -p 2222 0.0.0.0 help
+2025-12-22T19:19:27.301941Z   INFO - ✅ SSH server started. Press Ctrl+C to stop.
+SSH server listening on 0.0.0.0:2222
+2025-12-22T19:19:30.050711Z   INFO - kemal: 200 GET / 1.77ms
+2025-12-22T19:19:30.851994Z   INFO - kemal: Kemal is going to take a rest!

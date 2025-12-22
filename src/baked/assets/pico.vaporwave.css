@@ -1,0 +1,247 @@
+/* Pico Vaporwave Theme - Pastel Gradients & Aesthetic Shapes */
+/* This theme is COLOR-AGNOSTIC - works with any pico.*.css variant */
+
+/* Import vaporwave fonts */
+@import url('https://fonts.googleapis.com/css2?family=Righteous&family=Quicksand:wght@400;600;700&display=swap');
+
+/* Apply fonts to elements */
+body {
+  font-family: 'Quicksand', sans-serif !important;
+  font-weight: 600;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Righteous', cursive !important;
+  letter-spacing: 0.05em;
+}
+
+/* Soft gradient background */
+.vapor-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg,
+      rgba(255, 192, 203, 0.1) 0%,
+      rgba(224, 170, 255, 0.1) 25%,
+      rgba(0, 188, 212, 0.1) 50%,
+      rgba(255, 218, 185, 0.1) 75%,
+      rgba(255, 192, 203, 0.1) 100%
+    );
+  background-size: 400% 400%;
+  animation: vaporGradientMove 15s ease infinite;
+  z-index: -2;
+}
+
+@keyframes vaporGradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Floating geometric shapes */
+.vapor-shapes {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  opacity: 0.1;
+}
+
+.vapor-shapes::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(45deg, #FFB6C1, #87CEEB);
+  border-radius: 50%;
+  animation: vaporFloat 20s ease-in-out infinite;
+}
+
+.vapor-shapes::after {
+  content: '';
+  position: absolute;
+  bottom: 20%;
+  right: 15%;
+  width: 150px;
+  height: 150px;
+  background: linear-gradient(45deg, #E0AAFF, #00BCD4);
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  animation: vaporFloat 25s ease-in-out infinite reverse;
+}
+
+@keyframes vaporFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-30px) rotate(10deg);
+  }
+  66% {
+    transform: translateY(20px) rotate(-10deg);
+  }
+}
+
+/* Soft rounded borders */
+.vapor-border {
+  border: 2px solid !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 8px 32px rgba(255, 255, 255, 0.1),
+    inset 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+/* Aesthetic glowing effect */
+.vapor-glow {
+  text-shadow:
+    0 0 10px rgba(255, 182, 193, 0.5),
+    0 0 20px rgba(224, 170, 255, 0.3),
+    0 0 30px rgba(0, 188, 212, 0.2);
+}
+
+/* Dreamy blur effect */
+.vapor-blur {
+  backdrop-filter: blur(5px);
+}
+
+/* Gradient text */
+.vapor-gradient-text {
+  background: linear-gradient(45deg, #FFB6C1, #E0AAFF, #87CEEB, #FFDAB9);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: vaporGradientMove 8s ease infinite;
+}
+
+/* Soft shadow */
+.vapor-shadow {
+  box-shadow:
+    0 10px 40px rgba(255, 182, 193, 0.2),
+    0 5px 20px rgba(224, 170, 255, 0.1);
+}
+
+/* Pulsing animation */
+.vapor-pulse {
+  animation: vaporPulse 3s ease-in-out infinite;
+}
+
+@keyframes vaporPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Retro sun */
+.vapor-sun {
+  position: fixed;
+  bottom: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150%;
+  height: 150%;
+  background: linear-gradient(180deg,
+    rgba(255, 218, 185, 0.1) 0%,
+    rgba(224, 170, 255, 0.05) 30%,
+    transparent 60%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Grid lines */
+.vapor-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+/* Stars effect */
+.vapor-stars {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(2px 2px at 160px 120px, rgba(255, 255, 255, 0.2), transparent);
+  background-size: 200px 200px;
+  animation: vaporStars 60s linear infinite;
+  z-index: -1;
+}
+
+@keyframes vaporStars {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 1000px;
+  }
+}
+
+/* Apply base effects */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg,
+      rgba(255, 192, 203, 0.05) 0%,
+      rgba(224, 170, 255, 0.05) 25%,
+      rgba(0, 188, 212, 0.05) 50%,
+      rgba(255, 218, 185, 0.05) 75%,
+      rgba(255, 192, 203, 0.05) 100%
+    );
+  background-size: 400% 400%;
+  animation: vaporGradientMove 15s ease infinite;
+  z-index: -2;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.08), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200px 200px;
+  animation: vaporStars 60s linear infinite;
+  z-index: -1;
+}

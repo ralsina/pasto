@@ -1,0 +1,20 @@
+=== Pasto Benchmark Summary ===
+Date: lun 22 dic 2025 16:08:23 -03
+Duration per test: 30s
+Threads: 4 | Connections: 100
+
+## 1 Worker Instance(s)
+
+---
+## 2 Worker Instance(s)
+
+---
+## 4 Worker Instance(s)
+
+---
+## 8 Worker Instance(s)
+
+---
+## 12 Worker Instance(s)
+
+---

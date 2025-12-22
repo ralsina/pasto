@@ -1,0 +1,275 @@
+/* Pico Tron Theme - Clean Cyan Glow & Digital Grid */
+/* This theme is COLOR-AGNOSTIC - works with any pico.*.css variant */
+
+/* Import Tron fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+/* Apply fonts to elements */
+body {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif !important;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+/* Clean digital grid background */
+.tron-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(90deg, rgba(0, 217, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(0, 217, 255, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: -2;
+  animation: tronGridPulse 4s ease-in-out infinite;
+}
+
+@keyframes tronGridPulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Glowing border */
+.tron-border {
+  border: 2px solid !important;
+  box-shadow:
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    inset 0 0 10px rgba(0, 217, 255, 0.1);
+  position: relative;
+}
+
+/* Active corner glow */
+.tron-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid;
+  opacity: 0.5;
+  animation: tronCornerGlow 3s ease-in-out infinite;
+}
+
+@keyframes tronCornerGlow {
+  0%, 100% {
+    clip-path: polygon(0 0, 20% 0, 20% 2%, 0 2%);
+  }
+  25% {
+    clip-path: polygon(0 0, 20% 0, 20% 2%, 0 2%, 0 100%, 2% 100%, 2% 80%, 0 80%);
+  }
+  50% {
+    clip-path: polygon(0 0, 100% 0, 100% 2%, 0 2%, 0 100%, 2% 100%, 2% 0);
+  }
+  75% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 98% 100%, 98% 2%, 0 2%);
+  }
+}
+
+/* Smooth glow effect */
+.tron-glow {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+  animation: tronGlowPulse 2s ease-in-out infinite;
+}
+
+@keyframes tronGlowPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Light trail effect */
+.tron-trail {
+  position: relative;
+  overflow: hidden;
+}
+
+.tron-trail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    currentColor,
+    transparent
+  );
+  animation: tronTrail 3s infinite;
+}
+
+@keyframes tronTrail {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 100%;
+  }
+}
+
+/* Hexagonal pattern */
+.tron-hex {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2300d9ff' fill-opacity='0.08'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: repeat;
+}
+
+/* Circuit pattern */
+.tron-circuit {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(90deg, transparent 95%, rgba(0, 217, 255, 0.05) 95%),
+    linear-gradient(transparent 95%, rgba(0, 217, 255, 0.05) 95%);
+  background-size: 100px 100px;
+  z-index: -1;
+  opacity: 0.3;
+}
+
+/* Digital particles */
+.tron-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.tron-particles::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: tronParticle1 10s linear infinite;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.tron-particles::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: tronParticle2 15s linear infinite;
+  box-shadow: 0 0 10px currentColor;
+}
+
+@keyframes tronParticle1 {
+  0% {
+    top: -10px;
+    left: 10%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    left: 30%;
+    opacity: 0;
+  }
+}
+
+@keyframes tronParticle2 {
+  0% {
+    top: -10px;
+    left: 70%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    left: 50%;
+    opacity: 0;
+  }
+}
+
+/* Smooth transitions */
+.tron-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reflection effect */
+.tron-reflect {
+  position: relative;
+}
+
+.tron-reflect::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(transparent, rgba(0, 217, 255, 0.1));
+  transform: scaleY(-1);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Apply base effects */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(90deg, rgba(0, 217, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(0, 217, 255, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: -2;
+  animation: tronGridPulse 4s ease-in-out infinite;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(90deg, transparent 95%, rgba(0, 217, 255, 0.05) 95%),
+    linear-gradient(transparent 95%, rgba(0, 217, 255, 0.05) 95%);
+  background-size: 100px 100px;
+  z-index: -1;
+  opacity: 0.3;
+}

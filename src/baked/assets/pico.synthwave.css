@@ -1,0 +1,189 @@
+/* Pico Synthwave Theme - 80s Retro Grid & CRT Effects */
+/* This theme is COLOR-AGNOSTIC - works with any pico.*.css variant */
+
+/* Import retro fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+/* Apply fonts to elements */
+body {
+  font-family: 'Share Tech Mono', monospace !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+/* Animated Grid Background */
+.synthwave-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(90deg, rgba(255, 0, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: center bottom;
+  transform: perspective(500px) rotateX(60deg);
+  transform-origin: center bottom;
+  animation: synthwaveGridMove 20s linear infinite;
+  z-index: -2;
+  pointer-events: none;
+}
+
+@keyframes synthwaveGridMove {
+  0% {
+    background-position: center bottom 0;
+  }
+  100% {
+    background-position: center bottom 50px;
+  }
+}
+
+/* CRT Scanline Overlay */
+.synthwave-scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  animation: synthwaveScanlines 10s linear infinite;
+}
+
+@keyframes synthwaveScanlines {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 100px;
+  }
+}
+
+/* Vignette Effect */
+.synthwave-vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Glowing text effect */
+.synthwave-glow {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 20px currentColor;
+}
+
+/* Retro border style */
+.synthwave-border {
+  border: 2px solid !important;
+  box-shadow:
+    0 0 10px currentColor,
+    inset 0 0 10px rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer effect */
+.synthwave-shimmer::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: synthwaveShimmer 3s infinite;
+}
+
+@keyframes synthwaveShimmer {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
+}
+
+/* Glitch effect for headings */
+.synthwave-glitch {
+  animation: synthwaveGlitch 3s infinite;
+}
+
+@keyframes synthwaveGlitch {
+  0%, 90%, 100% {
+    transform: translate(0);
+  }
+  92% {
+    transform: translate(-2px, 1px);
+  }
+  94% {
+    transform: translate(2px, -1px);
+  }
+  96% {
+    transform: translate(-1px, 0.5px);
+  }
+  98% {
+    transform: translate(1px, -0.5px);
+  }
+}
+
+/* Apply styles automatically */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(90deg, rgba(255, 0, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: center bottom;
+  transform: perspective(500px) rotateX(60deg);
+  transform-origin: center bottom;
+  animation: synthwaveGridMove 20s linear infinite;
+  z-index: -2;
+  pointer-events: none;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  animation: synthwaveScanlines 10s linear infinite;
+}

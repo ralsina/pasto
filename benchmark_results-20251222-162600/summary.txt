@@ -1,0 +1,7 @@
+=== Pasto Benchmark Summary ===
+Date: lun 22 dic 2025 16:26:04 -03
+Duration per test: 30s
+Threads: 4 | Connections: 100
+
+## View Paste Performance
+

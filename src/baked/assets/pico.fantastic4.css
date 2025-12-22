@@ -1,0 +1,292 @@
+/* Pico Fantastic Four Theme - 60s Pastel Comic Book Style */
+/* This theme is COLOR-AGNOSTIC - works with any pico.*.css variant */
+
+/* Import 60s comic fonts */
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap');
+
+/* Apply fonts to elements */
+body {
+  font-family: 'Comic Neue', cursive !important;
+  font-weight: 700;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Bangers', cursive !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Ben-Day dot pattern */
+.fantastic4-dots {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 8px 8px;
+  z-index: -2;
+  animation: fantastic4Dots 20s linear infinite;
+}
+
+@keyframes fantastic4Dots {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 8px 8px;
+  }
+}
+
+/* Comic burst effect */
+.fantastic4-burst {
+  position: relative;
+}
+
+.fantastic4-burst::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  background:
+    repeating-conic-gradient(
+      from 0deg,
+      transparent 0deg 10deg,
+      rgba(255, 255, 255, 0.05) 10deg 20deg
+    );
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  animation: fantastic4Burst 20s linear infinite;
+}
+
+@keyframes fantastic4Burst {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Comic panel border */
+.fantastic4-panel {
+  border: 4px solid !important;
+  border-radius: 15px !important;
+  box-shadow:
+    8px 8px 0 rgba(0, 0, 0, 0.1),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+/* Speech bubble effect */
+.fantastic4-bubble {
+  position: relative;
+  background: white !important;
+  border: 3px solid !important;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.fantastic4-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 30px;
+  width: 0;
+  height: 0;
+  border: 15px solid transparent;
+  border-top-color: inherit;
+  border-bottom: 0;
+}
+
+/* POW effect */
+.fantastic4-pow {
+  position: relative;
+  display: inline-block;
+}
+
+.fantastic4-pow::before {
+  content: 'POW!';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  font-family: 'Bangers', cursive;
+  font-size: 1.5em;
+  color: #FFD700;
+  text-shadow:
+    2px 2px 0 #FF6B6B,
+    -1px -1px 0 #4ECDC4;
+  transform: rotate(-15deg);
+  animation: fantastic4Pow 0.5s ease-out;
+}
+
+@keyframes fantastic4Pow {
+  0% {
+    transform: rotate(-15deg) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: rotate(-15deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(-15deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Halftone pattern */
+.fantastic4-halftone {
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 6px 6px;
+}
+
+/* Action lines */
+.fantastic4-action {
+  position: relative;
+  overflow: hidden;
+}
+
+.fantastic4-action::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.1) 10px,
+    rgba(255, 255, 255, 0.1) 20px
+  );
+  animation: fantastic4Action 2s linear infinite;
+}
+
+@keyframes fantastic4Action {
+  from {
+    left: -100%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+/* Comic text shadow */
+.fantastic4-shadow {
+  text-shadow:
+    3px 3px 0 rgba(255, 107, 107, 0.3),
+    6px 6px 0 rgba(78, 205, 196, 0.2);
+}
+
+/* Starburst background */
+.fantastic4-starburst {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-conic-gradient(
+      from 0deg,
+      transparent 0deg 30deg,
+      rgba(255, 255, 255, 0.03) 30deg 60deg
+    );
+  z-index: -2;
+  animation: fantastic4Starburst 30s linear infinite;
+}
+
+@keyframes fantastic4Starburst {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Zigzag border */
+.fantastic4-zigzag {
+  border: 3px solid !important;
+  position: relative;
+}
+
+.fantastic4-zigzag::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background:
+    linear-gradient(135deg, transparent 5px, currentColor 5px) 0 0/10px 10px repeat-x;
+}
+
+/* Pop art effect */
+.fantastic4-popart {
+  position: relative;
+}
+
+.fantastic4-popart::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  color: rgba(255, 107, 107, 0.5);
+  z-index: -1;
+}
+
+/* Benday dots variant */
+.fantastic4-benday {
+  position: relative;
+}
+
+.fantastic4-benday::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.15) 1.5px, transparent 1.5px);
+  background-size: 6px 6px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Apply base effects */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 8px 8px;
+  z-index: -2;
+  animation: fantastic4Dots 20s linear infinite;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-conic-gradient(
+      from 0deg,
+      transparent 0deg 30deg,
+      rgba(255, 255, 255, 0.02) 30deg 60deg
+    );
+  z-index: -2;
+  animation: fantastic4Starburst 30s linear infinite;
+}
