@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pasto": {
+      "transport": "http",
+      "url": "https://your-pasto-instance.com/mcp",
+      "headers": {
+        "Authorization": "Bearer pasto_ak_your_api_key_here"
+      }
+    }
+  }
+}

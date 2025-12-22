@@ -33,6 +33,8 @@ dependencies:
     github: stumpycr/stumpy_png
   pasto-cache:
     github: ralsina/pasto-cache
+  mcp:
+    github: ralsina/mcp
         
 development_dependencies:
   ameba:

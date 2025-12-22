@@ -57,6 +57,10 @@ shards:
     git: https://github.com/kemalcr/kemal-session.git
     version: 1.3.0
 
+  mcp:
+    git: https://github.com/ralsina/mcp.git
+    version: 0.1.1
+
   pasto-cache:
     git: https://github.com/ralsina/pasto-cache.git
     version: 0.1.0+git.commit.44159da5e04f82889f65debf105c2dd94f4aec1d

@@ -39,6 +39,13 @@ A Crystal-based pastebin application with live syntax highlighting, SSH access, 
 - ⌨️ **CodeJar Editor**: Lightweight code editor with syntax highlighting
 - 🔄 **Live Preview Pane**: See rendered output as you type
 
+### AI Assistant Integration (MCP)
+- 🤖 **Model Context Protocol**: Native MCP support for AI assistant integration
+- 🔧 **Zero Installation**: AI assistants can access pastes without local setup
+- 🛡️ **Secure Access**: Uses existing API keys and authentication
+- 📝 **Full CRUD**: Create, retrieve, list, update, and delete pastes via MCP
+- 🎯 **Tool Discovery**: AI assistants automatically discover available paste operations
+
 ## Quick Start
 
 ### Docker (Recommended)
@@ -244,6 +251,166 @@ curl http://localhost:3000/{paste-id}/version/1
 curl -X POST http://localhost:3000/highlight \
   -d "content=def hello(): pass&language=python&theme=monokai"
 ```
+
+## AI Assistant Integration (MCP)
+
+Pasto supports the **Model Context Protocol (MCP)**, enabling AI assistants like Claude to directly interact with your pastes. This allows AI assistants to create, retrieve, and manage pastes without any local setup.
+
+### Getting Started
+
+1. **Generate an API Key**: Visit `/profile` on your Pasto instance and click "Generate API Key"
+2. **Copy the API Key**: It will start with `pasto_ak_`
+3. **Configure Your AI Assistant**: Use the MCP client configuration below
+
+### MCP Tools Available
+
+Pasto provides these MCP tools for AI assistants:
+
+#### create_paste
+Create a new paste with content and optional metadata.
+
+**Parameters:**
+- `content` (required): The paste content
+- `title` (optional): Paste title
+- `language` (optional): Programming language for syntax highlighting
+- `filename` (optional): Filename for language detection
+- `private` (optional): Make paste private (default: false)
+- `encrypted` (optional): Encrypt paste content (default: false)
+- `burn_after_reading` (optional): Delete after first view (default: false)
+- `expires_in` (optional): Expiration time - "1h", "1d", "1w", "1m", "never"
+
+**Example:**
+```
+Please create a paste with this Python code: print("Hello, World!")
+Make it private and set it to expire in 1 week.
+```
+
+#### get_paste
+Retrieve paste content and metadata by ID.
+
+**Parameters:**
+- `id` (required): The paste ID to retrieve
+
+**Example:**
+```
+Please retrieve the paste with ID abc123 and show me its details.
+```
+
+#### list_pastes
+List user's pastes with pagination and filtering.
+
+**Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page, max 100 (default: 20)
+- `private_only` (optional): Filter to private pastes only
+- `public_only` (optional): Filter to public pastes only
+- `encrypted_only` (optional): Filter to encrypted pastes only
+- `language` (optional): Filter by programming language
+
+**Example:**
+```
+Show me my private Python pastes, 10 at a time.
+```
+
+#### update_paste
+Update an existing paste's content or metadata (creates new version).
+
+**Parameters:**
+- `id` (required): The paste ID to update
+- `content` (required): New content for the paste
+- `title` (optional): New title
+- `language` (optional): New programming language
+- `filename` (optional): New filename
+- `private` (optional): Make paste private
+- `burn_after_reading` (optional): Set burn-after-reading flag
+- `expires_in` (optional): Update expiration time
+
+**Example:**
+```
+Update paste xyz789 with this new JavaScript code and make it public.
+```
+
+#### delete_paste
+Permanently delete a paste.
+
+**Parameters:**
+- `id` (required): The paste ID to delete
+- `confirm` (required): Set to true to confirm deletion
+
+**Example:**
+```
+Please permanently delete paste xyz789 and confirm you want to do this.
+```
+
+### Claude Desktop Configuration
+
+Add this to your Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "pasto": {
+      "transport": "http",
+      "url": "https://your-pasto-instance.com/mcp",
+      "headers": {
+        "Authorization": "Bearer pasto_ak_xxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+### Usage Examples
+
+#### Creating a Paste
+```
+User: Create a paste with this Rust code:
+fn main() {
+    println!("Hello, Pasto!");
+}
+
+Claude: I'll create a paste with that Rust code for you.
+✅ Paste created successfully!
+
+🔗 URL: https://your-pasto-instance.com/abc123
+📝 ID: abc123
+🏷️ Title: Untitled
+🔐 Private: false
+🔒 Encrypted: false
+```
+
+#### Listing Your Pastes
+```
+User: Show me my recent pastes
+
+Claude: 📄 **Your Pastes (Page 1 of 1)**
+📊 Total: 5 pastes | Showing: 20 per page
+
+🌐 **My Rust Script** (abc123)
+🔤 rust
+📅 2024-12-22T10:30:00Z
+⏰ Never expires
+
+🔐**Secret Algorithm** (def456)
+🔒 python
+📅 2024-12-21T15:45:00Z
+⏰ Expires: 2024-12-28T15:45:00Z
+```
+
+### Security
+
+- **Authentication Required**: All MCP requests require valid API keys
+- **Permission Control**: Users can only access their own pastes
+- **Rate Limiting**: MCP endpoints respect existing rate limits
+- **HTTPS Recommended**: Use HTTPS in production environments
+
+### Troubleshooting
+
+**Authentication Errors**: Ensure your API key starts with `pasto_ak_` and is valid.
+
+**Permission Denied**: Make sure you're trying to access your own pastes.
+
+**Not Found**: Verify the paste ID exists and hasn't expired.
 
 ## Supported Languages
 
