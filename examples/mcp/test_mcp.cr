@@ -8,7 +8,8 @@ require "json"
 
 class MCPTester
   def initialize(@url : String, @api_key : String)
-    @client = HTTP::Client.new
+    uri = URI.parse(@url)
+    @client = HTTP::Client.new(uri.host.not_nil!, uri.port || 80)
     @headers = HTTP::Headers{
       "Content-Type" => "application/json",
       "Authorization" => "Bearer #{@api_key}",
@@ -72,7 +73,7 @@ class MCPTester
       "method" => "initialize",
       "params" => {
         "protocolVersion" => "2024-11-05",
-        "capabilities" => {}
+        "capabilities" => {} of String => String
       }
     }
   end
@@ -82,7 +83,7 @@ class MCPTester
       "jsonrpc" => "2.0",
       "id" => "tools_test",
       "method" => "tools/list",
-      "params" => {}
+      "params" => {} of String => String
     }
   end
 end

@@ -83,7 +83,10 @@
       "Bash(crystal build:*)",
       "Bash(AUTH_DEBUG_MODE=true npm test:*)",
       "Bash(npm test:*)",
-      "Bash(npx playwright test:*)"
+      "Bash(npx playwright test:*)",
+      "Bash(for:*)",
+      "Bash(do echo:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
