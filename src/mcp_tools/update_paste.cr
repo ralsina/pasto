@@ -8,43 +8,43 @@ module Pasto
     @@tool_name = "update_paste"
     @@tool_description = "Update an existing paste's content or metadata (creates new version)"
     @@tool_input_schema = {
-      "type" => "object",
+      "type"       => "object",
       "properties" => {
         "id" => {
-          "type" => "string",
-          "description" => "The paste ID to update (required)"
+          "type"        => "string",
+          "description" => "The paste ID to update (required)",
         },
         "content" => {
-          "type" => "string",
-          "description" => "New content for the paste (required)"
+          "type"        => "string",
+          "description" => "New content for the paste (required)",
         },
         "title" => {
-          "type" => "string",
-          "description" => "New title for the paste (optional)"
+          "type"        => "string",
+          "description" => "New title for the paste (optional)",
         },
         "language" => {
-          "type" => "string",
-          "description" => "New programming language for syntax highlighting (optional)"
+          "type"        => "string",
+          "description" => "New programming language for syntax highlighting (optional)",
         },
         "filename" => {
-          "type" => "string",
-          "description" => "New filename for language detection (optional)"
+          "type"        => "string",
+          "description" => "New filename for language detection (optional)",
         },
         "private" => {
-          "type" => "boolean",
-          "description" => "Make paste private (optional)"
+          "type"        => "boolean",
+          "description" => "Make paste private (optional)",
         },
         "burn_after_reading" => {
-          "type" => "boolean",
-          "description" => "Set burn-after-reading flag (optional)"
+          "type"        => "boolean",
+          "description" => "Set burn-after-reading flag (optional)",
         },
         "expires_in" => {
-          "type" => "string",
+          "type"        => "string",
           "description" => "Update expiration: 1h, 1d, 1w, 1m, never (optional)",
-          "enum" => ["1h", "1d", "1w", "1m", "never"]
-        }
+          "enum"        => ["1h", "1d", "1w", "1m", "never"],
+        },
       },
-      "required" => ["id", "content"]
+      "required" => ["id", "content"],
     }.to_json
 
     def invoke(params : Hash(String, JSON::Any), env : HTTP::Server::Context? = nil) : Hash
@@ -123,9 +123,9 @@ module Pasto
           "content" => [
             {
               "type" => "text",
-              "text" => response_text
-            }
-          ]
+              "text" => response_text,
+            },
+          ],
         }
       rescue ex
         Pasto::Logging.error("UpdatePasteTool error: #{ex.message}")
@@ -134,16 +134,23 @@ module Pasto
     end
 
     private def extract_authenticated_user(env : HTTP::Server::Context?) : User
+      # Check if env is available
+      return extract_authenticated_user_fallback unless env
+
       # Try API key authentication first
-      user = Pasto::Filters.get_api_user(env.not_nil!)
+      user = Pasto::Filters.get_api_user(env)
 
       # Fallback to session authentication
-      user ||= Pasto.get_current_user(env.not_nil!)
+      user ||= Pasto.get_current_user(env)
 
       # Raise error if not authenticated
       raise "Unauthorized: No valid authentication found" unless user
 
       user
+    end
+
+    private def extract_authenticated_user_fallback : User
+      raise "Unauthorized: No valid authentication found"
     end
 
     private def can_update_paste(paste : Paste, user : User) : Bool
@@ -159,7 +166,7 @@ module Pasto
       filename : String?,
       private_flag : Bool?,
       burn_after_reading : Bool?,
-      expires_in : String?
+      expires_in : String?,
     ) : Paste
       # Create new paste version
       new_paste = ssh_key.create_paste(
@@ -199,10 +206,10 @@ module Pasto
 
     private def build_update_response(new_paste : Paste, paste_url : String, original_id : String) : String
       expires_text = if new_paste.expires_at
-                      "⏰ Expires: #{new_paste.expires_at}"
-                    else
-                      "⏰ Never expires"
-                    end
+                       "⏰ Expires: #{new_paste.expires_at}"
+                     else
+                       "⏰ Never expires"
+                     end
 
       <<-TEXT
       ✅ **Paste Updated Successfully!**
@@ -229,9 +236,9 @@ module Pasto
         "content" => [
           {
             "type" => "text",
-            "text" => "❌ Error: #{message}"
-          }
-        ]
+            "text" => "❌ Error: #{message}",
+          },
+        ],
       }
     end
   end

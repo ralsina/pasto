@@ -8,19 +8,19 @@ module Pasto
     @@tool_name = "delete_paste"
     @@tool_description = "Permanently delete a paste"
     @@tool_input_schema = {
-      "type" => "object",
+      "type"       => "object",
       "properties" => {
         "id" => {
-          "type" => "string",
-          "description" => "The paste ID to delete (required)"
+          "type"        => "string",
+          "description" => "The paste ID to delete (required)",
         },
         "confirm" => {
-          "type" => "boolean",
+          "type"        => "boolean",
           "description" => "Confirmation that you want to permanently delete this paste",
-          "default" => false
-        }
+          "default"     => false,
+        },
       },
-      "required" => ["id", "confirm"]
+      "required" => ["id", "confirm"],
     }.to_json
 
     def invoke(params : Hash(String, JSON::Any), env : HTTP::Server::Context? = nil) : Hash
@@ -69,9 +69,9 @@ module Pasto
           "content" => [
             {
               "type" => "text",
-              "text" => response_text
-            }
-          ]
+              "text" => response_text,
+            },
+          ],
         }
       rescue ex
         Pasto::Logging.error("DeletePasteTool error: #{ex.message}")
@@ -80,16 +80,23 @@ module Pasto
     end
 
     private def extract_authenticated_user(env : HTTP::Server::Context?) : User
+      # Check if env is available
+      return extract_authenticated_user_fallback unless env
+
       # Try API key authentication first
-      user = Pasto::Filters.get_api_user(env.not_nil!)
+      user = Pasto::Filters.get_api_user(env)
 
       # Fallback to session authentication
-      user ||= Pasto.get_current_user(env.not_nil!)
+      user ||= Pasto.get_current_user(env)
 
       # Raise error if not authenticated
       raise "Unauthorized: No valid authentication found" unless user
 
       user
+    end
+
+    private def extract_authenticated_user_fallback : User
+      raise "Unauthorized: No valid authentication found"
     end
 
     private def can_delete_paste(paste : Paste, user : User) : Bool
@@ -104,7 +111,7 @@ module Pasto
       created_at : Time,
       is_private : Bool,
       is_encrypted : Bool,
-      is_burn_after_reading : Bool
+      is_burn_after_reading : Bool,
     ) : String
       privacy_icon = is_private ? "🔐" : "🌐"
       encryption_icon = is_encrypted ? "🔒" : ""
@@ -129,9 +136,9 @@ module Pasto
         "content" => [
           {
             "type" => "text",
-            "text" => "❌ Error: #{message}"
-          }
-        ]
+            "text" => "❌ Error: #{message}",
+          },
+        ],
       }
     end
   end

@@ -8,41 +8,41 @@ module Pasto
     @@tool_name = "list_pastes"
     @@tool_description = "List user's pastes with pagination and filtering options"
     @@tool_input_schema = {
-      "type" => "object",
+      "type"       => "object",
       "properties" => {
         "page" => {
-          "type" => "integer",
+          "type"        => "integer",
           "description" => "Page number (default: 1)",
-          "minimum" => 1,
-          "default" => 1
+          "minimum"     => 1,
+          "default"     => 1,
         },
         "limit" => {
-          "type" => "integer",
+          "type"        => "integer",
           "description" => "Items per page (default: 20, max: 100)",
-          "minimum" => 1,
-          "maximum" => 100,
-          "default" => 20
+          "minimum"     => 1,
+          "maximum"     => 100,
+          "default"     => 20,
         },
         "private_only" => {
-          "type" => "boolean",
+          "type"        => "boolean",
           "description" => "Filter to private pastes only (default: false)",
-          "default" => false
+          "default"     => false,
         },
         "public_only" => {
-          "type" => "boolean",
+          "type"        => "boolean",
           "description" => "Filter to public pastes only (default: false)",
-          "default" => false
+          "default"     => false,
         },
         "encrypted_only" => {
-          "type" => "boolean",
+          "type"        => "boolean",
           "description" => "Filter to encrypted pastes only (default: false)",
-          "default" => false
+          "default"     => false,
         },
         "language" => {
-          "type" => "string",
-          "description" => "Filter by programming language (optional)"
-        }
-      }
+          "type"        => "string",
+          "description" => "Filter by programming language (optional)",
+        },
+      },
     }.to_json
 
     def invoke(params : Hash(String, JSON::Any), env : HTTP::Server::Context? = nil) : Hash
@@ -78,9 +78,9 @@ module Pasto
           "content" => [
             {
               "type" => "text",
-              "text" => "📄 No pastes found matching your criteria."
-            }
-          ]
+              "text" => "📄 No pastes found matching your criteria.",
+            },
+          ],
         }
       end
 
@@ -100,9 +100,9 @@ module Pasto
         "content" => [
           {
             "type" => "text",
-            "text" => response_text
-          }
-        ]
+            "text" => response_text,
+          },
+        ],
       }
     rescue ex
       Pasto::Logging.error("ListPastesTool error: #{ex.message}")
@@ -110,16 +110,23 @@ module Pasto
     end
 
     private def extract_authenticated_user(env : HTTP::Server::Context?) : User
+      # Check if env is available
+      return extract_authenticated_user_fallback unless env
+
       # Try API key authentication first
-      user = Pasto::Filters.get_api_user(env.not_nil!)
+      user = Pasto::Filters.get_api_user(env)
 
       # Fallback to session authentication
-      user ||= Pasto.get_current_user(env.not_nil!)
+      user ||= Pasto.get_current_user(env)
 
       # Raise error if not authenticated
       raise "Unauthorized: No valid authentication found" unless user
 
       user
+    end
+
+    private def extract_authenticated_user_fallback : User
+      raise "Unauthorized: No valid authentication found"
     end
 
     private def get_parameter(params : Hash(String, JSON::Any), key : String, default : Int32) : Int32
@@ -140,7 +147,7 @@ module Pasto
       all_pastes = user.get_pastes_for_range(0, 10000)
 
       # Sort by creation date (newest first)
-      all_pastes.sort_by(&.created_at).reverse
+      all_pastes.sort_by(&.created_at).reverse!
 
       # Apply pagination
       offset = (page - 1) * limit
@@ -184,10 +191,10 @@ module Pasto
       burn_icon = paste.burn_after_reading? ? "🔥" : ""
 
       expires_text = if paste.expires_at
-                      "⏰ Expires: #{paste.expires_at}"
-                    else
-                      "⏰ Never expires"
-                    end
+                       "⏰ Expires: #{paste.expires_at}"
+                     else
+                       "⏰ Never expires"
+                     end
 
       "#{privacy_icon}#{encryption_icon}#{burn_icon} **#{paste.display_title}** (#{paste.sepia_id})
 🔤 #{paste.language}
@@ -222,9 +229,9 @@ module Pasto
         "content" => [
           {
             "type" => "text",
-            "text" => "❌ Error: #{message}"
-          }
-        ]
+            "text" => "❌ Error: #{message}",
+          },
+        ],
       }
     end
   end
