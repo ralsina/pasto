@@ -131,17 +131,17 @@
       <div class="sidebar-section" style="padding: 0 1rem 1rem 1rem;">
 
         <div class="theme-group" style="margin-bottom: 1rem; margin-top: 0;">
-          <label style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">UI Theme:</label>
+          <label id="pico-theme-label" style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">UI Theme:</label>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <i data-lucide="sun" style="width: 16px; height: 16px; color: var(--pico-muted-color);"></i>
-            <input type="checkbox" id="pico-theme" name="pico-theme" role="switch" <%= theme_vars[:saved_pico_theme] == "dark" ? "checked" : "" %> onchange="updateThemes()">
-            <i data-lucide="moon" style="width: 16px; height: 16px; color: var(--pico-muted-color);"></i>
+            <i data-lucide="sun" style="width: 16px; height: 16px; color: var(--pico-muted-color);" aria-hidden="true"></i>
+            <input type="checkbox" id="pico-theme" name="pico-theme" role="switch" aria-labelledby="pico-theme-label" aria-label="Toggle between light and dark theme" <%= theme_vars[:saved_pico_theme] == "dark" ? "checked" : "" %> onchange="updateThemes()">
+            <i data-lucide="moon" style="width: 16px; height: 16px; color: var(--pico-muted-color);" aria-hidden="true"></i>
           </div>
         </div>
 
         <div class="theme-group" style="margin-bottom: 1rem;">
-          <label style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">Color Scheme:</label>
-          <select id="pico-color" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;">
+          <label for="pico-color" style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">Color Scheme:</label>
+          <select id="pico-color" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;" aria-label="Select color scheme for the UI">
             <% color_options = ["css", "red", "pink", "fuchsia", "purple", "violet", "indigo", "blue", "cyan", "jade", "green", "lime", "yellow", "amber", "pumpkin", "orange", "sand", "grey", "zinc", "slate"] %>
             <% color_names = ["Azure", "Red", "Pink", "Fuchsia", "Purple", "Violet", "Indigo", "Blue", "Cyan", "Jade", "Green", "Lime", "Yellow", "Amber", "Pumpkin", "Orange", "Sand", "Grey", "Zinc", "Slate"] %>
             <% color_options.each_with_index do |color, index| %>
@@ -151,8 +151,8 @@
         </div>
 
         <div class="theme-group" style="margin-bottom: 1rem;">
-          <label style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">Syntax Highlighting:</label>
-          <select id="syntax-theme" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;">
+          <label for="syntax-theme" style="display: block; font-weight: 400; margin-bottom: 0.5rem; font-size: 0.9rem; font-family: 'Chivo', 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace;">Syntax Highlighting:</label>
+          <select id="syntax-theme" onchange="updateThemes()" style="width: 100%; font-size: 0.9rem;" aria-label="Select syntax highlighting theme for code">
             <!-- Themes will be loaded via API -->
           </select>
         </div>
