@@ -58,6 +58,7 @@ Options:
   --ssh-bind=<address>      SSH address to bind to [default: 0.0.0.0].
   --host-key=<file>         SSH host key file [default: ssh_host_rsa_key].
   --disable-rate-limit      DISABLE ALL RATE LIMITING - ONLY FOR TESTING (DO NOT USE IN PRODUCTION).
+  --instances=<n>           Number of worker instances to run [default: 1].
 
 Rate Limiting Options:
   --rate-paste-limit=<n>              Paste creation limit per IP [default: 10].
@@ -92,6 +93,7 @@ DOC
     property ssh_bind : String
     property host_key : String
     property? disable_rate_limit : Bool
+    property instances : Int32
 
     # Rate limiting settings
     property rate_paste_limit : Int32
@@ -134,6 +136,7 @@ DOC
       @ssh_bind = docopt_options["--ssh-bind"].to_s
       @host_key = docopt_options["--host-key"].to_s
       @disable_rate_limit = docopt_options["--disable-rate-limit"]?.to_s.downcase.in?("true", "yes", "1")
+      @instances = docopt_options["--instances"].to_s.to_i
 
       # Rate limiting settings
       @rate_paste_limit = docopt_options["--rate-paste-limit"].to_s.to_i
@@ -177,6 +180,9 @@ DOC
 
   # SSH server process management
   @@ssh_process : Process?
+
+  # Worker process management
+  @@worker_processes = [] of Process
 
   # ameba:disable Metrics/CyclomaticComplexity
   def self.start_ssh_server(config : Config)
@@ -258,6 +264,83 @@ DOC
       puts "🛑 Stopping SSH server..."
       process.signal(:term)
     end
+  end
+
+  def self.spawn_worker_instances(config : Config)
+    return if config.instances <= 1
+
+    worker_count = config.instances - 1
+    Logging.info("Spawning #{worker_count} additional worker instances...", "🔧")
+
+    # Build command arguments for worker instances
+    # We need to pass all the same flags but with SSH disabled
+    args = [
+      "--port=#{config.port}",
+      "--bind=#{config.bind}",
+      "--storage-dir=#{config.storage_dir}",
+      "--cache-dir=#{config.cache_dir}",
+      "--env=#{config.environment}",
+      "--theme=#{config.theme}",
+      "--max-paste-size=#{config.max_paste_size}",
+      "--base-url=#{config.base_url}",
+      "--ssh-enabled=false",
+      "--instances=1", # Workers don't spawn more workers
+    ]
+
+    # Add optional flags
+    args << "--log-level=#{config.log_level}" if config.log_level
+    args << "--auth-debug-mode" if config.auth_debug_mode?
+    args << "--disable-rate-limit" if config.disable_rate_limit?
+
+    # Add rate limiting flags
+    args << "--rate-paste-limit=#{config.rate_paste_limit}"
+    args << "--rate-paste-window=#{config.rate_paste_window}"
+    args << "--rate-paste-user-limit=#{config.rate_paste_user_limit}"
+    args << "--rate-paste-user-window=#{config.rate_paste_user_window}"
+    args << "--rate-paste-global-limit=#{config.rate_paste_global_limit}"
+    args << "--rate-paste-global-window=#{config.rate_paste_global_window}"
+    args << "--rate-highlight-limit=#{config.rate_highlight_limit}"
+    args << "--rate-highlight-window=#{config.rate_highlight_window}"
+    args << "--rate-login-limit=#{config.rate_login_limit}"
+    args << "--rate-login-window=#{config.rate_login_window}"
+    args << "--rate-http-limit=#{config.rate_http_limit}"
+    args << "--rate-http-window=#{config.rate_http_window}"
+    args << "--rate-backup-limit=#{config.rate_backup_limit}"
+    args << "--rate-backup-window=#{config.rate_backup_window}"
+
+    # Find the pasto binary
+    pasto_binary = Process.executable_path || "./bin/pasto"
+
+    # Spawn worker instances
+    worker_count.times do |i|
+      spawn do
+        process = Process.new(
+          pasto_binary,
+          args,
+          output: Process::Redirect::Inherit,
+          error: Process::Redirect::Inherit
+        )
+        @@worker_processes << process
+        Logging.info("Worker instance #{i + 1} started (PID: #{process.pid})", "✓")
+      end
+    end
+
+    # Give workers a moment to start
+    sleep 0.5.seconds
+  end
+
+  def self.stop_worker_instances
+    return if @@worker_processes.empty?
+
+    Logging.info("Stopping worker instances...", "🛑")
+    @@worker_processes.each do |process|
+      begin
+        process.signal(:term)
+      rescue
+        # Process may have already exited
+      end
+    end
+    @@worker_processes.clear
   end
 
   private def self.find_ssh_binary : String?
@@ -414,9 +497,13 @@ DOC
     # Start SSH server if enabled
     start_ssh_server(config)
 
+    # Spawn worker instances if configured
+    spawn_worker_instances(config)
+
     # Handle graceful shutdown
     Signal::INT.trap do
       puts "\n🛑 Shutting down..."
+      stop_worker_instances
       stop_ssh_server
       Kemal.stop
       exit
@@ -424,6 +511,7 @@ DOC
 
     Signal::TERM.trap do
       puts "\n🛑 Shutting down..."
+      stop_worker_instances
       stop_ssh_server
       Kemal.stop
       exit
@@ -433,6 +521,9 @@ DOC
     Logging.info("Starting Pasto on #{config.bind}:#{config.port}", "🌐")
     Logging.info("Storage: #{config.storage_dir}", "📁")
     Logging.info("Theme: #{config.theme}", "🎨")
+    if config.instances > 1
+      Logging.info("Instances: #{config.instances} workers (SO_REUSEPORT enabled)", "🔧")
+    end
     if config.ssh_enabled?
       Logging.info("SSH: #{config.ssh_bind}:#{config.ssh_port}", "🔐")
     end
@@ -461,7 +552,16 @@ DOC
       puts "="*80 + "\n"
     end
 
-    Kemal.run
+    # Allow multiple instances to bind to the same port (SO_REUSEPORT)
+    Kemal.run do |config|
+      # Get the server instance from the config
+      if server = config.server
+        # Bind the server to configured address and port with reuse_port enabled
+        # reuse_port: true allows multiple processes to listen on the same port
+        # This is useful for load balancing across multiple worker processes
+        server.bind_tcp Pasto.config.bind, Pasto.config.port, reuse_port: true
+      end
+    end
   end
 end
 

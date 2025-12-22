@@ -1,0 +1,157 @@
+^Cralsina@pi4:~ $ bash benchmark.sh http://127.0.0.1:3000/699597e7-f35c-41e0-bffe-d822f150a7a9
+Benchmarking URL: http://127.0.0.1:3000/699597e7-f35c-41e0-bffe-d822f150a7a9
+Instance counts: 1 2 4 8 12
+Concurrency levels: 1 10 50 100
+Duration per test: 10s
+
+=========================================
+Testing with 1 instance(s)
+=========================================
+Starting pasto with 1 instances on port 3000...
+  Concurrency: 1
+    Latency    34.83ms   21.50ms  96.59ms   60.80%
+    Req/Sec    29.10     13.70   111.00     87.00%
+Requests/sec:     29.08
+Transfer/sec:      5.63MB
+
+  Concurrency: 10
+    Latency    63.76ms  134.75ms   1.44s    97.53%
+    Req/Sec    43.80     16.74   110.00     77.41%
+Requests/sec:    174.35
+Transfer/sec:     33.92MB
+
+  Concurrency: 50
+    Latency   147.34ms   37.56ms 400.00ms   76.72%
+    Req/Sec    81.57     22.26   121.00     74.49%
+Requests/sec:    323.65
+Transfer/sec:     62.96MB
+
+  Concurrency: 100
+    Latency   306.41ms   71.11ms 712.02ms   85.97%
+    Req/Sec    81.07     27.28   190.00     67.00%
+Requests/sec:    321.58
+Transfer/sec:     62.54MB
+
+Stopping pasto...
+
+=========================================
+Testing with 2 instance(s)
+=========================================
+Starting pasto with 2 instances on port 3000...
+  Concurrency: 1
+    Latency    46.95ms   17.95ms  95.95ms   80.75%
+    Req/Sec    21.18      7.83    60.00     62.00%
+Requests/sec:     21.18
+Transfer/sec:      4.12MB
+
+  Concurrency: 10
+    Latency    45.96ms   24.69ms 180.05ms   62.46%
+    Req/Sec    43.47     14.42    90.00     64.00%
+Requests/sec:    173.80
+Transfer/sec:     33.71MB
+
+  Concurrency: 50
+    Latency   153.83ms   87.98ms 568.48ms   63.34%
+    Req/Sec    76.63     29.34   180.00     73.54%
+Requests/sec:    302.58
+Transfer/sec:     58.59MB
+
+  Concurrency: 100
+    Latency   285.10ms   89.22ms 806.57ms   73.97%
+    Req/Sec    83.45     32.34   171.00     67.09%
+Requests/sec:    327.41
+Transfer/sec:     63.40MB
+
+Stopping pasto...
+
+=========================================
+Testing with 4 instance(s)
+=========================================
+Starting pasto with 4 instances on port 3000...
+  Concurrency: 1
+    Latency    42.33ms   20.85ms 180.26ms   76.45%
+    Req/Sec    23.91     11.53   111.00     88.00%
+Requests/sec:     23.90
+Transfer/sec:      4.65MB
+
+  Concurrency: 10
+    Latency    43.54ms   25.41ms 160.52ms   65.00%
+    Req/Sec    46.43     15.74   106.00     68.77%
+Requests/sec:    184.87
+Transfer/sec:     35.93MB
+
+  Concurrency: 50
+    Latency   159.90ms   97.04ms 579.81ms   61.94%
+    Req/Sec    75.15     27.09   150.00     66.92%
+Requests/sec:    297.76
+Transfer/sec:     57.79MB
+
+  Concurrency: 100
+    Latency   286.00ms  126.96ms 680.03ms   66.12%
+    Req/Sec    77.19     29.20   147.00     71.94%
+Requests/sec:    306.24
+Transfer/sec:     59.42MB
+
+Stopping pasto...
+
+=========================================
+Testing with 8 instance(s)
+=========================================
+Starting pasto with 8 instances on port 3000...
+  Concurrency: 1
+    Latency    47.44ms   12.87ms 115.92ms   90.57%
+    Req/Sec    21.09      5.11    40.00     76.00%
+Requests/sec:     21.09
+Transfer/sec:      4.10MB
+
+  Concurrency: 10
+    Latency    41.76ms   26.13ms 167.59ms   65.49%
+    Req/Sec    48.68     16.54   111.00     66.25%
+Requests/sec:    194.57
+Transfer/sec:     37.81MB
+
+  Concurrency: 50
+    Latency   172.52ms  122.59ms 746.55ms   75.53%
+    Req/Sec    73.28     27.73   166.00     71.43%
+Requests/sec:    292.13
+Transfer/sec:     56.63MB
+
+  Concurrency: 100
+    Latency   338.10ms  218.37ms   1.25s    65.72%
+    Req/Sec    71.88     31.23   212.00     66.75%
+Requests/sec:    284.86
+Transfer/sec:     55.36MB
+
+Stopping pasto...
+
+=========================================
+Testing with 12 instance(s)
+=========================================
+Starting pasto with 12 instances on port 3000...
+  Concurrency: 1
+    Latency    45.10ms   15.83ms  92.00ms   81.86%
+    Req/Sec    22.17      6.62    50.00     69.00%
+Requests/sec:     22.17
+Transfer/sec:      4.29MB
+
+  Concurrency: 10
+    Latency    43.28ms   27.60ms 226.14ms   68.50%
+    Req/Sec    47.21     17.15   101.00     60.40%
+Requests/sec:    188.54
+Transfer/sec:     36.59MB
+
+  Concurrency: 50
+    Latency   181.63ms  136.36ms 838.15ms   81.23%
+    Req/Sec    72.16     24.37   148.00     70.82%
+Requests/sec:    287.70
+Transfer/sec:     55.76MB
+
+  Concurrency: 100
+    Latency   341.77ms  244.15ms   1.45s    69.72%
+    Req/Sec    73.83     27.62   180.00     71.20%
+Requests/sec:    293.20
+Transfer/sec:     56.78MB
+
+Stopping pasto...
+
+Benchmark complete.

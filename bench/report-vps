@@ -1,0 +1,158 @@
+pasto@pasto1 ~> bash benchmark.sh http://127.0.0.1:5000/ca447b58-b3ce-40d2-9efb-3b6214215449
+Benchmarking URL: http://127.0.0.1:5000/ca447b58-b3ce-40d2-9efb-3b6214215449
+Instance counts: 1 2 4 8 12
+Concurrency levels: 1 10 50 100
+Duration per test: 10s
+
+=========================================
+Testing with 1 instance(s)
+=========================================
+Starting pasto with 1 instances on port 5000...
+  Concurrency: 1
+    Latency    49.80ms    4.52ms  72.00ms   90.00%
+    Req/Sec    19.98      1.43    30.00     98.00%
+Requests/sec:     19.98
+Transfer/sec:      3.89MB
+
+  Concurrency: 10
+    Latency    63.31ms   15.20ms  99.95ms   65.45%
+    Req/Sec    31.49      9.20    50.00     64.00%
+Requests/sec:    125.76
+Transfer/sec:     24.48MB
+
+  Concurrency: 50
+    Latency   202.13ms   59.55ms 464.00ms   84.70%
+    Req/Sec    58.98     19.41   131.00     69.67%
+Requests/sec:    234.64
+Transfer/sec:     45.59MB
+
+  Concurrency: 100
+    Latency   408.16ms  124.27ms 932.00ms   87.10%
+    Req/Sec    69.95     53.10   260.00     67.64%
+Requests/sec:    227.42
+Transfer/sec:     44.24MB
+
+Stopping pasto...
+
+=========================================
+Testing with 2 instance(s)
+=========================================
+Starting pasto with 2 instances on port 5000...
+  Concurrency: 1
+    Latency    50.27ms    6.39ms  91.99ms   93.47%
+    Req/Sec    19.87      2.66    30.00     93.00%
+Requests/sec:     19.87
+Transfer/sec:      3.87MB
+
+  Concurrency: 10
+    Latency    64.41ms   17.03ms 143.86ms   80.03%
+    Req/Sec    30.86      9.09    60.00     33.75%
+Requests/sec:    123.03
+Transfer/sec:     24.00MB
+
+  Concurrency: 50
+    Latency   212.92ms   73.49ms 484.32ms   74.81%
+    Req/Sec    55.97     20.23   120.00     66.75%
+Requests/sec:    221.68
+Transfer/sec:     43.17MB
+
+  Concurrency: 100
+    Latency   453.52ms  173.22ms   1.11s    78.06%
+    Req/Sec    53.79     37.88   171.00     67.80%
+Requests/sec:    188.41
+Transfer/sec:     36.70MB
+
+Stopping pasto...
+
+=========================================
+Testing with 4 instance(s)
+=========================================
+Starting pasto with 4 instances on port 5000...
+  Concurrency: 1
+    Latency    49.19ms    6.96ms 111.97ms   97.06%
+    Req/Sec    20.30      3.32    30.00     89.00%
+Requests/sec:     20.28
+Transfer/sec:      3.95MB
+
+  Concurrency: 10
+    Latency    67.59ms   34.27ms 387.99ms   89.19%
+    Req/Sec    30.30      9.70    50.00     36.36%
+Requests/sec:    120.62
+Transfer/sec:     23.49MB
+
+  Concurrency: 50
+    Latency   234.89ms  177.19ms   1.24s    74.72%
+    Req/Sec    52.97     21.66   140.00     63.25%
+Requests/sec:    210.13
+Transfer/sec:     40.87MB
+
+  Concurrency: 100
+    Latency   425.86ms  348.38ms   1.82s    62.19%
+    Req/Sec    48.15     23.18   131.00     68.80%
+Requests/sec:    188.90
+Transfer/sec:     36.77MB
+
+Stopping pasto...
+
+=========================================
+Testing with 8 instance(s)
+=========================================
+Starting pasto with 8 instances on port 5000...
+  Concurrency: 1
+    Latency    48.56ms    9.16ms  91.80ms   87.97%
+    Req/Sec    20.12      4.47    30.00     84.85%
+Requests/sec:     13.28
+Transfer/sec:      2.59MB
+
+  Concurrency: 10
+    Latency   245.40ms  394.89ms   2.00s    87.56%
+    Req/Sec    20.85     12.37    48.00     69.88%
+Requests/sec:     36.50
+Transfer/sec:      7.08MB
+
+  Concurrency: 50
+    Latency   270.29ms  250.91ms   1.94s    83.89%
+    Req/Sec    51.00     22.51   140.00     71.61%
+Requests/sec:    199.75
+Transfer/sec:     38.88MB
+
+  Concurrency: 100
+    Latency   458.21ms  405.17ms   2.00s    82.44%
+    Req/Sec    55.05     23.68   121.00     59.80%
+Requests/sec:    217.40
+Transfer/sec:     42.30MB
+
+Stopping pasto...
+
+=========================================
+Testing with 12 instance(s)
+=========================================
+Starting pasto with 12 instances on port 5000...
+  Concurrency: 1
+    Latency    88.76ms   14.59ms 112.38ms   80.00%
+    Req/Sec    10.50      6.24    19.00     50.00%
+Requests/sec:      0.30
+Transfer/sec:     58.95KB
+
+  Concurrency: 10
+    Latency   186.84ms  277.65ms   1.66s    90.72%
+    Req/Sec    16.93      9.27    40.00     72.09%
+Requests/sec:     32.78
+Transfer/sec:      6.41MB
+benchmark.sh: line 46:  6224 Killed                  $PASTO_BIN --port=$PORT --instances=$instances --disable-rate-limit > /dev/null 2>&1
+
+  Concurrency: 50
+    Latency   376.67ms  389.32ms   1.98s    86.85%
+    Req/Sec    23.66     20.26   100.00     76.51%
+Requests/sec:     47.93
+Transfer/sec:      9.29MB
+
+  Concurrency: 100
+    Latency   491.96ms  509.82ms   1.99s    80.99%
+    Req/Sec    27.08     25.79   110.00     76.00%
+Requests/sec:     36.35
+Transfer/sec:      7.06MB
+
+Stopping pasto...
+
+Benchmark complete.

@@ -1210,6 +1210,20 @@ module Pasto
     # Get current user for theme setup
     current_user = Pasto.get_current_user(env)
 
+    # Only use cache for anonymous users (not logged in)
+    unless current_user
+      cache_key = Pasto::Cache.generate_cache_key(env)
+      if cached_entry = Pasto::Cache.get(cache_key)
+        # Serve cached content
+        env.response.content_type = cached_entry.mime_type
+        # Restore cached headers
+        cached_entry.headers.each do |key, value|
+          env.response.headers[key] = value
+        end
+        halt env, 200, cached_entry.content
+      end
+    end
+
     # Apply language mapping from stored extension if present
     if stored_ext
       language_override = paste.language_for_extension(stored_ext)
@@ -1253,8 +1267,29 @@ module Pasto
       env.response.headers["X-Burn-After-Reading"] = paste.sepia_id
     end
 
+    # Render the content
     content = render "src/views/show.ecr"
-    render "src/views/layout.ecr"
+    rendered_html = render "src/views/layout.ecr"
+
+    # Cache the rendered HTML for anonymous users
+    unless current_user
+      cache_key = Pasto::Cache.generate_cache_key(env)
+
+      # Capture response headers for caching
+      headers = Hash(String, String).new
+      env.response.headers.each do |key, value|
+        case value
+        when Array
+          headers[key] = value.join(", ")
+        else
+          headers[key] = value.to_s
+        end
+      end
+
+      Pasto::Cache.set(cache_key, rendered_html, "text/html", 3600, headers)
+    end
+
+    rendered_html
   end
 
   # Serve syntax highlighting CSS for specific theme family and variant
