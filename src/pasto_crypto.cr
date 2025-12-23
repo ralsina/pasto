@@ -121,11 +121,11 @@ module PastoCrypto
     key_b64 = derive_key_from_password(password, salt_b64, iterations)
 
     # Decode encrypted data
-    encrypted_data = Base64.decode_string(encrypted_content_b64)
+    encrypted_data = Base64.decode_string(encrypted_content_b64).to_slice
 
     # Split into ciphertext and auth tag (last 16 bytes)
     ciphertext = encrypted_data[0...-16]
-    auth_tag = encrypted_data[-16..].to_slice
+    auth_tag = encrypted_data[-16..]
 
     # Decode key and IV
     key = Base64.decode_string(key_b64)
@@ -188,7 +188,8 @@ module PastoCrypto
       if !output_file.empty?
         File.write(output_file, result[:encrypted_content])
       else
-        print result[:encrypted_content]
+        # Print encrypted data to stderr to keep stdout clean for env vars
+        STDERR.print result[:encrypted_content]
       end
 
       # Print metadata to stdout for easy parsing

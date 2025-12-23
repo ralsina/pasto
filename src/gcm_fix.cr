@@ -81,8 +81,8 @@ def encrypt_for_pasto_webcrypto(plaintext : String, key_b64 : String, iv_b64 : S
 
   cipher = OpenSSL::Cipher.new("aes-256-gcm")
   cipher.encrypt
-  cipher.key = key.to_slice
-  cipher.iv = iv.to_slice
+  cipher.key = key
+  cipher.iv = iv
 
   # Get complete output with auth tag
   encrypted_data = cipher.encrypt_and_get_tag(plaintext)

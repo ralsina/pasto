@@ -60,12 +60,12 @@ window.SharedSecurity = {
 
     const dialogHTML = `
       <div id="encryption-dialog" class="encryption-dialog" style="text-align: center; color: var(--pico-color);">
-        <p style="margin-bottom: 1.5rem;">Enter the ${opts.isPasswordBased ? "password" : "encryption key"} to decrypt this content:</p>
+        <p style="margin-bottom: 1.5rem;">Enter the password to decrypt this content:</p>
 
         <input
           type="password"
           id="encryption-key-input"
-          placeholder="Enter ${opts.isPasswordBased ? "password" : "encryption key"}"
+          placeholder="Enter password"
           style="width: 100%; max-width: 400px; padding: 0.75rem; border: 1px solid var(--pico-border-color); border-radius: 4px; font-size: 1rem;"
           autocomplete="off"
         >
@@ -141,7 +141,7 @@ window.SharedSecurity = {
 
     const key = input.value.trim();
     if (!key) {
-      this.showError('Please enter a valid encryption key');
+      this.showError('Please enter a valid password');
       return;
     }
 
@@ -157,7 +157,7 @@ window.SharedSecurity = {
   attemptDecryptionWithInput: function(options = {}, inputValue) {
     const key = inputValue ? inputValue.trim() : '';
     if (!key) {
-      this.showError('Please enter a valid encryption key');
+      this.showError('Please enter a valid password');
       return;
     }
 

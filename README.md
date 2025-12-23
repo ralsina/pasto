@@ -158,6 +158,106 @@ ssh -p 2222 pasto.example.com login
 ssh -p 2222 pasto.example.com help
 ```
 
+### Zero-Knowledge Encryption
+
+Pasto supports **zero-knowledge encryption** where you encrypt content locally before sending it to the server. The server never sees your password or can decrypt your content.
+
+#### Using pasto-crypto CLI Tool
+
+The `pasto-crypto` tool enables you to encrypt content locally using AES-256-GCM encryption with PBKDF2 key derivation.
+
+**Encrypt content locally:**
+
+```bash
+# Encrypt with a random password (recommended for maximum security)
+./bin/pasto-crypto encrypt --random-pass --output encrypted.txt input.txt
+
+# Output: Environment variables needed for decryption
+# PASTO_PASSWORD=wxyeniX58PDup7O!VR2UGyQejOib%pk!
+# PASTO_SALT=SEp4IYOd36ICRA4szDdy2w==
+# PASTO_IV=wCKCNS9IW3r/48Md
+# PASTO_ITERATIONS=100000
+```
+
+**Create encrypted paste via SSH:**
+
+```bash
+# Save the environment variables from encryption
+export PASTO_PASSWORD="wxyeniX58PDup7O!VR2UGyQejOib%pk!"
+export PASTO_SALT="SEp4IYOd36ICRA4szDdy2w=="
+export PASTO_IV="wCKCNS9IW3r/48Md"
+
+# Create paste with zero-knowledge encryption
+cat encrypted.txt | ssh -p 2222 pasto.example.com paste \
+  --iv "$PASTO_IV" \
+  --salt "$PASTO_SALT" \
+  --iterations 100000
+```
+
+**Decrypt in the browser:**
+
+1. Open the paste URL in your browser
+2. Enter the **password** (not the key!) when prompted
+3. The content is decrypted client-side using Web Crypto API
+
+**What makes it zero-knowledge?**
+
+- **Password stays with you**: The server only stores the salt and IV, never the password
+- **PBKDF2 key derivation**: Your password is securely stretched with 100,000 iterations
+- **AES-256-GCM encryption**: Military-grade encryption
+- **Client-side decryption**: Content is decrypted in your browser, not on the server
+- **Server can't read**: Even if the server is compromised, your encrypted pastes remain secure
+
+**Full example workflow:**
+
+```bash
+# 1. Create a file with sensitive content
+cat > secret.txt <<EOF
+API_KEY=sk_live_1234567890abcdef
+DATABASE_URL=postgres://user:pass@localhost/db
+EOF
+
+# 2. Encrypt it locally with a random password
+./bin/pasto-crypto encrypt --random-pass --output secret.enc secret.txt
+
+# 3. Save the credentials (keep these safe!)
+export PASTO_PASSWORD="iJOK#rPpD!GfRwBA5kQZT@0RA5YV7GCG"
+export PASTO_SALT="utJ7JzIALDE9Ak1WzCGOnQ=="
+export PASTO_IV="AwnXIR7s2313cdBr"
+
+# 4. Create the paste via SSH
+cat secret.enc | ssh -p 2222 pasto.example.com paste \
+  --iv "$PASTO_IV" \
+  --salt "$PASTO_SALT" \
+  --title "Production Credentials"
+
+# Output: http://pasto.example.com/abc123-def456
+# 🔐 Zero-trust encrypted paste created
+
+# 5. Share the URL + PASSWORD with your teammate
+# Teammate opens URL, enters password, and sees decrypted content
+# The server administrators cannot see the content even if they wanted to!
+```
+
+**Decrypting locally (optional):**
+
+```bash
+# Decrypt the encrypted file back to plaintext
+./bin/pasto-crypto decrypt \
+  --password "$PASTO_PASSWORD" \
+  --salt "$PASTO_SALT" \
+  --iv "$PASTO_IV" \
+  --output decrypted.txt \
+  encrypted.txt
+```
+
+**Security best practices:**
+
+- Use `--random-pass` for generating strong passwords
+- Save the password securely (password manager, not in plain text files)
+- Share the password through a different channel than the paste URL
+- The server stores `encryption_iv` and `encryption_salt` but cannot decrypt without your password
+
 ### Web Usage
 
 1. Navigate to `http://localhost:3000`

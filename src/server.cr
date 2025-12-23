@@ -1220,14 +1220,17 @@ module Pasto
     # Only use cache for anonymous users (not logged in)
     unless current_user
       cache_key = Pasto::Cache.generate_cache_key(env)
-      if cached_entry = Pasto::Cache.get(cache_key)
-        # Serve cached content
-        env.response.content_type = cached_entry.mime_type
-        # Restore cached headers
-        cached_entry.headers.each do |key, value|
-          env.response.headers[key] = value
+      if cached_metadata = Pasto::Cache.get(cache_key)
+        # Get cached body from disk
+        if cached_body = Pasto::Cache.get_body(cache_key)
+          # Serve cached content
+          env.response.content_type = cached_metadata.mime_type
+          # Restore cached headers
+          cached_metadata.headers.each do |key, value|
+            env.response.headers[key] = value
+          end
+          halt env, 200, cached_body
         end
-        halt env, 200, cached_entry.content
       end
     end
 

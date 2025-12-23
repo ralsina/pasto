@@ -179,14 +179,16 @@ module PastoSSH
 Create a paste.
 
 Usage:
-  paste [-l LANG] [-f FILE] [-t TITLE] [-e] [--iv IV] [--expire TIME] [--burn] [--private]
+  paste [-l LANG] [-f FILE] [-t TITLE] [-e] [--iv IV] [--salt SALT] [--iterations N] [--expire TIME] [--burn] [--private]
 
 Options:
   -l LANG, --language LANG         Set the language for syntax highlighting
   -f FILE, --filename FILE         Set a filename (used for language detection)
   -t TITLE, --title TITLE          Set a title for the paste
   -e, --encrypted                  Create an encrypted paste (server encrypts)
-  --iv IV                          Pre-encrypted content with IV (base64). Content must be Web Crypto API compatible.
+  --iv IV                          Zero-knowledge encryption: IV for pre-encrypted content (base64)
+  --salt SALT                      Zero-knowledge encryption: salt for pre-encrypted content (base64)
+  --iterations N                   PBKDF2 iterations for zero-knowledge encryption (default: 100000)
   --expire TIME                    Set expiration time (10m, 1h, 1d, 1w, 1M, view-once)
   --burn                           Burn after reading (delete after first view)
   --private                        Create a private paste (not listed in public feeds)
@@ -225,13 +227,15 @@ DOC
   end
 
   # ameba:disable Metrics/CyclomaticComplexity
-  private def self.parse_paste_args(args : Array(String), ctx) : {String?, String?, String?, Bool, Bool, String?, Time?, Bool, Bool}
+  private def self.parse_paste_args(args : Array(String), ctx) : {String?, String?, String?, Bool, Bool, String?, String?, Int32, Time?, Bool, Bool}
     language = nil
     filename = nil
     title = nil
     encrypted = false
     pre_encrypted = false
     iv = nil
+    salt = nil
+    iterations = 100000
     expires_at = nil
     burn_after_reading = false
     private_paste = false
@@ -258,7 +262,16 @@ DOC
         iv = opts["--iv"]?.try(&.to_s)
         iv = nil if iv.nil? || iv == "false" || iv == "" || iv == "nil"
 
-        # If --iv is provided, this is pre-encrypted content (true zero-trust)
+        salt = opts["--salt"]?.try(&.to_s)
+        salt = nil if salt.nil? || salt == "false" || salt == "" || salt == "nil"
+
+        iterations_str = opts["--iterations"]?.try(&.to_s)
+        if iterations_str && iterations_str != "false" && iterations_str != "" && iterations_str != "nil"
+          iterations = iterations_str.to_i
+          iterations = 100000 if iterations == 0
+        end
+
+        # If --iv is provided, this is pre-encrypted content (zero-knowledge encryption)
         pre_encrypted = !iv.nil?
 
         # Handle expiration time
@@ -273,7 +286,7 @@ DOC
         # Handle private paste
         private_paste = !!opts["--private"]
 
-        Pasto::Logging.debug("SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}, expires_at=#{expires_at.inspect}, burn_after_reading=#{burn_after_reading}, private_paste=#{private_paste}")
+        Pasto::Logging.debug("SSH: parsed options - language=#{language.inspect}, filename=#{filename.inspect}, title=#{title.inspect}, encrypted=#{encrypted}, pre_encrypted=#{pre_encrypted}, iv=#{iv.inspect}, salt=#{salt.inspect}, iterations=#{iterations.inspect}, expires_at=#{expires_at.inspect}, burn_after_reading=#{burn_after_reading}, private_paste=#{private_paste}")
       rescue ex : Docopt::DocoptException
         ctx.write_stderr("Invalid options: #{ex.message}\n")
         ctx.write_stderr(PASTE_DOC)
@@ -281,7 +294,7 @@ DOC
       end
     end
 
-    {language, filename, title, encrypted, pre_encrypted, iv, expires_at, burn_after_reading, private_paste}
+    {language, filename, title, encrypted, pre_encrypted, iv, salt, iterations, expires_at, burn_after_reading, private_paste}
   end
 
   # ameba:disable Metrics/CyclomaticComplexity
@@ -303,7 +316,7 @@ DOC
 
     # Parse options with docopt
     begin
-      language, filename, title, encrypted, pre_encrypted, iv, expires_at, burn_after_reading, private_paste = parse_paste_args(args, ctx)
+      language, filename, title, encrypted, pre_encrypted, iv, salt, iterations, expires_at, burn_after_reading, private_paste = parse_paste_args(args, ctx)
     rescue ex : Docopt::DocoptException
       return 1
     end
@@ -365,8 +378,12 @@ DOC
         paste.encryption_salt = encryption_salt
         paste.encryption_iterations = 100000
         Pasto::Logging.debug("SSH: Setting encryption salt: #{encryption_salt}")
+      elsif is_pre_encrypted && salt
+        # For zero-knowledge encryption, use salt and iterations provided by user
+        paste.encryption_salt = salt
+        paste.encryption_iterations = iterations
+        Pasto::Logging.debug("SSH: Setting zero-knowledge encryption salt: #{salt}, iterations: #{iterations}")
       end
-      # is_pre_encrypted uses whatever user provided
 
       # Store the authentication tag (extracted from the encrypted data)
       if !actual_content.empty?
