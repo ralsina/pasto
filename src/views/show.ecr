@@ -271,10 +271,10 @@
   }
 
   .overlay-btn {
-    background: rgba(var(--pico-contrast-background-rgb, 0, 0, 0), 0.3);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(var(--pico-primary-rgb, 255, 255, 255), 0.3);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 2px solid var(--pico-primary);
     border-radius: var(--pico-border-radius);
     width: 40px;
     height: 40px;
@@ -282,10 +282,10 @@
     min-height: 40px;
     padding: 0;
     cursor: pointer;
-    opacity: 0.5;
+    opacity: 0.95;
     transform: translateZ(0);
-    will-change: opacity, background-color;
-    transition: opacity 0.2s, background-color 0.2s;
+    will-change: opacity, border-color;
+    transition: opacity 0.2s, border-color 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -293,9 +293,8 @@
 
   .overlay-btn:hover {
     opacity: 1;
-    background: rgba(var(--pico-primary-rgb, 255, 255, 255), 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--pico-primary-background);
+    border-color: var(--pico-primary);
   }
 
   .copy-btn.copied {
@@ -311,7 +310,12 @@
   .overlay-btn svg {
     width: 1.25rem;
     height: 1.25rem;
-    color: var(--pico-contrast-inverse);
+    color: color-mix(in srgb, var(--pico-primary) 50%, transparent);
+  }
+
+  .overlay-btn:hover i,
+  .overlay-btn:hover svg {
+    color: var(--pico-primary-inverse);
   }
 
   /* User ID info button styling */
