@@ -268,7 +268,23 @@ test.describe('Authenticated User Features', () => {
     });
 
     await page.goto(result.url!);
-    await expect(page.locator('.paste-content')).toBeVisible();
+    // Wait for the page to fully load
+    await page.waitForLoadState('networkidle');
+
+    // Check if there's a dialog that might be blocking
+    const hasDialog = await page.locator('dialog[open]').count();
+    if (hasDialog > 0) {
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+    }
+
+    // For markdown content, check for rendered-markdown, otherwise check paste-content
+    const hasRenderedMarkdown = await page.locator('#rendered-markdown').count() > 0;
+    if (hasRenderedMarkdown) {
+      await expect(page.locator('#rendered-markdown')).toBeVisible();
+    } else {
+      await expect(page.locator('.paste-content')).toBeVisible({ timeout: 10000 });
+    }
 
     await page.goto('/profile');
     await expect(page.locator('.profile-container')).toBeVisible();

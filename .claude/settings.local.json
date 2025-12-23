@@ -87,7 +87,8 @@
       "Bash(for:*)",
       "Bash(do echo:*)",
       "Bash(done)",
-      "mcp__playwright__browser_run_code"
+      "mcp__playwright__browser_run_code",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []
