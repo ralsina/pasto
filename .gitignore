@@ -35,3 +35,4 @@ test-results.xml
 /playwright/.cache/
 
 /coverage/
+test_storage/

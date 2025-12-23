@@ -86,7 +86,8 @@
       "Bash(npx playwright test:*)",
       "Bash(for:*)",
       "Bash(do echo:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "mcp__playwright__browser_run_code"
     ],
     "deny": [],
     "ask": []

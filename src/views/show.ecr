@@ -173,6 +173,7 @@
 </style>
 
 <% is_markdown = (paste.language == "markdown") || paste.filename.to_s.ends_with?(".md") %>
+
 <div class="paste-content-wrapper">
   <% if is_markdown %>
     <div id="rendered-markdown" class="markdown-content"></div>
@@ -188,7 +189,7 @@
         const rendered = document.getElementById('rendered-markdown');
         renderedHTML = marked.parse(rawContent);
         rendered.innerHTML = renderedHTML;
-        
+
         const btn = document.getElementById('toggle-md-render');
         btn.innerHTML = '<i data-lucide="file-code-2"></i>';
         btn.title = 'Show source';

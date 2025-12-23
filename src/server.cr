@@ -641,7 +641,14 @@ module Pasto
     # Apply content with line ending normalization
     paste.content = params.content.gsub("\r\n", "\n").gsub("\r", "\n")
 
-    paste.language = params.language
+    # Auto-detect language if not specified
+    if params.language.nil? || params.language.to_s.strip.empty?
+      detected = Paste.get_best_supported_language(paste.content)
+      paste.language = detected || "text"
+    else
+      paste.language = params.language
+    end
+
     paste.title = params.title
     paste.theme = params.syntax_theme
     # Only set user_id if not anonymous (even for logged-in users)
