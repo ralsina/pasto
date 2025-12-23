@@ -1,14 +1,16 @@
 require "openssl"
 
 # Low-level OpenSSL bindings for GCM auth tag support
-# This provides missing functionality for Crystal's OpenSSL wrapper
+# This extends Crystal's OpenSSL wrapper with missing GCM functionality
+# SECURITY NOTE: This code uses FFI bindings and should be carefully audited
 
 lib LibCrypto
-  # Missing GCM control constants
+  # GCM control constants from openssl/evp.h (OpenSSL 1.1.1+)
+  # NOTE: These are hardcoded values - verify against your OpenSSL headers
   EVP_CTRL_GCM_GET_TAG = 0x10
   EVP_CTRL_GCM_SET_TAG = 0x11
 
-  # Missing function binding for cipher context control
+  # Cipher context control function from OpenSSL
   fun evp_cipher_ctx_ctrl = EVP_CIPHER_CTX_ctrl(ctx : Void*, type : Int32, arg : Int32, ptr : Void*) : Int32
 end
 
@@ -86,6 +88,8 @@ def encrypt_for_pasto_webcrypto(plaintext : String, key_b64 : String, iv_b64 : S
   encrypted_data = cipher.encrypt_and_get_tag(plaintext)
 
   # Clear sensitive data from memory
+  # Note: Crystal's Bytes.fill(0) compiles to memset, which is constant-time
+  # For maximum security, we clear the full allocated buffer regardless of content
   key.fill(0)
   iv.fill(0)
 
