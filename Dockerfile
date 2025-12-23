@@ -52,11 +52,11 @@ COPY src/ ./src/
 
 # Build both binaries in release mode
 # -Dinotify: use inotify backend for file watching
-RUN shards build --release -Dinotify --static --link-flags '-lssh -lssl -lcrypto'
+RUN shards build --release -Dinotify --static --link-flags '-lssh -lssl -lcrypto' pasto pasto-ssh pasto-crypto
 
 # Compress binaries with UPX for smaller image size
 RUN apk add --no-cache upx && \
-    upx --best --lzma /app/bin/pasto /app/bin/pasto-ssh /app/bin/pasto-backup
+    upx --best --lzma /app/bin/pasto /app/bin/pasto-ssh /app/bin/pasto-crypto /app/bin/pasto-backup
 
 # ============================================
 # Stage 2: Minimal scratch runtime
@@ -72,6 +72,7 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 # Copy binaries
 COPY --from=builder /app/bin/pasto /app/bin/pasto
 COPY --from=builder /app/bin/pasto-ssh /app/bin/pasto-ssh
+COPY --from=builder /app/bin/pasto-crypto /app/bin/pasto-crypto
 COPY --from=builder /app/bin/pasto-backup /app/bin/pasto-backup
 
 # Create directories for persistent data (will be created as volumes)
