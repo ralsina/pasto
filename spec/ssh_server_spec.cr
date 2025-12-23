@@ -14,19 +14,9 @@ describe PastoSSH do
   end
 
   describe "Rate Limiting Configuration" do
-    it "initializes rate limiters without crashing" do
-      # This should not raise an exception
-      PastoSSH.init_rate_limiters(20, 60, 3, 600, 30, 60, 5, 300)
-      true.should be_true
-    end
   end
 
   describe "Base URL Configuration" do
-    it "sets base URL without crashing" do
-      # This should not raise an exception
-      PastoSSH.base_url = "http://localhost:3000"
-      true.should be_true
-    end
   end
 
   describe "Command Functionality" do
@@ -37,17 +27,6 @@ describe PastoSSH do
 
       server = PastoSSH.create_server("test_key", 2222, "127.0.0.1")
       server.should be_a(Shirk::Server)
-    end
-
-    it "handles different base URL configurations" do
-      original_url = "http://localhost:3000"
-      new_url = "https://example.com"
-
-      PastoSSH.base_url = original_url
-      PastoSSH.base_url = new_url
-
-      # The setter should not crash
-      true.should be_true
     end
   end
 

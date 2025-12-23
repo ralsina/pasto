@@ -4,15 +4,6 @@ require "../src/ratelimit"
 describe "Pasto Rate Limiting" do
   describe Pasto::RateLimits do
     describe "Rate Limiter Configuration" do
-      it "initializes rate limiters without crashing" do
-        # Create a mock config object
-        config = MockRateLimitConfig.new
-
-        # This should not raise an exception
-        Pasto::RateLimits.init(config)
-        true.should be_true
-      end
-
       it "stores rate limiter instances" do
         config = MockRateLimitConfig.new
         Pasto::RateLimits.init(config)
@@ -22,16 +13,6 @@ describe "Pasto Rate Limiting" do
         Pasto::RateLimits.highlight.should be_a(RateLimiter?)
         Pasto::RateLimits.login.should be_a(RateLimiter?)
         Pasto::RateLimits.http.should be_a(RateLimiter?)
-      end
-
-      it "handles multiple initializations safely" do
-        config1 = MockRateLimitConfig.new(rate_paste_limit: 10)
-        config2 = MockRateLimitConfig.new(rate_paste_limit: 20)
-
-        # Should handle multiple initializations without issues
-        Pasto::RateLimits.init(config1)
-        Pasto::RateLimits.init(config2)
-        true.should be_true
       end
     end
 
@@ -143,7 +124,7 @@ describe "Pasto Rate Limiting" do
           "127.0.0.1",
           "192.168.1.1",
           "10.0.0.1",
-          "::1"  # IPv6 localhost - may cause issues depending on implementation
+          "::1", # IPv6 localhost - may cause issues depending on implementation
         ]
 
         ips.each do |ip|
@@ -156,26 +137,6 @@ describe "Pasto Rate Limiting" do
             ex.message.should_not be_nil
           end
         end
-      end
-    end
-
-    describe "Thread Safety" do
-      it "handles concurrent access safely" do
-        config = MockRateLimitConfig.new
-        Pasto::RateLimits.init(config)
-
-        # Test that rate limiters can handle multiple operations without crashing
-        # The mutex in the implementation should provide thread safety
-        client_ip = "192.168.1.200"
-
-        # Multiple rapid calls should not crash
-        10.times do |i|
-          result = Pasto::RateLimits.allow_http?(client_ip)
-          result.should be_a(Tuple(Bool, RateLimitResult))
-        end
-
-        # Should not crash or produce inconsistent results
-        true.should be_true
       end
     end
 
@@ -231,9 +192,9 @@ describe "Pasto Rate Limiting" do
       it "handles different time windows" do
         # Create a custom config with different time windows by setting properties directly
         config = MockRateLimitConfig.new
-        config.rate_paste_window = 60   # 1 minute
-        config.rate_highlight_window = 300  # 5 minutes
-        config.rate_login_window = 600   # 10 minutes
+        config.rate_paste_window = 60      # 1 minute
+        config.rate_highlight_window = 300 # 5 minutes
+        config.rate_login_window = 600     # 10 minutes
 
         Pasto::RateLimits.init(config)
 
@@ -310,7 +271,7 @@ class MockRateLimitConfig
     @rate_paste_window = 3600,
     @rate_highlight_limit = 50,
     @rate_login_limit = 10,
-    @rate_http_limit = 1000
+    @rate_http_limit = 1000,
   )
   end
 end

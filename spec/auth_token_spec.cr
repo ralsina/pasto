@@ -183,7 +183,7 @@ describe Pasto::AuthToken do
         "SHA256:abc123",
         "simple-fingerprint",
         "123456789",
-        "special-chars-!@#$%^&*()"
+        "special-chars-!@#$%^&*()",
       ]
 
       fingerprints.each do |fp|

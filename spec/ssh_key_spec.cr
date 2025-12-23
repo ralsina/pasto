@@ -57,8 +57,8 @@ describe Pasto::SSHKey do
     it "uses sanitized fingerprint for sepia_id" do
       fingerprint = "ssh-rsa AAAAB3NzaC1yc2E/test-key"
       key = Pasto::SSHKey.find_or_create(fingerprint)
-      key.fingerprint.should eq(fingerprint)  # Original fingerprint is preserved
-      key.sepia_id.should contain("_")        # But sepia_id is sanitized
+      key.fingerprint.should eq(fingerprint) # Original fingerprint is preserved
+      key.sepia_id.should contain("_")       # But sepia_id is sanitized
     end
   end
 
@@ -82,7 +82,7 @@ describe Pasto::SSHKey do
       key.owner_id = "non-existent-user-id"
       key.save
 
-      key.owner_id.should eq("non-existent-user-id")  # It's preserved, not validated
+      key.owner_id.should eq("non-existent-user-id") # It's preserved, not validated
     end
   end
 
@@ -99,11 +99,11 @@ describe Pasto::SSHKey do
 
     it "persists both key and user" do
       user = Pasto::User.new(name: "Test User")
-      user.save  # Save the user first
+      user.save # Save the user first
       key = Pasto::SSHKey.new("test-fingerprint")
 
       key.owner_id = user.sepia_id
-      key.save   # Save the key too
+      key.save # Save the key too
 
       loaded_user = Pasto::User.find(user.sepia_id)
       loaded_key = Pasto::SSHKey.find(key.sepia_id)
@@ -168,7 +168,7 @@ describe Pasto::SSHKey do
         paste = Pasto::Paste.new("test content #{i + 1}")
         paste.ssh_fingerprint = key.fingerprint
         paste.save
-        key.add_paste(paste)  # Actually add the paste to the key
+        key.add_paste(paste) # Actually add the paste to the key
       end
 
       key.pastes.size.should eq(3)
@@ -188,7 +188,7 @@ describe Pasto::SSHKey do
       paste = Pasto::Paste.new("test content")
       paste.ssh_fingerprint = key.fingerprint
       paste.save
-      key.add_paste(paste)  # Add the paste to the key
+      key.add_paste(paste) # Add the paste to the key
 
       # Test that the key has the paste in its pastes array
       key.pastes.size.should eq(1)
@@ -246,7 +246,7 @@ describe Pasto::SSHKey do
     it "handles missing optional fields" do
       json = {
         "fingerprint" => "minimal-key",
-        "created_at"  => Time.utc.to_rfc3339  # required field
+        "created_at"  => Time.utc.to_rfc3339, # required field
       }.to_json
 
       key = Pasto::SSHKey.from_sepia(json)

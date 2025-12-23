@@ -8,7 +8,7 @@ describe "SSH Command Handlers" do
     # Initialize rate limiters and base URL for tests
     PastoSSH.init_rate_limiters(100, 60, 100, 600, 100, 60, 100, 300)
     PastoSSH.base_url = "http://localhost:3000"
-    
+
     # Clean up test data
     FileUtils.rm_rf("./test_storage")
     Dir.mkdir_p("./test_storage")
@@ -96,7 +96,7 @@ describe "SSH Command Handlers" do
 
     it "lists existing pastes" do
       fingerprint = "SHA256:test-fingerprint-list"
-      
+
       # Create a paste first
       paste_ctx = MockSSHContext.new("Test content for listing", "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", [] of String)
@@ -115,11 +115,11 @@ describe "SSH Command Handlers" do
     it "retrieves paste content" do
       fingerprint = "SHA256:test-fingerprint-get"
       content = "Content to retrieve"
-      
+
       # Create a paste
       paste_ctx = MockSSHContext.new(content, "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", [] of String)
-      
+
       # Extract paste ID from URL
       paste_url = paste_ctx.stdout_content.strip
       paste_id = paste_url.split('/').last
@@ -146,7 +146,7 @@ describe "SSH Command Handlers" do
     it "denies access to private paste owned by different key" do
       fingerprint1 = "SHA256:owner-fingerprint"
       fingerprint2 = "SHA256:attacker-fingerprint"
-      
+
       # Create private paste with fingerprint1
       paste_ctx = MockSSHContext.new("Secret content", "paste --private")
       PastoSSH.handle_paste(paste_ctx, fingerprint1, "http://localhost:3000", ["--private"])
@@ -164,7 +164,7 @@ describe "SSH Command Handlers" do
   describe "delete command" do
     it "deletes owned paste" do
       fingerprint = "SHA256:test-fingerprint-delete"
-      
+
       # Create a paste
       paste_ctx = MockSSHContext.new("To be deleted", "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", [] of String)
@@ -182,7 +182,7 @@ describe "SSH Command Handlers" do
     it "denies delete of paste owned by different key" do
       fingerprint1 = "SHA256:owner-fingerprint-delete"
       fingerprint2 = "SHA256:attacker-fingerprint-delete"
-      
+
       # Create paste with fingerprint1
       paste_ctx = MockSSHContext.new("Protected content", "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint1, "http://localhost:3000", [] of String)
@@ -200,7 +200,7 @@ describe "SSH Command Handlers" do
   describe "edit command" do
     it "updates paste content" do
       fingerprint = "SHA256:test-fingerprint-edit"
-      
+
       # Create original paste
       paste_ctx = MockSSHContext.new("Original content", "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", [] of String)
@@ -221,7 +221,7 @@ describe "SSH Command Handlers" do
 
     it "rejects empty content" do
       fingerprint = "SHA256:test-fingerprint-edit-empty"
-      
+
       # Create paste
       paste_ctx = MockSSHContext.new("Original", "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", [] of String)
@@ -238,7 +238,7 @@ describe "SSH Command Handlers" do
     it "denies edit of paste owned by different key" do
       fingerprint1 = "SHA256:owner-fingerprint-edit"
       fingerprint2 = "SHA256:attacker-fingerprint-edit"
-      
+
       # Create paste with fingerprint1
       paste_ctx = MockSSHContext.new("Original", "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint1, "http://localhost:3000", [] of String)
@@ -257,7 +257,7 @@ describe "SSH Command Handlers" do
     it "views paste content" do
       fingerprint = "SHA256:test-fingerprint-view"
       content = "Content to view"
-      
+
       # Create a paste
       paste_ctx = MockSSHContext.new(content, "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", [] of String)
@@ -275,7 +275,7 @@ describe "SSH Command Handlers" do
   describe "info command" do
     it "displays paste metadata" do
       fingerprint = "SHA256:test-fingerprint-info"
-      
+
       # Create a paste
       paste_ctx = MockSSHContext.new("Test content", "paste")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", [] of String)
@@ -294,7 +294,7 @@ describe "SSH Command Handlers" do
 
     it "shows language when set" do
       fingerprint = "SHA256:test-fingerprint-info-lang"
-      
+
       # Create paste with language
       paste_ctx = MockSSHContext.new("def test; end", "paste -l ruby")
       PastoSSH.handle_paste(paste_ctx, fingerprint, "http://localhost:3000", ["-l", "ruby"])
@@ -312,7 +312,7 @@ describe "SSH Command Handlers" do
   describe "help command" do
     it "displays help text" do
       ctx = MockSSHContext.new("", "help")
-      
+
       exit_code = PastoSSH.handle_help(ctx, "http://localhost:3000")
 
       exit_code.should eq(0)

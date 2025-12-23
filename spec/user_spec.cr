@@ -186,7 +186,7 @@ describe Pasto::User do
     it "returns true on successful save" do
       user = Pasto::User.new(name: "Test User")
       result = user.save
-      result.should be_true  # Sepia storage doesn't validate timestamps
+      result.should be_true # Sepia storage doesn't validate timestamps
     end
   end
 
@@ -225,8 +225,8 @@ describe Pasto::User do
 
     it "handles missing optional fields" do
       json = {
-        "name" => "Minimal User",
-        "created_at" => Time.utc.to_rfc3339
+        "name"       => "Minimal User",
+        "created_at" => Time.utc.to_rfc3339,
       }.to_json
 
       user = Pasto::User.from_sepia(json)

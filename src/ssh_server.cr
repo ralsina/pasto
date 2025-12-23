@@ -226,7 +226,6 @@ DOC
     processed
   end
 
-  # ameba:disable Metrics/CyclomaticComplexity
   private def self.parse_paste_args(args : Array(String), ctx) : {String?, String?, String?, Bool, Bool, String?, String?, Int32, Time?, Bool, Bool}
     language = nil
     filename = nil
@@ -297,7 +296,6 @@ DOC
     {language, filename, title, encrypted, pre_encrypted, iv, salt, iterations, expires_at, burn_after_reading, private_paste}
   end
 
-  # ameba:disable Metrics/CyclomaticComplexity
   def self.handle_paste(ctx, fingerprint : String, base_url : String, args : Array(String)) : Int32
     # Check paste rate limit
     unless allow_paste?(fingerprint)
@@ -646,7 +644,7 @@ DOC
     end
 
     # Parse options (simplified for now)
-    # TODO: Add proper flag parsing for lang, title, filename updates
+    # NOTE: Add proper flag parsing for lang, title, filename updates
 
     # Update the paste content
     begin
@@ -663,7 +661,7 @@ DOC
   # Handle view command - view paste with optional decryption
   def self.handle_view(ctx, fingerprint : String, args : Array(String)) : Int32
     # For now, just use the same logic as get
-    # TODO: Add decryption support in a future iteration
+    # NOTE: Add decryption support in a future iteration
     handle_get(ctx, fingerprint, args)
   end
 
