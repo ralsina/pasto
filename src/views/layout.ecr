@@ -48,11 +48,30 @@
     <% end %>
   <% end %>
 
-  <!-- Async CSS loading with correct themes from server -->
-  <link rel="preload" href="/assets/<%= theme_vars[:pico_theme_file] %>" as="style" onload="loadCSS(this, 'pico-css-link')">
-  <link rel="preload" href="/syntax/<%= theme_vars[:saved_syntax_theme] %>/<%= theme_vars[:resolved_pico_theme] %>" as="style" onload="loadCSS(this, 'highlight-css-link')">
+  <% # For anonymous users, dynamically write CSS link based on localStorage %>
+  <% if !current_user %>
+  <script>
+    (function() {
+      // Anonymous user: detect localStorage preferences immediately
+      const savedTheme = localStorage.getItem('picoTheme') || 'dark';
+      const savedColor = localStorage.getItem('picoColor') || 'green';
+      const themeFile = savedColor === 'css' ? 'pico.min.css' : 'pico.' + savedColor + '.min.css';
 
-  
+      // Apply theme immediately to prevent FOUC
+      if (savedTheme !== 'auto') {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+
+      // Write the stylesheet link inline - NOT preload, direct stylesheet
+      document.write('<link rel="stylesheet" href="/assets/' + themeFile + '" id="pico-css-link">');
+    })();
+  </script>
+  <% else %>
+  <!-- For logged-in users, use server-provided themes -->
+  <link rel="stylesheet" href="/assets/<%= theme_vars[:pico_theme_file] %>" id="pico-css-link">
+  <% end %>
+  <link rel="stylesheet" href="/syntax/<%= theme_vars[:saved_syntax_theme] %>/<%= theme_vars[:resolved_pico_theme] %>" id="highlight-css-link">
+
   <script>
     // Async CSS loading function
     function loadCSS(link, id) {
@@ -352,13 +371,8 @@
         // Make syntax theme available to JavaScript
         window.pastoSyntaxTheme = '<%= theme_vars[:saved_syntax_theme] %>';
       } else {
-        // For anonymous users, use localStorage preferences or detect system theme on first visit
-        let savedPicoTheme = localStorage.getItem('picoTheme');
-        if (!savedPicoTheme || savedPicoTheme === 'auto') {
-          // No preference saved or has auto, detect system theme and set it permanently
-          savedPicoTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          localStorage.setItem('picoTheme', savedPicoTheme);
-        }
+        // For anonymous users, use localStorage preferences
+        const savedPicoTheme = localStorage.getItem('picoTheme') || 'dark';
         const savedPicoColor = localStorage.getItem('picoColor') || 'slate';
         const savedSyntaxTheme = localStorage.getItem('syntaxTheme') || 'default';
 
