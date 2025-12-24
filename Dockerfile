@@ -50,9 +50,9 @@ RUN shards install --production
 # Copy source code
 COPY src/ ./src/
 
-# Build both binaries in release mode
+# Build binaries in release mode
 # -Dinotify: use inotify backend for file watching
-RUN shards build --release -Dinotify --static --link-flags '-lssh -lssl -lcrypto' pasto pasto-ssh pasto-crypto
+RUN shards build --release -Dinotify --static --link-flags '-lssh -lssl -lcrypto' pasto pasto-ssh pasto-crypto pasto-backup
 
 # Compress binaries with UPX for smaller image size
 RUN apk add --no-cache upx && \
