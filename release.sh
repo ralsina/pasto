@@ -62,7 +62,7 @@ echo "Docker images built and pushed with tag $NEW_VERSION."
 
 # Step 7: Create GitHub release and upload artifacts
 GH_RELEASE_ARGS=("v$NEW_VERSION" "--title" "Pasto $NEW_VERSION" "--notes-file" "$GIT_CLIFF_CHANGELOG")
-GH_ASSETS=(bin/pasto-static-linux-amd64 bin/pasto-ssh-static-linux-amd64 bin/pasto-crypto-static-linux-amd64 bin/pasto-static-linux-arm64 bin/pasto-ssh-static-linux-arm64 bin/pasto-crypto-static-linux-arm64 index.html)
+GH_ASSETS=(bin/pasto-static-linux-amd64 bin/pasto-ssh-static-linux-amd64 bin/pasto-crypto-static-linux-amd64 bin/pasto-backup-static-linux-amd64 bin/pasto-cli-static-linux-amd64 bin/pasto-static-linux-arm64 bin/pasto-ssh-static-linux-arm64 bin/pasto-crypto-static-linux-arm64 bin/pasto-backup-static-linux-arm64 bin/pasto-cli-static-linux-arm64 index.html)
 for asset in "${GH_ASSETS[@]}"; do
   if [ -f "$asset" ]; then
     GH_RELEASE_ARGS+=("$asset")

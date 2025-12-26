@@ -2,6 +2,7 @@ module Pasto
   module TimeHelper
     # Converts a Time object to a human-friendly relative time string
     # Examples: "just now", "2 hours ago", "yesterday", "3 weeks ago"
+
     def self.relative_time(time : Time) : String
       now = Time.utc
       diff = (now - time).total_seconds

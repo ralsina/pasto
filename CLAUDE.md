@@ -91,8 +91,8 @@ All services share the same Sepia data directory for seamless integration.
 - `src/pasto_crypto.cr`: CLI for zero-knowledge encryption
 
 #### Core Functionality
-- `src/server.cr` (~2333 lines): All HTTP routes, middleware, web handlers
-- `src/paste.cr` (~1015 lines): Paste model, rendering, highlighting, themes
+- `src/server.cr` (~2300+ lines): All HTTP routes, middleware, web handlers
+- `src/paste.cr` (~1000+ lines): Paste model, rendering, highlighting, themes
 - `src/ssh_server.cr`: SSH session handling, commands, authentication
 - `src/mcp_server.cr`: MCP protocol server for AI assistant integration
 
@@ -105,6 +105,11 @@ All services share the same Sepia data directory for seamless integration.
 - `src/logging.cr`: Structured logging
 - `src/profile.cr`: User profile management
 - `src/preview_generator.cr`: Live preview rendering
+- `src/gcm_fix.cr`: OpenSSL GCM mode extensions for encryption
+- `src/time_helper.cr`: Time formatting utilities
+- `src/health.cr`: Health check endpoint
+- `src/mimetypes.cr`: MIME type detection
+- `src/ssh_utils.cr`: SSH key utilities
 
 #### MCP Tools (`src/mcp_tools/`)
 Each MCP tool is a separate file implementing CRUD operations:
@@ -146,6 +151,7 @@ Key options from `src/pasto.cr`:
 - `--max-paste-size`: Maximum paste size in bytes (default: 102400)
 - `--auth-debug-mode`: Auto-authenticate all requests (DEV ONLY, DO NOT USE IN PRODUCTION)
 - `--disable-rate-limit`: DISABLE ALL RATE LIMITING (DEV ONLY, DO NOT USE IN PRODUCTION)
+- `--instances`: Number of worker instances to run (default: 1)
 
 Rate limiting options (all configurable):
 - `--rate-paste-limit/--rate-paste-window`: Paste creation per IP (default: 10/60s)
@@ -171,7 +177,7 @@ The crypto tool uses environment variables or command-line options:
 
 ## Zero-Knowledge Encryption
 
-Pasto supports **zero-knowledge encryption** where content is encrypted client-side before sending to the server.
+Pasto supports **zero-knowledge encryption** where content is encrypted client-side before sending to the server. This is implemented via the `pasto-crypto` binary and browser Web Crypto API.
 
 ### How It Works
 1. **Encryption**: Use `pasto-crypto` CLI or browser Web Crypto API
@@ -179,6 +185,7 @@ Pasto supports **zero-knowledge encryption** where content is encrypted client-s
 3. **Server stores**: Only `encryption_iv`, `encryption_salt`, and `encryption_iterations`
 4. **Server cannot decrypt**: Password never sent to server
 5. **Decryption**: Client-side in browser using password
+6. **GCM Fix**: `src/gcm_fix.cr` provides OpenSSL GCM auth tag support via FFI
 
 ### Encryption Workflow
 ```bash
@@ -260,7 +267,7 @@ Three authentication methods:
 - **Test after changes**: Verify functionality before completing tasks
 
 ### Testing
-- Project has **13 test files** in `spec/` directory
+- Project has **12 test files** in `spec/` directory
 - Run all tests: `crystal spec`
 - Run single test: `crystal spec spec/paste_spec.cr`
 - Key test files:
@@ -269,6 +276,7 @@ Three authentication methods:
   - `spec/rate_limiting_spec.cr`: Rate limiting tests
   - `spec/mcp_tools_spec.cr`: MCP tool tests
   - `spec/ssh_server_spec.cr`: SSH server tests
+  - `spec/backup_spec.cr`: Backup functionality tests
 
 ### Dependencies
 - **External libs in `lib/`**: READ-ONLY, do not modify
@@ -315,19 +323,26 @@ All API endpoints require authentication:
 - **API Key**: `Authorization: Bearer pasto_ak_xxxxxxxxxxxx` header
 - **Session**: Cookie-based session authentication
 
-### Key Endpoints
-- `POST /api/paste`: Create paste
-- `GET /api/paste/:id`: Get paste
-- `GET /api/paste/:id/versions`: List versions
-- `PUT /api/paste/:id`: Update paste (creates new version)
-- `DELETE /api/paste/:id`: Delete paste
-- `GET /api/user/pastes`: List user's pastes
-- `GET /api/user/api-key`: Get current API key
-- `POST /api/user/regenerate-api-key`: Generate new API key
-- `POST /api/user/backup`: Create backup
+### API v1 Endpoints
+
+#### User Information
+- `GET /api/v1/me`: Get current user information (includes api_keys_count and pastes_count)
+
+#### Paste Management
+- `GET /api/v1/pastes`: List user's pastes (with pagination: page, limit parameters)
+- `POST /api/v1/pastes`: Create new paste (JSON body with content, title, language, filename, private, encrypted, burn_after_reading)
+- `GET /api/v1/pastes/:id`: Get paste details (metadata, permissions, URLs)
+- `GET /api/v1/pastes/:id/content`: Get paste content only (returns text/plain)
+- `PATCH /api/v1/pastes/:id`: Update paste content (owner only, requires JSON body with content field)
+- `DELETE /api/v1/pastes/:id`: Delete paste (owner only)
+
+#### Utility Endpoints
+- `GET /api/languages`: List all supported languages (JSON array)
+- `GET /api/themes`: List all syntax highlighting themes with variants (JSON array)
+- `GET /api/qr/:id`: Generate QR code for a paste (returns PNG image)
 
 ### API Documentation
-Interactive OpenAPI specification available at `/api-spec`
+Interactive OpenAPI specification available at `/openapi.yaml`
 
 ## Asset Management
 
@@ -384,6 +399,7 @@ Automatic language detection using **Hansa** classifier:
 - **Rate limiting**: Use `check_rate_limit()` helper before rate-limited operations
 - **Response helpers**: `Pasto::Logging.info()`, `env.set/status/redirect`
 - **nil handling**: Use `if let` patterns or explicit nil checks, NEVER `not_nil!`
+- **Multi-instance**: Use `--instances` flag to run multiple worker processes
 
 ### File Locations to Know
 - Models: `src/models/*.cr`

@@ -49,9 +49,12 @@ targets:
     main: src/pasto_backup.cr
   pasto-crypto:
     main: src/pasto_crypto.cr
+  pasto-cli:
+    main: src/pasto_cli.cr
 
 executables:
   - pasto
   - pasto-ssh
   - pasto-backup
   - pasto-crypto
+  - pasto-cli

@@ -162,6 +162,7 @@ module PastoCrypto
   end
 
   # Main entry point
+
   def self.run(args = ARGV)
     options = Docopt.docopt(DOC, argv: args, version: VERSION)
 

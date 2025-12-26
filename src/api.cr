@@ -150,6 +150,8 @@ module Pasto
     offset = (page - 1) * limit
 
     pastes = api_user.all_pastes
+    # Sort by created_at descending (newest first)
+    pastes = pastes.sort_by(&.created_at).reverse!
     total = pastes.size
 
     # Apply pagination
@@ -365,8 +367,8 @@ module Pasto
       "ssh_ip"             => paste.ssh_ip,
       "base_id"            => paste.base_id,
       "generation"         => paste.generation,
-      "url"     => Pasto.build_paste_url(env, paste.sepia_id),
-      "raw_url" => "#{Pasto.build_paste_url(env, paste.sepia_id)}/raw",
+      "url"                => Pasto.build_paste_url(env, paste.sepia_id),
+      "raw_url"            => "#{Pasto.build_paste_url(env, paste.sepia_id)}/raw",
     }.to_json
   end
 
@@ -519,8 +521,8 @@ module Pasto
           "burn_after_reading" => paste.burn_after_reading?,
           "size"               => paste.content.bytesize,
           "is_owner"           => true,
-          "url"     => Pasto.build_paste_url(env, paste.sepia_id),
-          "raw_url" => "#{Pasto.build_paste_url(env, paste.sepia_id)}/raw",
+          "url"                => Pasto.build_paste_url(env, paste.sepia_id),
+          "raw_url"            => "#{Pasto.build_paste_url(env, paste.sepia_id)}/raw",
         }.to_json
       else
         env.response.status_code = 500

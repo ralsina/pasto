@@ -71,6 +71,7 @@ The services will be available at:
 
 - **Web interface**: <http://localhost:3000>
 - **SSH access**: `ssh -p 2222 localhost`
+- **CLI tool**: `pasto-cli --server=localhost login` (see [CLI.md](CLI.md))
 
 #### Docker Configuration
 
@@ -157,6 +158,37 @@ ssh -p 2222 pasto.example.com login
 # Show help
 ssh -p 2222 pasto.example.com help
 ```
+
+### CLI Usage
+
+The `pasto-cli` tool provides a convenient command-line interface for Pasto:
+
+```bash
+# Login to a Pasto server (SSH authentication)
+pasto-cli --server=pasto.example.com login
+
+# Create a paste
+echo 'print("Hello, World!")' | pasto-cli paste --language=python
+
+# List your pastes
+pasto-cli list
+
+# Get a paste
+pasto-cli get <paste-id>
+
+# Delete a paste
+pasto-cli delete <paste-id>
+```
+
+The CLI supports:
+- **SSH-based authentication** using your SSH keys
+- **Automatic host derivation** - specify `--server` or `--ssh-host`, the other is auto-detected
+- **Terminal hyperlinks** - clickable paste IDs in supported terminals
+- **Human-readable timestamps** - relative time display
+- **Full CRUD operations** - create, read, update, delete pastes
+- **Credential storage** - saves API keys securely in `~/.config/pasto/credentials.yml`
+
+For detailed CLI documentation, see [CLI.md](CLI.md).
 
 ### Zero-Knowledge Encryption
 
