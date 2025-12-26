@@ -112,10 +112,8 @@ module Pasto
           expires_in
         )
 
-        # Build response URL
-        host = env.try(&.request.headers["Host"]?) || "localhost:3000"
-        scheme = env.try(&.request.headers["X-Forwarded-Proto"]?) || "http"
-        paste_url = "#{scheme}://#{host}/#{updated_paste.sepia_id}"
+        # Build response URL using helper (respects reverse proxy headers)
+        paste_url = Pasto.build_paste_url(env, updated_paste.sepia_id)
 
         response_text = build_update_response(updated_paste, paste_url, paste.sepia_id)
 

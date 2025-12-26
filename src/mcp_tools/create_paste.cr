@@ -115,10 +115,8 @@ module Pasto
         return error_response("Failed to save paste")
       end
 
-      # Build URL
-      host = env.try(&.request.headers["Host"]?) || "localhost:3000"
-      scheme = env.try(&.request.headers["X-Forwarded-Proto"]?) || "http"
-      paste_url = "#{scheme}://#{host}/#{paste.sepia_id}"
+      # Build URL using helper (respects reverse proxy headers)
+      paste_url = Pasto.build_paste_url(env, paste.sepia_id)
 
       # Return success response
       {

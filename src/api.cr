@@ -75,19 +75,11 @@ module Pasto
 
     id = env.params.url["id"]
 
-    # Get base URL from request or use default
-    scheme = env.request.headers["X-Forwarded-Proto"]? || "http"
-    host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
-    base_url = "#{scheme}://#{host}"
-
-    # Add port if non-standard
-    server_port = Kemal.config.port
-    if server_port && server_port != 80 && server_port != 443
-      base_url += ":#{server_port}"
-    end
+    # Build URL using helper (respects reverse proxy headers)
+    paste_url = Pasto.build_paste_url(env, id)
 
     # Generate QR code PNG (simple URL encoder - no validation needed)
-    qr = QRCode.new("#{base_url}/#{id}")
+    qr = QRCode.new(paste_url)
     png_bytes = qr.as_png(size: 256)
 
     if png_bytes.empty?
@@ -285,10 +277,8 @@ module Pasto
         }.to_json
       end
 
-      # Build URL
-      host = env.request.headers["Host"]? || "localhost:3000"
-      scheme = env.request.headers["X-Forwarded-Proto"]? || "http"
-      paste_url = "#{scheme}://#{host}/#{paste.sepia_id}"
+      # Build URL using helper (respects reverse proxy headers)
+      paste_url = Pasto.build_paste_url(env, paste.sepia_id)
 
       env.response.status_code = 201
       {
@@ -375,8 +365,8 @@ module Pasto
       "ssh_ip"             => paste.ssh_ip,
       "base_id"            => paste.base_id,
       "generation"         => paste.generation,
-      "url"                => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}",
-      "raw_url"            => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}/raw",
+      "url"     => Pasto.build_paste_url(env, paste.sepia_id),
+      "raw_url" => "#{Pasto.build_paste_url(env, paste.sepia_id)}/raw",
     }.to_json
   end
 
@@ -529,8 +519,8 @@ module Pasto
           "burn_after_reading" => paste.burn_after_reading?,
           "size"               => paste.content.bytesize,
           "is_owner"           => true,
-          "url"                => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}",
-          "raw_url"            => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["Host"]? || "localhost:3000"}/#{paste.sepia_id}/raw",
+          "url"     => Pasto.build_paste_url(env, paste.sepia_id),
+          "raw_url" => "#{Pasto.build_paste_url(env, paste.sepia_id)}/raw",
         }.to_json
       else
         env.response.status_code = 500

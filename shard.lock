@@ -7,7 +7,7 @@ shards:
 
   baked_file_handler:
     git: https://github.com/ralsina/baked_file_handler.git
-    version: 0.1.4
+    version: 0.1.5
 
   baked_file_system:
     git: https://github.com/ralsina/baked_file_system.git
@@ -87,7 +87,7 @@ shards:
 
   sixteen:
     git: https://github.com/ralsina/sixteen.git
-    version: 0.6.2
+    version: 0.6.3
 
   stumpy_core:
     git: https://github.com/stumpycr/stumpy_core.git

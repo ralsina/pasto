@@ -195,6 +195,40 @@ module Pasto
     end
   end
 
+  # Helper to build base URL respecting reverse proxy headers
+  # Returns scheme://host (without port if behind reverse proxy)
+  def self.build_base_url(env) : String
+    # Get scheme from reverse proxy header or default to http
+    scheme = env.request.headers["X-Forwarded-Proto"]? || "http"
+
+    # Get host from reverse proxy header or fall back to Host header
+    host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
+
+    # Only add port if NOT behind a reverse proxy and port is non-standard
+    behind_proxy = env.request.headers["X-Forwarded-Proto"]? || env.request.headers["X-Forwarded-Host"]?
+
+    unless behind_proxy
+      # Extract port from Host header if present
+      if host_match = host.match(/^(.+):(\d+)$/)
+        host_without_port = host_match[1]
+        port = host_match[2].to_i
+        host = host_without_port
+
+        # Add port back if it's non-standard
+        if port != 80 && port != 443
+          return "#{scheme}://#{host_without_port}:#{port}"
+        end
+      end
+    end
+
+    "#{scheme}://#{host}"
+  end
+
+  # Helper to build full URL for a paste
+  def self.build_paste_url(env, paste_id : String) : String
+    "#{build_base_url(env)}/#{paste_id}"
+  end
+
   # Apply security headers and rate limiting to all requests
   before_all do |env|
     Pasto::Filters.add_security_headers(env)
@@ -739,7 +773,7 @@ module Pasto
       env.response.content_type = "application/json"
       {
         "success"      => true,
-        "url"          => "#{env.request.headers["X-Forwarded-Proto"]? || "http"}://#{env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"}/#{paste.sepia_id}",
+        "url"          => Pasto.build_paste_url(env, paste.sepia_id),
         "id"           => paste.sepia_id,
         "is_view_once" => paste.burn_after_reading?,
       }.to_json
