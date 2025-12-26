@@ -165,7 +165,7 @@ The `pasto-cli` tool provides a convenient command-line interface for Pasto:
 
 ```bash
 # Login to a Pasto server (SSH authentication)
-pasto-cli --server=pasto.example.com login
+pasto-cli --server=pasto.example.com --ssh-port=2222 login
 
 # Create a paste
 echo 'print("Hello, World!")' | pasto-cli paste --language=python
