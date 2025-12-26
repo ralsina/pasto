@@ -83,7 +83,7 @@ shards:
 
   shirk:
     git: https://github.com/ralsina/shirk.git
-    version: 0.2.1
+    version: 0.3.0
 
   sixteen:
     git: https://github.com/ralsina/sixteen.git
