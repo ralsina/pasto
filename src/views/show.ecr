@@ -464,8 +464,16 @@
     const pasteId = window.location.pathname.substring(1).replace('/embed', '');
     const embedUrl = `${window.location.origin}/${pasteId}/embed`;
 
-    // Default embed code
-    const defaultEmbed = `<iframe src="${embedUrl}" width="100%" height="400" frameborder="0"></iframe>`;
+    // Get current theme preferences from server-rendered variables
+    const currentSyntaxTheme = <%= theme_vars[:saved_syntax_theme].to_json %>;
+    const currentPicoTheme = <%= theme_vars[:resolved_pico_theme].to_json %>;
+
+    // Generate initial embed code with current themes
+    const initialParams = new URLSearchParams();
+    initialParams.append('theme', currentSyntaxTheme);
+    initialParams.append('mode', currentPicoTheme);
+    const initialEmbedUrl = `${embedUrl}?${initialParams.toString()}`;
+    const defaultEmbed = `<iframe src="${initialEmbedUrl}" width="100%" height="400" frameborder="0"></iframe>`;
 
     // Generate dialog with embed options
     window.showGenericModal({
@@ -474,6 +482,22 @@
       message: 'Copy the embed code to include this paste in your website:',
       customContent: `
         <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <label for="embed-syntax-theme" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">Syntax Theme</label>
+              <select id="embed-syntax-theme" style="width: 100%;" onchange="updateEmbedCode()">
+                <option value="" disabled selected>Loading themes...</option>
+              </select>
+            </div>
+            <div>
+              <label for="embed-ui-theme" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">UI Theme</label>
+              <select id="embed-ui-theme" style="width: 100%;" onchange="updateEmbedCode()">
+                <option value="auto" ${currentPicoTheme === 'auto' ? 'selected' : ''}>Auto (System)</option>
+                <option value="dark" ${currentPicoTheme === 'dark' ? 'selected' : ''}>Dark</option>
+                <option value="light" ${currentPicoTheme === 'light' ? 'selected' : ''}>Light</option>
+              </select>
+            </div>
+          </div>
           <div>
             <label for="embed-size" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">Preset Size</label>
             <select id="embed-size" style="width: 100%; margin-bottom: 0.5rem;" onchange="updateEmbedCode()">
@@ -486,7 +510,7 @@
           <div id="custom-size-inputs" style="display: none; gap: 0.5rem;">
             <div>
               <label for="embed-width" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; display: block;">Width</label>
-              <input type="number" id="embed-width" value="100%" style="width: 100%;" onchange="updateEmbedCode()">
+              <input type="text" id="embed-width" value="100%" style="width: 100%;" onchange="updateEmbedCode()">
             </div>
             <div>
               <label for="embed-height" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; display: block;">Height</label>
@@ -516,8 +540,35 @@
       primaryButtonText: 'Close',
       showSecondaryButton: false,
       onShow: (modal) => {
+        // Load syntax themes via API
+        fetch('/api/themes')
+          .then(response => response.json())
+          .then(themes => {
+            const syntaxSelect = document.getElementById('embed-syntax-theme');
+            syntaxSelect.innerHTML = '';
+
+            themes.forEach(theme => {
+              const option = document.createElement('option');
+              option.value = theme.name;
+              option.textContent = theme.name;
+              option.selected = theme.name === currentSyntaxTheme;
+              syntaxSelect.appendChild(option);
+            });
+
+            // Initialize embed code after themes are loaded
+            updateEmbedCode();
+          })
+          .catch(err => {
+            console.error('Failed to load themes:', err);
+            const syntaxSelect = document.getElementById('embed-syntax-theme');
+            syntaxSelect.innerHTML = '<option value="default" selected>Default</option>';
+            updateEmbedCode();
+          });
+
         // Make updateEmbedCode and copyEmbedCode available globally
         window.updateEmbedCode = function() {
+          const syntaxTheme = document.getElementById('embed-syntax-theme').value;
+          const uiTheme = document.getElementById('embed-ui-theme').value;
           const size = document.getElementById('embed-size').value;
           const showLines = document.getElementById('embed-lines').checked;
           const showUi = document.getElementById('embed-ui').checked;
@@ -538,12 +589,12 @@
 
           // Build URL parameters
           const params = new URLSearchParams();
+          params.append('theme', syntaxTheme);
+          params.append('mode', uiTheme);
           if (showLines) params.append('lines', 'true');
           if (!showUi) params.append('ui', 'false');
 
-          const paramsString = params.toString();
-          const embedUrlWithParams = paramsString ? `${embedUrl}?${paramsString}` : embedUrl;
-
+          const embedUrlWithParams = `${embedUrl}?${params.toString()}`;
           const embedCode = `<iframe src="${embedUrlWithParams}" width="${width}" height="${height}" frameborder="0"></iframe>`;
           document.getElementById('embed-code').value = embedCode;
         };

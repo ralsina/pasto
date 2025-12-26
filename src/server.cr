@@ -1244,6 +1244,7 @@ module Pasto
 
     # Parse embed options from query parameters
     embed_theme = env.params.query["theme"]? || paste.theme
+    embed_mode = env.params.query["mode"]? || "auto"  # "auto", "light", or "dark"
     embed_lines = env.params.query["lines"]? == "true"
     embed_ui = env.params.query["ui"]? != "false" # default true
     embed_width = env.params.query["width"]?.try(&.to_i) || 600
