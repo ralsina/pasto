@@ -1260,6 +1260,34 @@ module Pasto
     host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
     base_url = "#{scheme}://#{host}"
 
+    # Check cache for anonymous users
+    current_user = Pasto.get_current_user(env)
+    unless current_user
+      cache_key = Pasto::Cache.generate_cache_key(env)
+
+      if cached_metadata = Pasto::Cache.get(cache_key)
+        # Serve cached content
+        if cached_body = Pasto::Cache.get_body(cache_key)
+          env.response.content_type = cached_metadata.mime_type
+          # Restore cached headers
+          cached_metadata.headers.each do |key, value|
+            env.response.headers[key] = value
+          end
+          next cached_body
+        end
+      end
+
+      # Render the embed view
+      content = render "src/views/embed.ecr"
+
+      # Cache the rendered HTML (1 hour cache for embeds)
+      headers = Hash(String, String).new
+      headers["X-Embed-Cache"] = "HIT"
+      Pasto::Cache.set(cache_key, content, "text/html", 3600, headers)
+
+      next content
+    end
+
     # Render embed view (minimal layout, no sidebar)
     render "src/views/embed.ecr"
   end
