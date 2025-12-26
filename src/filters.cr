@@ -13,7 +13,12 @@ module Pasto
     # Security headers filter
     def self.add_security_headers(env)
       env.response.headers["X-Content-Type-Options"] = "nosniff"
-      env.response.headers["X-Frame-Options"] = "DENY"
+
+      # Allow framing ONLY for embed endpoints, deny for all others
+      unless env.request.path.ends_with?("/embed")
+        env.response.headers["X-Frame-Options"] = "DENY"
+      end
+
       env.response.headers["X-XSS-Protection"] = "1; mode=block"
 
       # Auth debug mode detection header

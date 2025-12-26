@@ -1214,6 +1214,55 @@ module Pasto
     content
   end
 
+  # Embed endpoint for iframe embedding (must come before /:id route)
+  get "/:id/embed" do |env|
+    id = env.params.url["id"]
+
+    # Validate access using centralized function
+    access = Pasto.validate_paste_access(env)
+    unless access.allowed?
+      halt env, access.status_code
+    end
+
+    if access.paste
+      paste = access.paste.as(Pasto::Paste)
+    else
+      halt env, 404
+    end
+
+    # Disallow embeds for burn-after-reading pastes
+    if paste.burn_after_reading?
+      env.response.status_code = 403
+      next "Burn-after-reading pastes cannot be embedded"
+    end
+
+    # Disallow embeds for encrypted pastes
+    if paste.is_encrypted?
+      env.response.status_code = 403
+      next "Encrypted pastes cannot be embedded"
+    end
+
+    # Parse embed options from query parameters
+    embed_theme = env.params.query["theme"]? || paste.theme
+    embed_lines = env.params.query["lines"]? == "true"
+    embed_ui = env.params.query["ui"]? != "false" # default true
+    embed_width = env.params.query["width"]?.try(&.to_i) || 600
+    embed_height = env.params.query["height"]?.try(&.to_i) || 400
+    embed_lang = env.params.query["lang"]?
+
+    # Generate highlighted content
+    highlighted_content = paste.highlight(embed_lang)[0]
+
+    # Calculate base URL for "View on Pasto" link
+    # Respect reverse proxy headers
+    scheme = env.request.headers["X-Forwarded-Proto"]? || "http"
+    host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
+    base_url = "#{scheme}://#{host}"
+
+    # Render embed view (minimal layout, no sidebar)
+    render "src/views/embed.ecr"
+  end
+
   get "/:id" do |env|
     id = env.params.url["id"]
     request_path = env.request.path

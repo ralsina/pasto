@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= HTML.escape(paste.display_title) %> - Pasto Embed</title>
+
+  <!-- Pico CSS (minimal) -->
+  <link rel="stylesheet" href="/assets/pico.min.css">
+
+  <!-- Syntax highlighting CSS -->
+  <link rel="stylesheet" href="/syntax/<%= embed_theme %>/dark">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      font-family: 'Chivo', 'Chivo Mono', monospace;
+      background: var(--pico-background-color);
+      color: var(--pico-color);
+    }
+
+    .embed-header {
+      background: var(--pico-secondary-background);
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--pico-border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .embed-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .embed-meta {
+      font-size: 0.75rem;
+      color: var(--pico-muted-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .embed-link {
+      font-size: 0.75rem;
+      color: var(--pico-primary);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .embed-link:hover {
+      text-decoration: underline;
+    }
+
+    .embed-content {
+      padding: 1rem;
+      overflow: auto;
+      max-height: <%= embed_height %>px;
+    }
+
+    .embed-content pre {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      border: none;
+      overflow: visible;
+    }
+
+    .embed-content code {
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    /* Hide header if ui=false */
+    .no-ui .embed-header {
+      display: none;
+    }
+
+    /* Error state */
+    .embed-error {
+      padding: 2rem;
+      text-align: center;
+      color: var(--pico-del-color);
+    }
+
+    .embed-error h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .embed-error p {
+      font-size: 0.9rem;
+      color: var(--pico-muted-color);
+    }
+  </style>
+</head>
+<body<% unless embed_ui %> class="no-ui"<% end %>>
+
+  <% if embed_ui %>
+  <div class="embed-header">
+    <h1 class="embed-title"><%= HTML.escape(paste.display_title) %></h1>
+    <div class="embed-meta">
+      <% if paste.language %>
+      <span><%= HTML.escape(paste.language.try(&.capitalize) || "Unknown") %></span>
+      <% end %>
+      <a href="<%= base_url %>/<%= paste.sepia_id %>" target="_blank" rel="noopener noreferrer" class="embed-link">
+        View on Pasto →
+      </a>
+    </div>
+  </div>
+  <% end %>
+
+  <div class="embed-content">
+    <%= highlighted_content %>
+  </div>
+
+</body>
+</html>
