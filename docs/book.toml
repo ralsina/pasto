@@ -1,0 +1,31 @@
+[book]
+authors = ["Roberto Alsina"]
+title = "Pasto Documentation"
+description = "Comprehensive documentation for Pasto - A modern pastebin with live syntax highlighting, SSH access, and AI assistant integration"
+language = "en"
+multilingual = false
+src = "src"
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[preprocessor.toc]
+command = "mdbook-toc"
+renderer = ["html"]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "coal"
+smart-punctuation = true
+git-repository-url = "https://github.com/ralsina/pasto"
+edit-url-template = "https://github.com/ralsina/pasto/edit/main/docs/{path}"
+
+[output.html.search]
+limit-results = 30
+
+[output.html.code]
+git-repository-url = "https://github.com/ralsina/pasto"
