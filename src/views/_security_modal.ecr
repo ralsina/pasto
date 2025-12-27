@@ -48,6 +48,17 @@ function showSharedSecurityModal(initialSettings, options = {}) {
       <!-- Expiration -->
       <div>
         <label for="security-expiration" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i data-lucide="clock" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;"></i>Expiration</label>
+
+        <% if mode == "edit" && paste && paste.expires_at.year < 9999 %>
+          <p style="font-size: 0.875rem; margin-bottom: 0.5rem; padding: 0.5rem; background: var(--pico-secondary-background); border-radius: var(--pico-border-radius); border-left: 3px solid var(--pico-primary);">
+            <i data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 0.25rem;"></i>
+            Currently expires: <strong><%= paste.expires_at.to_s("%Y-%m-%d %H:%M") %> UTC</strong>
+          </p>
+          <p style="font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--pico-muted-color);">
+            Select a preset below to change expiration, or leave as-is to keep current setting.
+          </p>
+        <% end %>
+
         <select id="security-expiration" style="width: 100%; padding: 0.5rem;">
           <option value="">Never</option>
           <option value="10m" ${securitySettings.expiration === '10m' ? 'selected' : ''}>10 minutes</option>

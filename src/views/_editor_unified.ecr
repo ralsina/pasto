@@ -131,7 +131,24 @@
     encryptionPassword: null
   <% else %>
     accessControl: '<%= paste && paste.private? ? "private" : "public" %>',
-    expiration: '<%= paste && paste.expires_at.year != 9999 ? paste.expires_at.to_s("%Y-%m-%d") : "" %>',
+    expiration: <%= if paste && paste.expires_at.year != 9999
+      # Calculate which preset matches the current expiration
+      expires_at = paste.expires_at
+      now = Time.utc
+      diff_hours = (expires_at - now).total_hours
+
+      preset = case diff_hours
+      when ..0.167 then "10m"     # 0-10 minutes
+      when 0.167..1 then "1h"      # 10 min - 1 hour
+      when 1..24 then "1d"         # 1-24 hours
+      when 24..168 then "1w"       # 1-7 days
+      when 168..730 then "1M"      # 7-30 days
+      else ""
+      end
+      "\"#{preset}\""
+    else
+      "\"\""
+    end %>,
     burnAfterReading: <%= paste && paste.burn_after_reading? ? "true" : "false" %>,
     encryptionEnabled: <%= paste && paste.is_encrypted? ? "true" : "false" %>,
     encryptionPassword: null
