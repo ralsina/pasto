@@ -9,6 +9,7 @@
   - [Web Interface](./user-guide/web-interface.md)
   - [SSH Access](./user-guide/ssh-access.md)
   - [CLI Client](./user-guide/cli.md)
+  - [VS Code Extension](./user-guide/vscode-extension.md)
   - [Encryption](./user-guide/encryption.md)
   - [User Accounts](./user-guide/user-accounts.md)
   - [Themes](./user-guide/themes.md)
