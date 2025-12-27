@@ -50,15 +50,14 @@ module Pasto
     # Build consolidated CSS
     result = [] of String
 
-    # Add consolidated rules for each highlight.js class
+    # Add all individual rules with highlight.js class aliases
+    # This preserves all specific styling properties instead of consolidating
     hljs_to_selectors.each do |hljs_class, selectors|
-      # Find the most generic selector (shortest, usually the base one)
-      # For comments, this will be ".c" instead of ".ch", ".cp", etc.
-      generic_selector = selectors.min_by(&.size)
-
-      if properties = original_rules[generic_selector]?
-        # Use only the generic selector with the hljs class
-        result << "#{generic_selector}, #{hljs_class} { #{properties} }"
+      selectors.each do |tartrazine_selector|
+        if properties = original_rules[tartrazine_selector]?
+          # Include each selector with its own properties, plus hljs class alias
+          result << "#{tartrazine_selector}, .#{hljs_class} { #{properties} }"
+        end
       end
     end
 
