@@ -1,0 +1,171 @@
+{
+  "name": "pasto",
+  "displayName": "Pasto Pastebin",
+  "description": "Create and manage Pasto pastes from VS Code",
+  "version": "0.1.0",
+  "publisher": "ralsina",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Snippets"
+  ],
+  "keywords": [
+    "pastebin",
+    "paste",
+    "share",
+    "code sharing",
+    "pasto"
+  ],
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ralsina/pasto"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "pasto.createPaste",
+        "title": "Create Pasto Paste",
+        "category": "Pasto",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "pasto.fetchPaste",
+        "title": "Fetch Paste by ID",
+        "category": "Pasto",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "pasto.configureApiKey",
+        "title": "Configure API Key",
+        "category": "Pasto",
+        "icon": "$(key)"
+      },
+      {
+        "command": "pasto.refreshPastes",
+        "title": "Refresh Pastes",
+        "category": "Pasto",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "pasto.deletePaste",
+        "title": "Delete Paste",
+        "category": "Pasto",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "pasto.copyPasteURL",
+        "title": "Copy Paste URL",
+        "category": "Pasto",
+        "icon": "$(link)"
+      },
+      {
+        "command": "pasto.openPaste",
+        "title": "Open Paste",
+        "category": "Pasto",
+        "icon": "$(go-to-file)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "pastoView",
+          "name": "My Pastes",
+          "icon": "$(file-code)",
+          "contextualTitle": "Pasto Pastes"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "pastoView",
+        "contents": "No pastes found.\n[Create Paste](command:pasto.createPaste)\n[Configure API Key](command:pasto.configureApiKey)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "pasto.createPaste",
+          "when": "editorHasSelection",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "pasto.copyPasteURL",
+          "when": "view == pastoView && viewItem == paste",
+          "group": "inline@1"
+        },
+        {
+          "command": "pasto.deletePaste",
+          "when": "view == pastoView && viewItem == paste",
+          "group": "inline@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "pasto.refreshPastes",
+          "when": "view == pastoView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Pasto",
+      "properties": {
+        "pasto.instanceUrl": {
+          "type": "string",
+          "default": "https://pasto1.ralsina.me",
+          "description": "Pasto instance URL (supports self-hosted instances)",
+          "order": 1
+        },
+        "pasto.defaultPrivate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Create private pastes by default",
+          "order": 2
+        },
+        "pasto.defaultExpiry": {
+          "type": "string",
+          "enum": ["never", "1hour", "1day", "1week", "1month"],
+          "default": "never",
+          "description": "Default paste expiration time",
+          "order": 3
+        },
+        "pasto.autoDetectLanguage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect language from file extension",
+          "order": 4
+        },
+        "pasto.copyUrlAfterCreate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically copy paste URL to clipboard after creation",
+          "order": 5
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.74.0",
+    "@vscode/test-electron": "^2.3.0",
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.19.0"
+  },
+  "dependencies": {}
+}
