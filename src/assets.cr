@@ -8,6 +8,12 @@ module Pasto
     bake_folder "baked/assets"
   end
 
+  # Font assets for PNG preview generation
+  class FontAssets
+    extend BakedFileSystem
+    bake_folder "baked/fonts"
+  end
+
   # Favicon redirect for browsers that request /favicon without extension
   get "/favicon" do |env|
     env.response.status_code = 301

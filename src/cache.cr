@@ -176,7 +176,7 @@ def generate_placeholder_file(message : String) : String
     temp_font_path = File.join(temp_dir, "spleen-32x64.pcf")
 
     unless File.exists?(temp_font_path)
-      font_data = Pasto::PastoAssets.get("fonts/spleen-32x64.pcf")
+      font_data = Pasto::FontAssets.get("spleen-32x64.pcf")
       File.write(temp_font_path, font_data)
     end
 
