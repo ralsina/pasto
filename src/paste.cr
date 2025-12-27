@@ -56,7 +56,8 @@ module Pasto
       selectors.each do |tartrazine_selector|
         if properties = original_rules[tartrazine_selector]?
           # Include each selector with its own properties, plus hljs class alias
-          result << "#{tartrazine_selector}, .#{hljs_class} { #{properties} }"
+          # hljs_class already includes the dot (e.g., ".hljs-keyword")
+          result << "#{tartrazine_selector}, #{hljs_class} { #{properties} }"
         end
       end
     end
