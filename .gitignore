@@ -7,7 +7,7 @@ bin/ameba
 *.dwarf
 
 # Runtime data
-data/
+/data/
 public/cache/
 
 # IDE files
