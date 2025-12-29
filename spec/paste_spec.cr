@@ -73,7 +73,7 @@ describe Pasto::Paste do
       loaded.not_nil!.content.should eq("Load test")
     end
 
-    pending "returns nil for non-existent paste" do
+    it "returns nil for non-existent paste" do
       # Note: This test fails due to exception handling in from_file method
       # The method should catch the exception and return nil, but currently doesn't
       loaded = Pasto::Paste.from_file("non-existent-id")
@@ -81,9 +81,8 @@ describe Pasto::Paste do
     end
   end
 
-  describe "#delete" do
-    pending "removes paste from storage" do
-      # Note: This test fails due to exception handling in from_file method after deletion
+  describe "#delete_completely!" do
+    it "removes paste from storage" do
       paste = Pasto::Paste.new("Test content", title: "Test Delete")
       paste.save
 
@@ -92,9 +91,9 @@ describe Pasto::Paste do
       found.should_not be_nil
 
       # Delete it
-      paste.delete
+      paste.delete_completely!
 
-      # Verify it's gone - should raise exception or return nil
+      # Verify it's gone - should return nil
       found_after = Pasto::Paste.from_file(paste.sepia_id)
       found_after.should be_nil
     end

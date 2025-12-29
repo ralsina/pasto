@@ -205,14 +205,19 @@ module Pasto
       paste
     rescue Enumerable::EmptyError
       # If latest() fails with empty enumerable, try direct load
-      paste = Sepia::Storage.load(Paste, id)
-      # Check if paste has expired - if so, delete it and return nil
-      if paste && paste.expired?
-        Pasto::Logging.info("Paste #{id} has expired - deleting permanently", "⏰")
-        paste.delete_completely!
-        return nil
+      begin
+        paste = Sepia::Storage.load(Paste, id)
+        # Check if paste has expired - if so, delete it and return nil
+        if paste && paste.expired?
+          Pasto::Logging.info("Paste #{id} has expired - deleting permanently", "⏰")
+          paste.delete_completely!
+          return nil
+        end
+        paste
+      rescue
+        # If direct load also fails, return nil
+        nil
       end
-      paste
     rescue
       # Catch any other exceptions (e.g., "not found in storage")
       nil
