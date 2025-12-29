@@ -1044,9 +1044,11 @@
           <i data-lucide="history" style="width: 20px; height: 20px;"></i>
         </a>
         <% end %>
+        <% if current_user && paste.user_id && paste.user_id == current_user.sepia_id %>
         <button onclick="deletePaste()" class="controls-button" title="Delete Paste" aria-label="Delete paste permanently" style="color: var(--pico-del-color);">
           <i data-lucide="trash-2" style="width: 20px; height: 20px;"></i>
         </button>
+        <% end %>
         <% if is_version_view %>
         <a href="/<%= base_paste_id %>" class="controls-button" title="Back to Latest" aria-label="Back to Latest" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>

@@ -146,7 +146,9 @@ module Pasto
       current_user_id = current_user.try(&.sepia_id)
 
       # Check ownership requirement
-      if current_user_id == paste.user_id
+      # Anonymous pastes (paste.user_id is nil) cannot be owned/deleted by anyone
+      # Logged-in users can only access pastes where user_id matches
+      if current_user_id && paste.user_id && current_user_id == paste.user_id
         return AccessResult.new(true, paste: paste)
       else
         # Access denied - ownership required or paste is private and user is not owner
@@ -273,7 +275,14 @@ module Pasto
       # edit and delete require ownership
       access_result = Pasto.validate_paste_access(env, require_owner: true)
       unless access_result.success?
-        halt env, access_result.status_code
+        # Return JSON for delete API routes, plain text for web UI
+        if path.includes?("/delete")
+          env.response.content_type = "application/json"
+          error_response = {"success" => false, "error" => "Access denied"}.to_json
+          halt env, access_result.status_code, error_response
+        else
+          halt env, access_result.status_code
+        end
       end
     end
   end
