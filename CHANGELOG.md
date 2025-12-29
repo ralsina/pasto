@@ -1,5 +1,12 @@
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- Missing file
+- Make Paste.from_file properly handle not-found exceptions
+- Critical security vulnerability in anonymous paste access control
+## [0.9.0] - 2025-12-27
+
 ### 🚀 Features
 
 - Add VS Code extension for Pasto
@@ -24,6 +31,7 @@
 
 - Update deps
 - Update deps
+- *(release)* V0.9.0
 ## [0.8.0] - 2025-12-26
 
 ### 🚀 Features
