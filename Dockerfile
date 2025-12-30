@@ -4,7 +4,7 @@
 # ============================================
 # Stage 1: Build the Crystal application
 # ============================================
-FROM alpine:edge AS builder
+FROM alpine:3.23 AS builder
 
 # Install Crystal and build dependencies
 RUN apk add --no-cache \
