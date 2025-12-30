@@ -35,10 +35,7 @@ echo "Generated changelog: $GIT_CLIFF_CHANGELOG"
 
 
 
-# Step 5: Build static binaries and files
-./build_static.sh
 
-echo "Static binaries built."
 
 # Step 4: Update dependencies and commit version bump, changelogs, and lockfile
 shards update --production
@@ -46,6 +43,11 @@ if ! git diff --quiet shard.yml "$GIT_CLIFF_CHANGELOG" CHANGELOG.md shard.lock; 
   git add shard.yml "$GIT_CLIFF_CHANGELOG" CHANGELOG.md shard.lock
   git commit -m "chore(release): v$NEW_VERSION"
 fi
+
+# Step 5: Build static binaries and files
+./build_static.sh
+echo "Static binaries built."
+
 
 git tag "v$NEW_VERSION"
 git push
