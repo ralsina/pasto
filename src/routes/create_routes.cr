@@ -124,10 +124,10 @@ module Pasto
       current_user = Pasto.get_current_user(env)
 
       # Get all theme-related template variables
-      theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config) # ameba:disable Lint/UselessAssign
+      theme_vars = Pasto::ThemeHelper.setup_vars(current_user, config)
 
       # Set template variables (ECR template will have access to these)
-      is_home_page = true # ameba:disable Lint/UselessAssign
+      is_home_page = true
       page_title = "Pasto"
 
       # Social media metadata (for home page)
