@@ -24,6 +24,12 @@ module Pasto
     # Setup all theme-related template variables
     def self.setup_vars(current_user : User?, config : Pasto::Config)
       themes = get_theme_preferences(current_user, config)
+      base_path = config.base_path
+
+      # Create a path helper that properly concatenates base_path with routes
+      path_helper = ->(route : String) {
+        PathHelper.with_base_path(route, base_path)
+      }
 
       {
         saved_pico_theme:    themes[:pico_theme],
@@ -33,6 +39,8 @@ module Pasto
         pico_theme_file:     themes[:pico_color] == "css" ? "pico.min.css" : "pico.#{themes[:pico_color]}.min.css",
         theme:               config.theme,
         version:             VERSION,
+        base_path:           base_path,
+        path:                path_helper,
       }
     end
   end

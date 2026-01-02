@@ -4,7 +4,7 @@
 
 <div class="help-markdown" id="help-markdown"></div>
 <script>
-  fetch('/assets/HELP.md')
+  fetch(basePath + '/assets/HELP.md')
     .then(response => response.text())
     .then(helpMarkdown => {
       document.getElementById('help-markdown').innerHTML = marked.parse(helpMarkdown);

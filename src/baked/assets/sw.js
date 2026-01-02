@@ -1,14 +1,14 @@
-const CACHE_NAME = 'pasto-v1';
+const CACHE_NAME = 'pasto-v2';
+// Cache only assets within the service worker's scope (/pasto/assets/)
 const urlsToCache = [
-  '/',
-  '/assets/bundle.js',
-  '/assets/codejar.min.js',
-  '/assets/crypto.js',
-  '/assets/language-mapping.js',
-  '/assets/editor-shared.js',
-  '/assets/mobile_controls.js',
-  '/assets/manifest.json',
-  '/assets/favicon.png'
+  './bundle.js',
+  './codejar.min.js',
+  './crypto.js',
+  './language-mapping.js',
+  './editor-shared.js',
+  './mobile_controls.js',
+  './manifest.json',
+  './favicon.png'
 ];
 
 // Install service worker and cache resources
@@ -16,7 +16,24 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache)
+          .catch(error => {
+            console.error('Failed to cache some resources:', error);
+            // Log which URLs failed
+            return Promise.all(
+              urlsToCache.map(url => {
+                return fetch(url).then(response => {
+                  if (!response.ok) {
+                    console.error('Failed to fetch:', url, response.status);
+                  }
+                  return response;
+                }).catch(e => {
+                  console.error('Error fetching:', url, e);
+                  throw e;
+                });
+              })
+            );
+          });
       })
   );
 });

@@ -265,6 +265,7 @@ class MockRateLimitConfig
   property rate_http_window : Int32 = 3600
   property rate_backup_limit : Int32 = 5
   property rate_backup_window : Int32 = 86400
+  property base_path : String = "/"
 
   def initialize(
     @rate_paste_limit = 100,
@@ -272,6 +273,7 @@ class MockRateLimitConfig
     @rate_highlight_limit = 50,
     @rate_login_limit = 10,
     @rate_http_limit = 1000,
+    @base_path = "/",
   )
   end
 end

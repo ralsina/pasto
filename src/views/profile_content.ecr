@@ -9,8 +9,8 @@
     if (controlsGroup) {
       // Define buttons for profile page
       const buttons = [
-        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
-        {type: "link", href: "/help", icon: "help-circle", title: "Help"}
+        {type: "link", href: `${basePath}/`, icon: "plus", title: "Create New Paste"},
+        {type: "link", href: `${basePath}/help`, icon: "help-circle", title: "Help"}
         <% if current_user %>
         ,
         {type: "button", icon: "log-out", title: "Logout", action: "document.getElementById('logout-form').submit()", style: "danger"}
@@ -46,7 +46,7 @@
     }
   });
 </script>
-<form id="logout-form" method="post" action="/logout" style="display: none;"></form>
+<form id="logout-form" method="post" action="<%= theme_vars[:path].call("/logout") %>" style="display: none;"></form>
 
 <div class="profile-container">
   <% if current_user %>
@@ -69,7 +69,7 @@
       <h2>User Profile</h2>
       
       <!-- Edit Name Form -->
-      <form method="post" action="/profile" class="edit-name-form">
+      <form method="post" action="<%= theme_vars[:path].call("/profile") %>" class="edit-name-form">
         <label for="name">Display Name</label>
         <div class="input-group">
           <input type="text" 
@@ -110,7 +110,7 @@
               <span>Showing page <%= page_number %> of <%= page_count %></span>
               <div class="pagination-controls">
                 <% if page_number > 1 %>
-                  <a href="/profile?page=<%= page_number - 1 %>" class="pagination-btn prev">
+                  <a href="<%= theme_vars[:path].call("/profile") %>?page=<%= page_number - 1 %>" class="pagination-btn prev">
                     <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
                     Previous
                   </a>
@@ -121,7 +121,7 @@
                 </span>
 
                 <% if page_number < page_count %>
-                  <a href="/profile?page=<%= page_number + 1 %>" class="pagination-btn next">
+                  <a href="<%= theme_vars[:path].call("/profile") %>?page=<%= page_number + 1 %>" class="pagination-btn next">
                     Next
                     <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
                   </a>
@@ -134,7 +134,7 @@
               <% user_pastes.each do |paste| %>
               <div class="paste-item <%= paste.burn_after_reading? ? "burn-after-reading" : "" %>">
                 <div class="paste-link">
-                  <a href="/<%= paste.sepia_id %>" class="paste-content">
+                  <a href="<%= Pasto::PathHelper.with_base_path("/#{paste.sepia_id}", theme_vars[:base_path]) %>" class="paste-content">
                     <span class="paste-title">
                       <%= HTML.escape(paste.display_title) %>
                       <% if paste.burn_after_reading? %>
@@ -155,7 +155,7 @@
                   </a>
                   <div class="paste-actions">
                     <% unless paste.burn_after_reading? %>
-                    <a href="/<%= paste.sepia_id %>/edit" class="edit-btn" title="Edit Paste" aria-label="Edit Paste">
+                    <a href="<%= Pasto::PathHelper.with_base_path("/#{paste.sepia_id}/edit", theme_vars[:base_path]) %>" class="edit-btn" title="Edit Paste" aria-label="Edit Paste">
                       <i data-lucide="edit-2"></i>
                     </a>
                     <% end %>
@@ -170,7 +170,7 @@
             <div class="pagination-bottom">
               <div class="pagination-controls">
                 <% if page_number > 1 %>
-                  <a href="/profile?page=<%= page_number - 1 %>" class="pagination-btn prev">
+                  <a href="<%= theme_vars[:path].call("/profile") %>?page=<%= page_number - 1 %>" class="pagination-btn prev">
                     <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
                     Previous
                   </a>
@@ -181,7 +181,7 @@
                 </span>
 
                 <% if page_number < page_count %>
-                  <a href="/profile?page=<%= page_number + 1 %>" class="pagination-btn next">
+                  <a href="<%= theme_vars[:path].call("/profile") %>?page=<%= page_number + 1 %>" class="pagination-btn next">
                     Next
                     <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
                   </a>
@@ -237,7 +237,7 @@
               <% end %>
             </div>
             <div class="api-docs-link">
-              <a href="/api-docs" target="_blank" class="docs-btn">
+              <a href="<%= theme_vars[:path].call("/api-docs") %>" target="_blank" class="docs-btn">
                 <i data-lucide="book-open"></i>
                 View API Documentation
               </a>
@@ -423,7 +423,7 @@ function confirmRevokeKey(apiKeyId) {
 
 function confirmRevokeSSHKey(fingerprint, keyType) {
   showConfirmDialog(`Are you sure you want to revoke SSH key "${keyType}"? This action cannot be undone and will immediately invalidate the key.`, () => {
-    fetch('/profile/ssh-keys/revoke', {
+    fetch(basePath + '/profile/ssh-keys/revoke', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -465,7 +465,7 @@ function createBackup() {
   button.disabled = true;
   button.innerHTML = '<i data-lucide="loader" class="spin" style="width: 16px; height: 16px; margin-right: 6px;"></i> Creating...';
 
-  fetch('/profile/backups/create', {
+  fetch(basePath + '/profile/backups/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <% base_tag = theme_vars[:base_path] == "/" ? "" : "<base href=\"#{theme_vars[:base_path]}/\">" %>
+  <%= base_tag %>
   <title>Pasto</title>
   <%# Include shared utilities and styles %>
   <%= render "src/views/_shared_utils.ecr" %>
   <%= render "src/views/_shared_styles.ecr" %>
-  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/assets/manifest.json">
+  <link rel="manifest" href="assets/manifest.json">
   <meta name="theme-color" content="#0172ad">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -53,6 +55,7 @@
   <script>
     (function() {
       // Anonymous user: detect localStorage preferences immediately
+      const basePath = '<%= theme_vars[:base_path] %>';
       const savedTheme = localStorage.getItem('picoTheme') || 'dark';
       const savedColor = localStorage.getItem('picoColor') || 'green';
       const themeFile = savedColor === 'css' ? 'pico.min.css' : 'pico.' + savedColor + '.min.css';
@@ -63,14 +66,15 @@
       }
 
       // Write the stylesheet link inline - NOT preload, direct stylesheet
-      document.write('<link rel="stylesheet" href="/assets/' + themeFile + '" id="pico-css-link">');
+      const assetPath = basePath === '/' ? '/assets/' : basePath + '/assets/';
+      document.write('<link rel="stylesheet" href="' + assetPath + themeFile + '" id="pico-css-link">');
     })();
   </script>
   <% else %>
   <!-- For logged-in users, use server-provided themes -->
-  <link rel="stylesheet" href="/assets/<%= theme_vars[:pico_theme_file] %>" id="pico-css-link">
+  <link rel="stylesheet" href="<%= theme_vars[:path].call("/assets/#{theme_vars[:pico_theme_file]}") %>" id="pico-css-link">
   <% end %>
-  <link rel="stylesheet" href="/syntax/<%= theme_vars[:saved_syntax_theme] %>/<%= theme_vars[:resolved_pico_theme] %>" id="highlight-css-link">
+  <link rel="stylesheet" href="<%= theme_vars[:path].call("/syntax/#{theme_vars[:saved_syntax_theme]}/#{theme_vars[:resolved_pico_theme]}") %>" id="highlight-css-link">
 
   <script>
     // Async CSS loading function
@@ -85,19 +89,20 @@
       link.parentNode.replaceChild(stylesheet, link);
     }
   </script>
-  <script src="/assets/bundle.js" defer></script>
+  <script src="assets/bundle.js" defer></script>
   <!-- Encryption functionality -->
-  <script src="/assets/crypto.js" defer></script>
+  <script src="assets/crypto.js" defer></script>
   <!-- Language mapping for syntax highlighting -->
-  <script src="/assets/language-mapping.js" defer></script>
+  <script src="assets/language-mapping.js" defer></script>
   <!-- Shared editor functionality -->
-  <script src="/assets/editor-shared.js" defer></script>
-  <script src="/assets/mobile_controls.js" defer></script>
+  <script src="assets/editor-shared.js" defer></script>
+  <script src="assets/mobile_controls.js" defer></script>
   <!-- Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/assets/sw.js')
+        // Register service worker - scope will be /pasto/assets/ (the directory containing sw.js)
+        navigator.serviceWorker.register('assets/sw.js')
           .then(function(registration) {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           })
@@ -121,6 +126,25 @@
   <%= render "src/views/_critical_css.ecr" %>
 </head>
 <body>
+  <script>
+    // Global base path for all AJAX requests
+    window.PASTO_BASE_PATH = '<%= theme_vars[:base_path] %>';
+    const basePath = window.PASTO_BASE_PATH;
+
+    // Helper function to build URLs with base path
+    window.pastoUrl = function(path) {
+      // Ensure path starts with /
+      if (!path.startsWith('/')) {
+        path = '/' + path;
+      }
+      // If base_path is just /, return path as-is
+      if (window.PASTO_BASE_PATH === '/') {
+        return path;
+      }
+      // Otherwise, prepend base_path
+      return window.PASTO_BASE_PATH + path;
+    };
+  </script>
   <div class="app-layout">
     <!-- Sidebar -->
     <aside class="sidebar collapsed" id="sidebar">
@@ -293,13 +317,15 @@
       // Update Pico CSS
       const picoLink = document.getElementById('pico-css-link');
       if (picoLink) {
-        picoLink.href = `/assets/${picoColor === 'css' ? 'pico.min.css' : 'pico.' + picoColor + '.min.css'}`;
+        const cssFile = picoColor === 'css' ? 'pico.min.css' : 'pico.' + picoColor + '.min.css';
+        picoLink.href = (window.PASTO_BASE_PATH === '/' ? '/assets/' : window.PASTO_BASE_PATH + '/assets/') + cssFile;
       }
 
       // Update syntax theme
       const syntaxLink = document.getElementById('highlight-css-link');
       if (syntaxLink) {
-        syntaxLink.href = `/syntax/${syntaxTheme}/${picoTheme === 'dark' ? 'dark' : 'light'}`;
+        const themePath = (window.PASTO_BASE_PATH === '/' ? '/syntax/' : window.PASTO_BASE_PATH + '/syntax/') + syntaxTheme + '/' + (picoTheme === 'dark' ? 'dark' : 'light');
+        syntaxLink.href = themePath;
       }
 
       // CodeJar theme is now handled by the enhanced /syntax endpoint
@@ -328,7 +354,7 @@
       formData.append('pico_color', picoColor);
       formData.append('syntax_theme', syntaxTheme);
 
-      fetch('/profile', {
+      fetch((window.PASTO_BASE_PATH === '/' ? '/profile' : window.PASTO_BASE_PATH + '/profile'), {
         method: 'POST',
         headers: {
           'X-Requested-With': 'XMLHttpRequest'
@@ -391,7 +417,7 @@
       }
 
       // Load syntax themes via API
-      fetch('/api/themes')
+      fetch((window.PASTO_BASE_PATH === '/' ? '/api/themes' : window.PASTO_BASE_PATH + '/api/themes'))
         .then(response => response.json())
         .then(themes => {
           const syntaxSelect = document.getElementById('syntax-theme');

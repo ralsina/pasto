@@ -8,6 +8,7 @@ module Pasto
 
   class Config
     property theme : String = "monokai"
+    property base_path : String = "/"
 
     def initialize(@args : Array(String))
     end
@@ -25,7 +26,7 @@ describe Pasto::ThemeHelper do
 
         # Create a mock config with required args parameter
         args = ["--port", "3000", "--storage-dir", "./data"]
-        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
         preferences = Pasto::ThemeHelper.get_theme_preferences(user, config)
 
@@ -37,7 +38,7 @@ describe Pasto::ThemeHelper do
       it "migrates 'auto' theme to 'dark'" do
         user = Pasto::User.new(name: "Test User")
         user.pico_theme = "auto"
-        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
         preferences = Pasto::ThemeHelper.get_theme_preferences(user, config)
 
@@ -47,7 +48,7 @@ describe Pasto::ThemeHelper do
 
       it "uses defaults when user preferences are nil" do
         user = Pasto::User.new(name: "Test User")
-        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
         preferences = Pasto::ThemeHelper.get_theme_preferences(user, config)
 
@@ -59,7 +60,7 @@ describe Pasto::ThemeHelper do
 
     describe "with anonymous user" do
       it "uses default themes" do
-        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
         preferences = Pasto::ThemeHelper.get_theme_preferences(nil, config)
 
@@ -75,7 +76,7 @@ describe Pasto::ThemeHelper do
         user.pico_theme = "light"
         user.pico_color = "blue"
         # No syntax_theme set
-        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+        config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
         config.theme = "custom-theme"
 
         preferences = Pasto::ThemeHelper.get_theme_preferences(user, config)
@@ -91,7 +92,7 @@ describe Pasto::ThemeHelper do
       user.pico_theme = "light"
       user.pico_color = "blue"
       user.syntax_theme = "github"
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
       config.theme = "test-theme"
 
       vars = Pasto::ThemeHelper.setup_vars(user, config)
@@ -110,7 +111,7 @@ describe Pasto::ThemeHelper do
       user.pico_theme = "light"
       user.pico_color = "blue"
       user.syntax_theme = "github"
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
       config.theme = "test-theme"
 
       vars = Pasto::ThemeHelper.setup_vars(user, config)
@@ -127,7 +128,7 @@ describe Pasto::ThemeHelper do
     it "sets CSS file name for 'css' color" do
       user = Pasto::User.new(name: "Test User")
       user.pico_color = "css"
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
       vars = Pasto::ThemeHelper.setup_vars(user, config)
 
@@ -137,7 +138,7 @@ describe Pasto::ThemeHelper do
     it "sets CSS file name for named color" do
       user = Pasto::User.new(name: "Test User")
       user.pico_color = "purple"
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
       vars = Pasto::ThemeHelper.setup_vars(user, config)
 
@@ -145,7 +146,7 @@ describe Pasto::ThemeHelper do
     end
 
     it "sets defaults for anonymous user" do
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
       config.theme = "monokai"
 
       vars = Pasto::ThemeHelper.setup_vars(nil, config)
@@ -159,7 +160,7 @@ describe Pasto::ThemeHelper do
 
     it "includes version from VERSION constant" do
       user = Pasto::User.new
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
       vars = Pasto::ThemeHelper.setup_vars(user, config)
 
@@ -173,7 +174,7 @@ describe Pasto::ThemeHelper do
     it "maintains consistency between saved and resolved theme" do
       user = Pasto::User.new
       user.pico_theme = "light"
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
       vars = Pasto::ThemeHelper.setup_vars(user, config)
 
@@ -184,7 +185,7 @@ describe Pasto::ThemeHelper do
     it "handles nil values gracefully" do
       user = Pasto::User.new
       # Don't set any preferences
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
       vars = Pasto::ThemeHelper.setup_vars(user, config)
 
@@ -199,7 +200,7 @@ describe Pasto::ThemeHelper do
     it "handles empty color string" do
       user = Pasto::User.new
       user.pico_color = ""
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
 
       # Should not raise an exception
       result = Pasto::ThemeHelper.setup_vars(user, config)
@@ -207,7 +208,7 @@ describe Pasto::ThemeHelper do
     end
 
     it "handles very long theme names" do
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
       config.theme = "a" * 1000
 
       # Should handle very long theme names without crashing
@@ -216,7 +217,7 @@ describe Pasto::ThemeHelper do
     end
 
     it "handles special characters in theme names" do
-      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data"])
+      config = Pasto::Config.new(["--port", "3000", "--storage-dir", "./data", "--base-path", "/"])
       config.theme = "theme-with-dashes_and_underscores"
 
       vars = Pasto::ThemeHelper.setup_vars(nil, config)

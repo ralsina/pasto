@@ -113,7 +113,7 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
   formData.append('language', languageSelect.value);
   formData.append('theme', syntaxThemeSelect.value || (window.pastoSyntaxTheme || 'default-dark'));
 
-  fetch('/highlight', {
+  fetch((window.PASTO_BASE_PATH === '/' ? '/highlight' : window.PASTO_BASE_PATH + '/highlight'), {
     method: 'POST',
     body: formData
   })
@@ -293,9 +293,9 @@ function restorePreviewVisibility() {
 }
 
 // Initialize language select with API data
-async function initializeLanguageSelect(languageSelectId, currentLanguage = null) {
+async function initializeLanguageSelect(languageSelectId, currentLanguage = null, basePath = '/') {
   try {
-    const response = await fetch('/api/languages');
+    const response = await fetch((window.PASTO_BASE_PATH === '/' ? '/api/languages' : window.PASTO_BASE_PATH + '/api/languages'));
     const languages = await response.json();
     const select = document.getElementById(languageSelectId);
 

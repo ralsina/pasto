@@ -8,14 +8,14 @@
     if (controlsGroup) {
       // Define buttons for 403 page
       const buttons = [
-        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
-        {type: "link", href: "/help", icon: "help-circle", title: "Help"}
+        {type: "link", href: `${basePath}/`, icon: "plus", title: "Create New Paste"},
+        {type: "link", href: `${basePath}/help`, icon: "help-circle", title: "Help"}
         <% if current_user %>
         ,
-        {type: "link", href: "/profile", icon: "user", title: "Profile"}
+        {type: "link", href: `${basePath}/profile`, icon: "user", title: "Profile"}
         <% else %>
         ,
-        {type: "link", href: "/auth/help", icon: "log-in", title: "Login"}
+        {type: "link", href: `${basePath}/auth/help`, icon: "log-in", title: "Login"}
         <% end %>
       ];
 
@@ -56,7 +56,7 @@
       <% if current_user %>
         This private paste belongs to another user. You can only access your own private pastes.
       <% else %>
-        This paste is private. Please <a href="/auth/help">log in</a> to access it, or ask the owner to make it public.
+        This paste is private. Please <a href="<%= theme_vars[:path].call("/auth/help") %>">log in</a> to access it, or ask the owner to make it public.
       <% end %>
     </p>
   </div>

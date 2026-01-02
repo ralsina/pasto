@@ -13,7 +13,7 @@
   <div id="anon-warning" class="anon-warning" style="display:none; margin: 1rem;">
     <i data-lucide="info"></i>
     You are not logged in. Pastes created will not be associated with an account and cannot be edited later.
-    <a href="/profile" style="margin-left:0.5em;">Log in to enable editing</a>
+    <a href="<%= theme_vars[:path].call("/profile") %>" style="margin-left:0.5em;">Log in to enable editing</a>
     <button id="anon-warning-dismiss" title="Dismiss" aria-label="Dismiss anonymous user warning" style="background:none;border:none;color:inherit;cursor:pointer;margin-left:0.5em;font-size:1.1em;vertical-align:middle;">&times;</button>
   </div>
   <script>
@@ -240,7 +240,7 @@
       formData.append('anonymous', 'true');
     }
 
-    fetch('/' + pasteId + '/edit', {
+    fetch((window.PASTO_BASE_PATH === '/' ? '/' : window.PASTO_BASE_PATH + '/') + pasteId + '/edit', {
       method: 'POST',
       body: formData
     })
@@ -248,7 +248,7 @@
       if (response.redirected) {
         window.location.href = response.url;
       } else if (response.ok) {
-        window.location.href = '/' + pasteId;
+        window.location.href = (window.PASTO_BASE_PATH === '/' ? '/' : window.PASTO_BASE_PATH + '/') + pasteId;
       } else {
         return response.text().then(text => {
           throw new Error(text);
@@ -533,7 +533,7 @@ async function createPaste(event) {
         formData.append('pending_paste_id', pasteId);
       }
 
-      const response = await fetch('/', {
+      const response = await fetch(window.PASTO_BASE_PATH === '/' ? '/' : window.PASTO_BASE_PATH + '/', {
         method: 'POST',
         body: formData
       });
@@ -805,7 +805,7 @@ async function createPaste(event) {
       },
       onClose: () => {
         // Redirect to home page after modal is closed
-        window.location.href = '/';
+        window.location.href = window.PASTO_BASE_PATH === '/' ? '/' : window.PASTO_BASE_PATH + '/';
       }
     });
   }
@@ -831,8 +831,8 @@ async function createPaste(event) {
       controlsHTML += `<button onclick="updatePaste()" class="controls-button" title="Save Changes" aria-label="Save Changes"><i data-lucide="save" style="width: 20px; height: 20px;"></i></button>`;
 
       // Navigation buttons - only in edit mode
-      controlsHTML += `<a href="/" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="plus" style="width: 20px; height: 20px;"></i></a>`;
-      controlsHTML += `<a href="/<%= paste_id %>" class="controls-button" title="Cancel" aria-label="Cancel" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i data-lucide="x" style="width: 20px; height: 20px;"></i></a>`;
+      controlsHTML += `<a href="<%= theme_vars[:path].call("/") %>" class="controls-button" title="Create New Paste" aria-label="Create New Paste" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="plus" style="width: 20px; height: 20px;"></i></a>`;
+      controlsHTML += `<a href="<%= theme_vars[:path].call("/\#{paste_id}") %>" class="controls-button" title="Cancel" aria-label="Cancel" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i data-lucide="x" style="width: 20px; height: 20px;"></i></a>`;
 <% else %>
       // Create mode buttons
       controlsHTML += `<button onclick="createPaste(event)" class="controls-button" title="Create Paste" aria-label="Create Paste"><i data-lucide="save" style="width: 20px; height: 20px;"></i></button>`;
@@ -843,10 +843,10 @@ async function createPaste(event) {
       controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || '<%= theme_vars[:saved_syntax_theme] %>')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" aria-label="Hide Preview" style="display: flex;"><i data-lucide="eye-off" style="width: 20px; height: 20px;"></i></button>`;
 
       // Shared help and profile buttons
-      controlsHTML += `<a href="/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+      controlsHTML += `<a href="${basePath}/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
         </a>
-        <a href="/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+        <a href="${basePath}/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="user" style="width: 20px; height: 20px;"></i>
         </a>`;
 
@@ -854,7 +854,7 @@ async function createPaste(event) {
     }
 
     // Dynamically import CodeJar as ES module
-    const { CodeJar } = await import('/assets/codejar.min.js');
+    const { CodeJar } = await import('<%= theme_vars[:path].call("/assets/codejar.min.js") %>');
 
     const editorElement = document.getElementById('editor');
 
@@ -1180,7 +1180,7 @@ async function createPaste(event) {
     }
 
     // Initialize language options via API
-    fetch('/api/languages')
+    fetch((window.PASTO_BASE_PATH === '/' ? '/api/languages' : window.PASTO_BASE_PATH + '/api/languages'))
       .then(response => response.json())
       .then(languages => {
         const languageSelect = document.getElementById('language');

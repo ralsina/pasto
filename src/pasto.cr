@@ -6,10 +6,11 @@ require "./logging"
 require "./preview_generator"
 require "./server"
 require "./api"
-
-# Register BakedFileHandler mounted on /assets path
-# This ensures it only handles /assets/* requests, leaving other paths to routes
-add_handler BakedFileHandler::BakedFileHandler.new(Pasto::PastoAssets, mount_path: "/assets")
+require "./path_helper"
+require "./routes/create_routes"
+require "./routes/paste_routes"
+require "./routes/profile_routes"
+require "./routes/utility_routes"
 require "./theme_helper"
 require "./rate_limit_helper"
 require "pasto-cache"
@@ -52,6 +53,7 @@ Options:
   --theme=<theme>           Syntax highlighting theme [default: default-dark].
   --max-paste-size=<size>   Maximum paste size in bytes [default: 102400].
   --base-url=<url>          Base URL for web interface [default: http://bind:port].
+  --base-path=<path>        Base path for URL routing (e.g., /pasto) [default: /].
   --auth-debug-mode         Enable authentication debug mode - auto-authenticate all requests (DO NOT USE IN PRODUCTION).
   --ssh-enabled=<bool>      Enable SSH server [default: false].
   --ssh-port=<port>         SSH port to listen on [default: 2222].
@@ -87,6 +89,7 @@ DOC
     property theme : String
     property max_paste_size : Int32
     property base_url : String
+    property base_path : String
     property? auth_debug_mode : Bool
     property? ssh_enabled : Bool
     property ssh_port : Int32
@@ -161,6 +164,10 @@ DOC
       else
         @base_url = base_url_option.rstrip("/")
       end
+
+      # Handle base_path - ensure it starts with / and doesn't end with /
+      base_path_option = docopt_options["--base-path"].to_s
+      @base_path = PathHelper.normalize_base_path(base_path_option)
     end
 
     def add_kemal_config
@@ -203,12 +210,14 @@ DOC
         puts "🔐 Starting SSH server on #{config.ssh_bind}:#{config.ssh_port}"
 
         # Build command arguments
+        # Include base_path in base_url for SSH server
+        ssh_base_url = config.base_url + (config.base_path == "/" ? "" : config.base_path)
         args = [
           "--ssh-port=#{config.ssh_port}",
           "--ssh-bind=#{config.ssh_bind}",
           "--storage-dir=#{config.storage_dir}",
           "--host-key=#{config.host_key}",
-          "--base-url=#{config.base_url}",
+          "--base-url=#{ssh_base_url}",
         ]
 
         # Start the SSH server process with filtered stderr
@@ -551,6 +560,17 @@ DOC
       puts "🛑 DO NOT USE IN PRODUCTION - SERIOUS ABUSE RISK 🛑".center(80)
       puts "="*80 + "\n"
     end
+
+    # Register all routes (must happen after config is initialized)
+    register_create_routes
+    register_paste_routes
+    register_profile_routes
+    register_utility_routes
+    register_api_routes
+
+    # Register BakedFileHandler for assets with base_path support
+    assets_mount_path = PathHelper.with_base_path("/assets", config.base_path)
+    add_handler BakedFileHandler::BakedFileHandler.new(Pasto::PastoAssets, mount_path: assets_mount_path)
 
     # Allow multiple instances to bind to the same port (SO_REUSEPORT)
     Kemal.run do |config|

@@ -6,12 +6,13 @@
   <title><%= HTML.escape(paste.display_title) %> - Pasto Embed</title>
 
   <!-- Pico CSS (minimal) -->
-  <link rel="stylesheet" href="/assets/pico.min.css">
+  <link rel="stylesheet" href="<%= embed_base_path == "/" ? "" : embed_base_path %>/assets/pico.min.css">
 
   <% if embed_mode == "auto" %>
   <!-- Auto-detect mode: will be set by JavaScript -->
   <script>
     (function() {
+      const basePath = '<%= embed_base_path %>';
       const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
       const mode = prefersLight ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', mode);
@@ -19,13 +20,13 @@
       // Inject the correct syntax CSS
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = '/syntax/<%= embed_theme %>/' + mode;
+      link.href = (basePath === '/' ? '' : basePath) + '/syntax/<%= embed_theme %>/' + mode;
       document.head.appendChild(link);
     })();
   </script>
   <% else %>
   <!-- Explicit mode: set directly -->
-  <link rel="stylesheet" href="/syntax/<%= embed_theme %>/<%= embed_mode %>">
+  <link rel="stylesheet" href="<%= embed_base_path == "/" ? "" : embed_base_path %>/syntax/<%= embed_theme %>/<%= embed_mode %>">
   <% end %>
 
   <style>
@@ -128,7 +129,7 @@
       <% if paste.language %>
       <span><%= HTML.escape(paste.language.try(&.capitalize) || "Unknown") %></span>
       <% end %>
-      <a href="<%= base_url %>/<%= paste.sepia_id %>" target="_blank" rel="noopener noreferrer" class="embed-link">
+      <a href="<%= base_url %><%= embed_base_path == "/" ? "" : embed_base_path %>/<%= paste.sepia_id %>" target="_blank" rel="noopener noreferrer" class="embed-link">
         View on Pasto →
       </a>
     </div>

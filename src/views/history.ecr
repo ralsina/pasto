@@ -7,7 +7,7 @@
     const topBarRight = document.querySelector('.top-bar-right');
     if (topBarRight) {
       topBarRight.insertAdjacentHTML('afterbegin', `
-        <a href="/<%= base_id %>" class="top-bar-btn" title="Back to Latest"><i data-lucide="arrow-left"></i></a>
+        <a href="<%= theme_vars[:path].call("/#{base_id}") %>" class="top-bar-btn" title="Back to Latest"><i data-lucide="arrow-left"></i></a>
       `);
       // Initialize Lucide icons using shared utility
       if (window.SharedIcons) {
@@ -42,11 +42,11 @@
           </div>
           <div class="history-item-actions">
             <% if index == 0 %>
-              <a href="/<%= base_id %>" class="history-btn" title="View Current">
+              <a href="<%= theme_vars[:path].call("/#{base_id}") %>" class="history-btn" title="View Current">
                 <i data-lucide="eye"></i> View
               </a>
             <% else %>
-              <a href="/<%= base_id %>/version/<%= version.generation %>" class="history-btn" title="View This Version">
+              <a href="<%= theme_vars[:path].call("/#{base_id}") %>/version/<%= version.generation %>" class="history-btn" title="View This Version">
                 <i data-lucide="eye"></i> View
               </a>
             <% end %>

@@ -129,25 +129,34 @@ module Pasto
       "/favicon", "/favicon.ico", "/favicon.png", "/syntax-theme.css",
     ]
 
-    # Path prefixes that should skip paste access control
+    # Path prefixes that should skip paste access control (without base_path)
     SKIP_ACCESS_CONTROL_PREFIXES = [
       "/auth/", "/api/", "/assets/", "/cache/", "/preview/",
       "/api/qr/", "/api/languages", "/api/themes",
-      "/syntax/", "/profile/",
+      "/syntax/", "/profile/", "/mcp", "/syntax/",
     ]
 
     # Check if path needs paste access control
-    def self.needs_paste_access_control?(path : String) : Bool
-      # Skip explicitly listed paths
-      return false if SKIP_ACCESS_CONTROL.includes?(path)
+    def self.needs_paste_access_control?(path : String, base_path : String = "/") : Bool
+      # Normalize path by removing base_path for comparison
+      path_without_base = if base_path != "/" && path.starts_with?(base_path)
+                            path[base_path.size..-1]
+                          else
+                            path
+                          end
+      path_without_base = "/" if path_without_base.empty?
 
-      # Skip paths with certain prefixes
+      # Skip explicitly listed paths
+      return false if SKIP_ACCESS_CONTROL.includes?(path_without_base)
+
+      # Skip paths with certain prefixes (prepend base_path to each prefix)
       SKIP_ACCESS_CONTROL_PREFIXES.each do |prefix|
-        return false if path.starts_with?(prefix)
+        prefixed_path = base_path == "/" ? prefix : "#{base_path}#{prefix}"
+        return false if path.starts_with?(prefixed_path) || path.starts_with?(prefix)
       end
 
       # Check if path looks like a paste endpoint
-      path_parts = path.split("/")
+      path_parts = path_without_base.split("/")
       return false if path_parts.size < 2
 
       # First part should be empty (leading slash), second should be paste ID
@@ -160,9 +169,10 @@ module Pasto
     # Apply paste access control
     def self.apply_paste_access_control(env)
       path = env.request.path
+      base_path = Pasto.config.base_path
 
       # Check if this path needs access control
-      unless needs_paste_access_control?(path)
+      unless needs_paste_access_control?(path, base_path)
         return true
       end
 
