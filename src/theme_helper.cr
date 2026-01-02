@@ -1,3 +1,5 @@
+require "./path_helper"
+
 module Pasto
   module ThemeHelper
     # Get user theme preferences with fallbacks and migrate auto to detected theme
