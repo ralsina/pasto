@@ -57,7 +57,7 @@ Options:
   --auth-debug-mode         Enable authentication debug mode - auto-authenticate all requests (DO NOT USE IN PRODUCTION).
   --ssh-enabled=<bool>      Enable SSH server [default: false].
   --ssh-port=<port>         SSH port to listen on [default: 2222].
-  --ssh-bind=<address>      SSH address to bind to [default: 0.0.0.0].
+  --ssh-bind=<address>      SSH address to bind to [default: ::].
   --host-key=<file>         SSH host key file [default: ssh_host_rsa_key].
   --disable-rate-limit      DISABLE ALL RATE LIMITING - ONLY FOR TESTING (DO NOT USE IN PRODUCTION).
   --instances=<n>           Number of worker instances to run [default: 1].

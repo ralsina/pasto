@@ -19,7 +19,7 @@ Options:
   -h --help                 Show this screen.
   --version                 Show version.
   --ssh-port=<port>         SSH port to listen on [default: 2222].
-  --ssh-bind=<address>      SSH address to bind to [default: 0.0.0.0].
+  --ssh-bind=<address>      SSH address to bind to [default: ::].
   --storage-dir=<dir>       Directory to store pastes [default: ./data].
   --host-key=<file>         SSH host key file [default: ssh_host_rsa_key].
   --base-url=<url>          Base URL for paste links [default: http://localhost:5000].
