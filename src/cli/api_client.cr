@@ -7,13 +7,14 @@ module PastoCLI
     @base_url : String
     @api_host : String
     @api_port : Int32
+    @base_path : String
 
     def initialize(@config : Config)
       # Load credentials to get the server URL
       creds = Credentials.load
 
-      # Use saved server_url if available, otherwise use config
-      @base_url = creds.server_url || @config.server_url
+      # Use config server_url (from --server flag), fall back to saved credentials
+      @base_url = @config.server_url || creds.server_url || "http://localhost:3000"
 
       # Extract host and port from server URL for HTTP::Client
       uri = URI.parse(@base_url)
@@ -29,6 +30,9 @@ module PastoCLI
           3000
         end
       end
+
+      # Extract the base path from the URL (e.g., "/pasto" from "http://localhost:5000/pasto")
+      @base_path = uri.path || "/"
     end
 
     # Expose base_url for constructing paste URLs
@@ -52,7 +56,9 @@ module PastoCLI
       headers = auth_headers
       headers["Content-Type"] = "text/plain"
 
-      response = http_client.get("#{@base_url}/api/v1/pastes/#{id}/content", headers)
+      # Construct the full path by combining base_path with the API route
+      full_path = @base_path == "/" ? "/api/v1/pastes/#{id}/content" : "#{@base_path}/api/v1/pastes/#{id}/content"
+      response = http_client.get(full_path, headers)
 
       check_response(response)
 
@@ -80,7 +86,9 @@ module PastoCLI
     end
 
     private def get(path : String) : JSON::Any
-      response = http_client.get("#{@base_url}#{path}", auth_headers)
+      # Construct the full path by combining base_path with the API route
+      full_path = @base_path == "/" ? path : "#{@base_path}#{path}"
+      response = http_client.get(full_path, auth_headers)
       check_response(response)
       JSON.parse(response.body)
     end
@@ -90,13 +98,17 @@ module PastoCLI
       headers["Content-Type"] = "application/json"
 
       body = data.to_json
-      response = http_client.post("#{@base_url}#{path}", headers, body)
+      # Construct the full path by combining base_path with the API route
+      full_path = @base_path == "/" ? path : "#{@base_path}#{path}"
+      response = http_client.post(full_path, headers, body)
       check_response(response)
       JSON.parse(response.body)
     end
 
     private def delete(path : String) : JSON::Any
-      response = http_client.delete("#{@base_url}#{path}", auth_headers)
+      # Construct the full path by combining base_path with the API route
+      full_path = @base_path == "/" ? path : "#{@base_path}#{path}"
+      response = http_client.delete(full_path, auth_headers)
       check_response(response)
       JSON.parse(response.body)
     end
