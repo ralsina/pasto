@@ -5,6 +5,7 @@ require "../logging"
 require "../rate_limit_helper"
 require "../preview_generator"
 require "../mimetypes"
+require "../meta"
 
 module Pasto
   # Register all paste viewing/management routes
