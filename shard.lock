@@ -23,7 +23,7 @@ shards:
 
   crimage: # Overridden
     git: https://github.com/naqvis/crimage.git
-    version: 1.0.1+git.commit.0516164c663279a2e8642aa60170d81e714c9a40
+    version: 1.0.2+git.commit.0bab3ccf53a6a4e9a6da3a13411bdfc5e930556d
 
   crystar:
     git: https://github.com/naqvis/crystar.git
@@ -91,5 +91,5 @@ shards:
 
   tartrazine:
     git: https://github.com/ralsina/tartrazine.git
-    version: 0.19.3
+    version: 0.20.0
 
