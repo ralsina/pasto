@@ -1,10 +1,6 @@
 # NOTICE: This lockfile contains some overrides from shard.override.yml
 version: 2.0
 shards:
-  ameba:
-    git: https://github.com/crystal-ameba/ameba.git
-    version: 1.6.4
-
   backtracer:
     git: https://github.com/sija/backtracer.cr.git
     version: 1.2.4
@@ -21,7 +17,7 @@ shards:
     git: https://github.com/crystal-china/base58.cr.git
     version: 0.1.0+git.commit.f7193c497efff614cf87b03f0bd07741915a592f
 
-  crimage: # Overridden
+  crimage:
     git: https://github.com/naqvis/crimage.git
     version: 1.0.2+git.commit.0bab3ccf53a6a4e9a6da3a13411bdfc5e930556d
 
@@ -40,10 +36,6 @@ shards:
   exception_page:
     git: https://github.com/crystal-loot/exception_page.git
     version: 0.5.0
-
-  fswatch:
-    git: https://github.com/bcardiff/crystal-fswatch.git
-    version: 0.1.0+git.commit.04aca8703e22fb0ed3d7a39316a49bc0e30eefba
 
   hansa:
     git: https://github.com/ralsina/hansa.git
@@ -67,7 +59,7 @@ shards:
 
   pasto-cache:
     git: https://github.com/ralsina/pasto-cache.git
-    version: 0.2.0
+    version: 0.2.1
 
   radix:
     git: https://github.com/luislavena/radix.git
@@ -77,9 +69,9 @@ shards:
     git: https://github.com/ralsina/rate_limiter.git
     version: 0.1.0+git.commit.7c0abab10a3c1739a27fdedf2d7c742ebb44f59e
 
-  sepia:
+  sepia: # Overridden
     git: https://github.com/ralsina/sepia.git
-    version: 0.3.0
+    version: 0.3.0+git.commit.e4452090f4fc4f7b9caff10893640caccba3a476
 
   shirk:
     git: https://github.com/ralsina/shirk.git
