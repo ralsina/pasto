@@ -7,4 +7,15 @@ if [ -f .env ]; then
 fi
 
 # Build all binaries
-shards build pasto pasto-ssh pasto-backup pasto-crypto
+echo "Building Pasto binaries..."
+shards build pasto pasto-ssh pasto-backup pasto-crypto pasto-cli
+
+# Compress assets
+echo ""
+echo "Compressing assets..."
+./compress_assets.sh
+
+echo ""
+echo "✓ Build complete!"
+echo "Binaries: bin/pasto, bin/pasto-ssh, bin/pasto-backup, bin/pasto-crypto, bin/pasto-cli"
+
