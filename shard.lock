@@ -21,6 +21,10 @@ shards:
     git: https://github.com/crystal-china/base58.cr.git
     version: 0.1.0+git.commit.f7193c497efff614cf87b03f0bd07741915a592f
 
+  crimage: # Overridden
+    git: https://github.com/naqvis/crimage.git
+    version: 1.0.1+git.commit.0516164c663279a2e8642aa60170d81e714c9a40
+
   crystar:
     git: https://github.com/naqvis/crystar.git
     version: 0.4.0
@@ -65,14 +69,6 @@ shards:
     git: https://github.com/ralsina/pasto-cache.git
     version: 0.2.0
 
-  pcf-parser:
-    git: https://github.com/l3kn/pcf-parser.git
-    version: 0.1.1
-
-  qr-code:
-    git: https://github.com/spider-gazelle/qr-code.git
-    version: 1.0.3
-
   radix:
     git: https://github.com/luislavena/radix.git
     version: 0.4.1
@@ -93,19 +89,7 @@ shards:
     git: https://github.com/ralsina/sixteen.git
     version: 0.6.3
 
-  stumpy_core:
-    git: https://github.com/stumpycr/stumpy_core.git
-    version: 1.9.1
-
-  stumpy_png:
-    git: https://github.com/stumpycr/stumpy_png.git
-    version: 5.0.1
-
-  stumpy_utils:
-    git: https://github.com/stumpycr/stumpy_utils.git
-    version: 0.5.1
-
   tartrazine:
     git: https://github.com/ralsina/tartrazine.git
-    version: 0.19.2
+    version: 0.19.3
 

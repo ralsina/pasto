@@ -1,3 +1,6 @@
 dependencies:
   docopt:
     github: ralsina/docopt.cr
+  crimage:
+    github: naqvis/crimage
+    branch: main

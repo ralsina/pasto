@@ -90,7 +90,11 @@
       "mcp__playwright__browser_run_code",
       "Bash(bash:*)",
       "Bash(ss:*)",
-      "Bash(getent:*)"
+      "Bash(getent:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(CRYSTAL_OPTS=\"-Dno_fswatch\" shards build:*)",
+      "Bash(CRYSTAL_OPTS=\"-Dinotify\" crystal spec:*)",
+      "Bash(./build.sh)"
     ],
     "deny": [],
     "ask": []

@@ -68,20 +68,23 @@ module Pasto
       # Build URL using helper (respects reverse proxy headers)
       paste_url = Pasto.build_paste_url(env, id)
 
-      # Generate QR code PNG (simple URL encoder - no validation needed)
-      qr = QRCode.new(paste_url)
-      png_bytes = qr.as_png(size: 256)
+      # Generate QR code using crimage with rounded corners
+      qr_image = CrImage.qr_code(paste_url, size: 384, error_correction: :medium)
+      qr_image = qr_image.round_corners(30) # Add rounded corners (30px radius)
 
-      if png_bytes.empty?
-        env.response.status_code = 500
-        next "Failed to generate QR code"
-      end
+      # Convert to PNG bytes
+      png_bytes = IO::Memory.new
+      CrImage::PNG.write(png_bytes, qr_image)
+      png_bytes.rewind
+
+      # Get bytes as Slice(UInt8)
+      bytes = png_bytes.gets_to_end.to_slice
 
       # Set content length explicitly
-      env.response.content_length = png_bytes.size
+      env.response.content_length = bytes.size
 
       # Write binary data directly to response
-      env.response.write(png_bytes)
+      env.response.write(bytes)
     end
 
     # GET /api/v1/me - Get current user information

@@ -27,10 +27,6 @@ dependencies:
     github: ralsina/shirk
   baked_file_handler:
     github: ralsina/baked_file_handler
-  qr-code:
-    github: spider-gazelle/qr-code
-  stumpy_png:
-    github: stumpycr/stumpy_png
   pasto-cache:
     github: ralsina/pasto-cache
   mcp:

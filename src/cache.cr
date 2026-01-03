@@ -167,35 +167,29 @@ def generate_placeholder_file(message : String) : String
 
   # Generate if doesn't exist
   unless File.exists?(filename)
-    # Generate simple placeholder using Tartrazine with a message and baked spleen font
+    # Generate simple placeholder using Tartrazine with a message
+    # New API uses TTF fonts (JetBrains Mono) for much better quality
     placeholder_content = "// Error: #{message}\n"
 
-    # Extract baked spleen font to temporary file
-    temp_dir = File.join(Dir.tempdir, "pasto_fonts")
-    Dir.mkdir_p(temp_dir) unless Dir.exists?(temp_dir)
-    temp_font_path = File.join(temp_dir, "spleen-32x64.pcf")
-
-    unless File.exists?(temp_font_path)
-      font_data = Pasto::FontAssets.get("spleen-32x64.pcf")
-      File.write(temp_font_path, font_data)
-    end
-
-    # Create PNG formatter manually to set font size for spleen-32x64.pcf
+    # Create PNG formatter with default TTF font
     formatter = Tartrazine::Png.new(
       theme: Tartrazine.theme("default-dark"),
       line_numbers: false,
-      font_path: temp_font_path,
-      font_width: 32, # Match the spleen-32x64 font width
-      font_height: 64 # Match the spleen-32x64 font height
+      font_size: 24 # Large font for better preview images
     )
 
     buf = IO::Memory.new
     formatter.format(placeholder_content, Tartrazine.lexer(name: "text"), buf)
-    png_bytes = buf.to_s
-    File.write(filename, png_bytes)
 
-    # Clean up temporary font file
-    File.delete(temp_font_path) if temp_font_path && File.exists?(temp_font_path)
+    # Add rounded corners for better appearance
+    img_io = IO::Memory.new(buf.to_s)
+    img = CrImage::PNG.read(img_io)
+    img = img.round_corners(15) # Add rounded corners (15px radius)
+
+    # Convert back to PNG and save
+    output = IO::Memory.new
+    CrImage::PNG.write(output, img)
+    File.write(filename, output.to_s)
   end
   filename
 end
