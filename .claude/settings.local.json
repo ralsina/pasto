@@ -94,7 +94,8 @@
       "Bash(git remote get-url:*)",
       "Bash(CRYSTAL_OPTS=\"-Dno_fswatch\" shards build:*)",
       "Bash(CRYSTAL_OPTS=\"-Dinotify\" crystal spec:*)",
-      "Bash(./build.sh)"
+      "Bash(./build.sh)",
+      "Bash(docker pull:*)"
     ],
     "deny": [],
     "ask": []

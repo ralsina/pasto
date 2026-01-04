@@ -59,7 +59,7 @@ shards:
 
   pasto-cache:
     git: https://github.com/ralsina/pasto-cache.git
-    version: 0.2.1
+    version: 0.2.2
 
   radix:
     git: https://github.com/luislavena/radix.git
