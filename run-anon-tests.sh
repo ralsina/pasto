@@ -68,7 +68,7 @@ print_success "npm $(npm -v) found"
 if [ ! -f "./bin/pasto" ]; then
     print_warning "Pasto binary not found. Building..."
     if command_exists shards; then
-        CRYSTAL_OPTS="-Dinotify" shards build pasto
+        shards build pasto
         if [ $? -eq 0 ]; then
             print_success "Pasto binary built successfully"
         else

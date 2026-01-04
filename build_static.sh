@@ -37,15 +37,15 @@ echo "Building Docker image for AMD64..."
 retry_command "docker build . -f Dockerfile.static -t pasto-builder" "Build AMD64 builder image"
 
 echo "Building pasto for AMD64..."
-retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto\"" "Build pasto (AMD64)"
+retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto\"" "Build pasto (AMD64)"
 
-retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-ssh\"" "Build pasto-ssh (AMD64)"
+retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-ssh\"" "Build pasto-ssh (AMD64)"
 
-retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-crypto\"" "Build pasto-crypto (AMD64)"
+retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-crypto\"" "Build pasto-crypto (AMD64)"
 
-retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-backup\"" "Build pasto-backup (AMD64)"
+retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-backup\"" "Build pasto-backup (AMD64)"
 
-retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-cli\"" "Build pasto-cli (AMD64)"
+retry_command "docker run -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-cli\"" "Build pasto-cli (AMD64)"
 
 mv bin/pasto bin/pasto-static-linux-amd64
 mv bin/pasto-ssh bin/pasto-ssh-static-linux-amd64
@@ -58,15 +58,15 @@ echo "Building Docker image for ARM64..."
 retry_command "docker build . --platform linux/arm64 -f Dockerfile.static -t pasto-builder" "Build ARM64 builder image"
 
 echo "Building pasto for ARM64..."
-retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto\"" "Build pasto (ARM64)"
+retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto\"" "Build pasto (ARM64)"
 
-retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-ssh\"" "Build pasto-ssh (ARM64)"
+retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-ssh\"" "Build pasto-ssh (ARM64)"
 
-retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-crypto\"" "Build pasto-crypto (ARM64)"
+retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-crypto\"" "Build pasto-crypto (ARM64)"
 
-retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-backup\"" "Build pasto-backup (ARM64)"
+retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-backup\"" "Build pasto-backup (ARM64)"
 
-retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt -Dinotify --link-flags '-lssh -lssl -lcrypto' pasto-cli\"" "Build pasto-cli (ARM64)"
+retry_command "docker run --platform linux/arm64 -ti --rm -v \"$PWD\":/app --user=\"$UID\" pasto-builder /bin/sh -c \"cd /app && rm -rf lib shard.lock && shards build --release --without-development --static -Dpreview_mt --link-flags '-lssh -lssl -lcrypto' pasto-cli\"" "Build pasto-cli (ARM64)"
 
 mv bin/pasto bin/pasto-static-linux-arm64
 mv bin/pasto-ssh bin/pasto-ssh-static-linux-arm64
