@@ -131,7 +131,7 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
 
   const currentLanguage = languageSelect.value.toLowerCase();
 
-  // For Markdown, render client-side using marked
+  // For explicitly selected Markdown, render client-side using marked
   if (currentLanguage === 'markdown' || currentLanguage === 'md') {
     const previewElement = document.getElementById('preview');
     if (previewElement) {
@@ -206,22 +206,39 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
       }
     }
 
-    // Show message that preview is not available for non-Markdown content
     const previewElement = document.getElementById('preview');
-    if (previewElement) {
-      const detectedLang = data.language || 'unknown';
-      previewElement.innerHTML = `
-        <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
-          <i data-lucide="eye" style="width: 24px; height: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
-          <p>Preview available for Markdown only</p>
-          <p style="font-size: 0.9em; margin-top: 5px;">Detected language: <strong>${detectedLang}</strong></p>
-          <p style="font-size: 0.8em; margin-top: 10px;">The editor shows syntax highlighting in real-time</p>
-        </div>
-      `;
+    const detectedLang = (data.language || 'unknown').toLowerCase();
 
-      // Re-initialize Lucide icons if needed
-      if (window.lucide) {
-        window.lucide.createIcons();
+    // If detected language is Markdown, render it
+    if (detectedLang === 'markdown' || detectedLang === 'md') {
+      if (previewElement) {
+        try {
+          if (typeof marked !== 'undefined') {
+            previewElement.innerHTML = marked.parse(content);
+          } else {
+            previewElement.innerHTML = '<pre><code>marked.js not loaded</code></pre>';
+          }
+        } catch (e) {
+          console.error('Markdown parsing error:', e);
+          previewElement.innerHTML = '<pre><code>Error rendering Markdown</code></pre>';
+        }
+      }
+    } else {
+      // Show message that preview is not available for non-Markdown content
+      if (previewElement) {
+        previewElement.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
+            <i data-lucide="eye" style="width: 24px; height: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
+            <p>Preview available for Markdown only</p>
+            <p style="font-size: 0.9em; margin-top: 5px;">Detected language: <strong>${detectedLang}</strong></p>
+            <p style="font-size: 0.8em; margin-top: 10px;">The editor shows syntax highlighting in real-time</p>
+          </div>
+        `;
+
+        // Re-initialize Lucide icons if needed
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
       }
     }
   })
