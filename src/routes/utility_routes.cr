@@ -6,6 +6,27 @@ module Pasto
   def self.register_utility_routes
     base_path = Pasto.config.base_path
 
+    # Serve lexer XML files from tartrazine's baked file system
+    get Pasto::PathHelper.with_base_path("/assets/lexers/:filename", base_path) do |env|
+      filename = env.params.url["filename"]
+
+      unless filename.ends_with?(".xml")
+        env.response.status_code = 400
+        next "Invalid file type"
+      end
+
+      begin
+        # Serve from tartrazine's baked LexerFiles
+        lexer_xml = Tartrazine::LexerFiles.get("/lexers/#{filename}").gets_to_end
+        env.response.content_type = "text/xml"
+        env.response.headers["Cache-Control"] = "public, max-age=604800" # 1 week
+        lexer_xml
+      rescue ex
+        env.response.status_code = 404
+        "Lexer not found: #{filename}"
+      end
+    end
+
     # Dummy endpoint for tartrazine.js theme loading
     # Themes are already loaded via /syntax endpoint, so we return empty theme data
     get Pasto::PathHelper.with_base_path("/styles/:filename", base_path) do |env|
