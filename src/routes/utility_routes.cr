@@ -10,8 +10,10 @@ module Pasto
     # Note: Using /lexers path instead of /assets/lexers to avoid conflict with BakedFileHandler
     get Pasto::PathHelper.with_base_path("/lexers/:filename", base_path) do |env|
       filename = env.params.url["filename"]
+      puts "DEBUG: Lexer request - filename='#{filename}', ends_with .xml? #{filename.ends_with?(".xml")}"
 
       unless filename.ends_with?(".xml")
+        puts "DEBUG: Lexer rejected: does not end with .xml"
         env.response.status_code = 400
         next "Invalid file type"
       end
@@ -23,6 +25,7 @@ module Pasto
         env.response.headers["Cache-Control"] = "public, max-age=604800" # 1 week
         lexer_xml
       rescue ex
+        puts "DEBUG: Lexer not found: #{ex.message}"
         env.response.status_code = 404
         "Lexer not found: #{filename}"
       end

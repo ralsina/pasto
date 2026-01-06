@@ -89,6 +89,12 @@
       link.parentNode.replaceChild(stylesheet, link);
     }
   </script>
+  <script>
+    // Configure tartrazine.js asset base path BEFORE any deferred scripts
+    // Must run synchronously before tartrazine.js loads
+    window.PASTO_BASE_PATH = '<%= theme_vars[:base_path] %>';
+    window.__tartrazine_asset_base = (window.PASTO_BASE_PATH === '/' ? '' : window.PASTO_BASE_PATH);
+  </script>
   <script src="assets/bundle.js" defer></script>
   <!-- Encryption functionality -->
   <script src="assets/crypto.js" defer></script>
@@ -130,7 +136,7 @@
 <body>
   <script>
     // Global base path for all AJAX requests
-    window.PASTO_BASE_PATH = '<%= theme_vars[:base_path] %>';
+    // Already set in head before deferred scripts load
     const basePath = window.PASTO_BASE_PATH;
 
     // Helper function to build URLs with base path
