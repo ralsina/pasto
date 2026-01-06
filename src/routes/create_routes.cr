@@ -190,6 +190,40 @@ module Pasto
       }.to_json
     end
 
+    # API endpoint for language detection
+    post Pasto::PathHelper.with_base_path("/api/detect-language", base_path) do |env|
+      # Rate limit check for language detection endpoint
+      allowed, rate_limit_response = Pasto::RateLimitHelper.check_and_handle_rate_limit(env, :highlight)
+      unless allowed
+        next rate_limit_response
+      end
+
+      # Get content from request
+      content = env.params.body["content"]?.to_s
+      if content.empty?
+        env.response.content_type = "application/json"
+        next {
+          "language"   => nil,
+          "confidence" => 0.0,
+        }.to_json
+      end
+
+      # Detect language using Hansa + Tartrazine
+      detected_language = Pasto::Paste.get_best_supported_language(content)
+
+      # Return detected language
+      env.response.content_type = "application/json"
+      {
+        "language" => detected_language,
+      }.to_json
+    rescue ex
+      Pasto::Logging.error("Language detection failed: #{ex.message}")
+      env.response.content_type = "application/json"
+      {
+        "language" => nil,
+      }.to_json
+    end
+
     # Handle paste submission (create new paste)
     post Pasto::PathHelper.with_base_path("/", base_path) do |env|
       # Rate limiting check

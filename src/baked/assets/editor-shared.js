@@ -120,12 +120,31 @@ function debouncedUpdatePreview(updatePreviewCallback, debounceTimerVar) {
 function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
   const content = jar ? jar.toString() : '';
   const languageSelect = document.getElementById('language') || { value: getLanguageValue() };
-  const syntaxThemeSelect = document.querySelector('#syntax-theme') || document.getElementById('syntax-theme') || { value: getSyntaxThemeValue() };
 
   if (!content.trim()) {
     const previewElement = document.getElementById('preview');
     if (previewElement) {
       previewElement.innerHTML = '<pre><code>Start typing to see preview...</code></pre>';
+    }
+    return;
+  }
+
+  const currentLanguage = languageSelect.value.toLowerCase();
+
+  // For Markdown, render client-side using marked
+  if (currentLanguage === 'markdown' || currentLanguage === 'md') {
+    const previewElement = document.getElementById('preview');
+    if (previewElement) {
+      try {
+        if (typeof marked !== 'undefined') {
+          previewElement.innerHTML = marked.parse(content);
+        } else {
+          previewElement.innerHTML = '<pre><code>marked.js not loaded</code></pre>';
+        }
+      } catch (e) {
+        console.error('Markdown parsing error:', e);
+        previewElement.innerHTML = '<pre><code>Error rendering Markdown</code></pre>';
+      }
     }
     return;
   }
@@ -160,22 +179,16 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
     return;
   }
 
+  // For non-Markdown content, use language detection endpoint
   const formData = new FormData();
   formData.append('content', content);
-  formData.append('language', languageSelect.value);
-  formData.append('theme', syntaxThemeSelect.value || (window.pastoSyntaxTheme || 'default-dark'));
 
-  fetch((window.PASTO_BASE_PATH === '/' ? '/highlight' : window.PASTO_BASE_PATH + '/highlight'), {
+  fetch((window.PASTO_BASE_PATH === '/' ? '/api/detect-language' : window.PASTO_BASE_PATH + '/api/detect-language'), {
     method: 'POST',
     body: formData
   })
   .then(response => response.json())
   .then(data => {
-    const previewElement = document.getElementById('preview');
-    if (previewElement) {
-      previewElement.innerHTML = data.html;
-    }
-
     // Update language selector text to show detected language if auto-detection is active
     const isAutoDetect = (languageSelect.value === 'Auto' || languageSelect.value === '');
 
@@ -190,6 +203,25 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
         } else {
           autoDetectOption.textContent = 'Auto';
         }
+      }
+    }
+
+    // Show message that preview is not available for non-Markdown content
+    const previewElement = document.getElementById('preview');
+    if (previewElement) {
+      const detectedLang = data.language || 'unknown';
+      previewElement.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
+          <i data-lucide="eye" style="width: 24px; height: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
+          <p>Preview available for Markdown only</p>
+          <p style="font-size: 0.9em; margin-top: 5px;">Detected language: <strong>${detectedLang}</strong></p>
+          <p style="font-size: 0.8em; margin-top: 10px;">The editor shows syntax highlighting in real-time</p>
+        </div>
+      `;
+
+      // Re-initialize Lucide icons if needed
+      if (window.lucide) {
+        window.lucide.createIcons();
       }
     }
   })

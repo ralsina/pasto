@@ -95,7 +95,14 @@
       "Bash(CRYSTAL_OPTS=\"-Dno_fswatch\" shards build:*)",
       "Bash(CRYSTAL_OPTS=\"-Dinotify\" crystal spec:*)",
       "Bash(./build.sh)",
-      "Bash(docker pull:*)"
+      "Bash(docker pull:*)",
+      "mcp__web-search-prime__webSearchPrime",
+      "Bash(npm install:*)",
+      "Bash(npx esbuild:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(/tmp/lucide_part.js)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
