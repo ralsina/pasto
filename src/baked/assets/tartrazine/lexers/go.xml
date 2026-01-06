@@ -1,0 +1,45 @@
+
+<lexer>
+  <config>
+    <name>Go</name>
+    <alias>go</alias>
+    <alias>golang</alias>
+    <filename>*.go</filename>
+    <mime_type>text/x-gosrc</mime_type>
+  </config>
+  <rules>
+    <state name="root">
+      <rule pattern="\n"><token type="Text"/></rule>
+      <rule pattern="\s+"><token type="Text"/></rule>
+      <rule pattern="(\\)(\n)"><bygroups><token type="Text"/><token type="Text"/></bygroups></rule>
+      <rule pattern="//(.*?)\n"><token type="CommentSingle"/></rule>
+      <rule pattern="/(\\\n)?[*](.|\n)*?[*](\\\n)?/"><token type="CommentMultiline"/></rule>
+      <rule pattern="(import|package)\b"><token type="KeywordNamespace"/></rule>
+      <rule pattern="func(?=\s+\w+\s*\()"><token type="KeywordDeclaration"/></rule>
+      <rule pattern="func"><token type="KeywordDeclaration"/></rule>
+      <rule pattern="\s+([^\W\d]\w*)(?=\s*\()"><bygroups><token type="Text"/><token type="NameFunction"/></bygroups></rule>
+      <rule pattern="(var|struct|map|chan|type|interface|const)\b"><token type="KeywordDeclaration"/></rule>
+      <rule pattern="(break|default|select|case|defer|go|else|goto|switch|fallthrough|if|range|continue|for|return)\b"><token type="Keyword"/></rule>
+      <rule pattern="(true|false|iota|nil)\b"><token type="KeywordConstant"/></rule>
+      <rule pattern="(uint|uint8|uint16|uint32|uint64|int|int8|int16|int32|int64|float|float32|float64|complex64|complex128|byte|rune|string|bool|error|uintptr|any|comparable|print|println|panic|recover|close|complex|real|imag|len|cap|append|copy|delete|new|make|min|max|clear)\b(\()"><bygroups><token type="NameBuiltin"/><token type="Punctuation"/></bygroups></rule>
+      <rule pattern="(uint|uint8|uint16|uint32|uint64|int|int8|int16|int32|int64|float|float32|float64|complex64|complex128|byte|rune|string|bool|error|uintptr|any|comparable)\b"><token type="KeywordType"/></rule>
+      <rule pattern="\d+i"><token type="LiteralNumber"/></rule>
+      <rule pattern="\d+\.\d*([Ee][-+]\d+)?i"><token type="LiteralNumber"/></rule>
+      <rule pattern="\.\d+([Ee][-+]\d+)?i"><token type="LiteralNumber"/></rule>
+      <rule pattern="\d+[Ee][-+]\d+i"><token type="LiteralNumber"/></rule>
+      <rule pattern="\d+(\.\d+[eE][+\-]?\d+|\.\d*|[eE][+\-]?\d+)"><token type="LiteralNumberFloat"/></rule>
+      <rule pattern="\.\d+([eE][+\-]?\d+)?"><token type="LiteralNumberFloat"/></rule>
+      <rule pattern="0[0-7]+"><token type="LiteralNumberOct"/></rule>
+      <rule pattern="0[xX][0-9a-fA-F]+"><token type="LiteralNumberHex"/></rule>
+      <rule pattern="(0|[1-9][0-9]*)"><token type="LiteralNumberInteger"/></rule>
+      <rule pattern="&#x27;(\\[&#x27;&quot;\\abfnrtv]|\\x[0-9a-fA-F]{2}|\\[0-7]{1,3}|\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}|[^\\])&#x27;"><token type="LiteralStringChar"/></rule>
+      <rule pattern="`[^`]*`"><token type="LiteralString"/></rule>
+      <rule pattern="&quot;(\\\\|\\[^\\]|[^&quot;\\])*&quot;"><token type="LiteralString"/></rule>
+      <rule pattern="(&lt;&lt;=|&gt;&gt;=|&lt;&lt;|&gt;&gt;|&lt;=|&gt;=|&amp;\^=|&amp;\^|\+=|-=|\*=|/=|%=|&amp;=|\|=|&amp;&amp;|\|\||&lt;-|\+\+|--|==|!=|:=|\.\.\.|[+\-*/%&amp;]|~|\|)"><token type="Operator"/></rule>
+      <rule pattern="[|^&lt;&gt;=!()\[\]{}.,;:]"><token type="Punctuation"/></rule>
+      <rule pattern="([^\W\d]\w*)(\.)(?=([^\W\d]\w*)\s*\()"><bygroups><token type="NameOther"/><token type="Punctuation"/></bygroups></rule>
+      <rule pattern="([^\W\d]\w*)(?=\s*\()"><token type="NameFunction"/></rule>
+      <rule pattern="[^\W\d]\w*"><token type="NameOther"/></rule>
+    </state>
+  </rules>
+</lexer>

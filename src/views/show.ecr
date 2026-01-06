@@ -370,10 +370,10 @@
   };
   SharedSecurity.initialize(pasteData);
 
-  // Function to apply syntax highlighting to a content element
-  function applySyntaxHighlighting(contentElement, code, language) {
-    if (typeof hljs === 'undefined') {
-      // highlight.js not available, fallback to plain text
+  // Function to apply syntax highlighting to a content element using tartrazine.js
+  async function applySyntaxHighlighting(contentElement, code, language) {
+    if (typeof Tartrazine === 'undefined' || !Tartrazine.highlight) {
+      // tartrazine.js not available, fallback to plain text
       contentElement.textContent = code;
       return;
     }
@@ -385,20 +385,23 @@
       return;
     }
 
-    // Apply syntax highlighting
+    // Apply syntax highlighting using tartrazine.js
     let highlightedCode;
     try {
-      if (language && language !== 'text' && hljs.getLanguage(language)) {
-        highlightedCode = hljs.highlight(code, { language: language, ignoreIllegals: true }).value;
-      } else {
-        highlightedCode = hljs.highlightAuto(code).value;
-      }
+      // Normalize empty language to plaintext
+      const normalizedLang = (!language || language === 'text' || language === '') ? 'plaintext' : language;
+
+      // Use tartrazine.js for client/server consistent highlighting (no theme - CSS is pre-loaded)
+      highlightedCode = await Tartrazine.highlight(code, normalizedLang, {
+        standalone: false,
+        lineNumbers: false
+      });
     } catch (e) {
-      console.error('Highlight.js error:', e);
-      highlightedCode = code;
+      console.error('Tartrazine highlight error:', e);
+      highlightedCode = `<pre><code>${code}</code></pre>`;
     }
 
-    contentElement.innerHTML = `<pre><code>${highlightedCode}</code></pre>`;
+    contentElement.innerHTML = highlightedCode;
 
     // Apply CodeJar theme classes for consistency
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -894,14 +897,14 @@
       }
 
       console.log('Calling applySyntaxHighlighting...');
-      applySyntaxHighlighting(pasteContent, decryptedContent, pasteLanguage);
+      await applySyntaxHighlighting(pasteContent, decryptedContent, pasteLanguage);
 
       // Update rawContent for copy/download functionality
       window.rawContent = decryptedContent;
       console.log('Set window.rawContent, length:', decryptedContent ? decryptedContent.length : 0);
 
       // SECURITY: Client-side highlighting for encrypted content
-      // Using highlight.js instead of sending decrypted content to server
+      // Using tartrazine.js instead of sending decrypted content to server
 
       // Update markdown rendering if needed
       const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");
@@ -996,13 +999,13 @@
 
       // Update the content with the decrypted data
       const pasteContent = document.getElementById('paste-content');
-      applySyntaxHighlighting(pasteContent, decryptedContent, pasteLanguage);
+      await applySyntaxHighlighting(pasteContent, decryptedContent, pasteLanguage);
 
       // Update rawContent for copy/download functionality
       window.rawContent = decryptedContent;
 
       // SECURITY: Client-side highlighting for encrypted content
-      // Using highlight.js instead of sending decrypted content to server
+      // Using tartrazine.js instead of sending decrypted content to server
 
       // Update markdown rendering if needed
       const isMarkdown = (pasteLanguage === "markdown") || pasteFilename.endsWith(".md");

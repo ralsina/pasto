@@ -1,0 +1,2329 @@
+[
+  {
+    "filename": "abap.xml",
+    "name": "ABAP",
+    "description": "",
+    "aliases": [
+      "abap"
+    ]
+  },
+  {
+    "filename": "abnf.xml",
+    "name": "ABNF",
+    "description": "",
+    "aliases": [
+      "abnf"
+    ]
+  },
+  {
+    "filename": "actionscript.xml",
+    "name": "ActionScript",
+    "description": "",
+    "aliases": [
+      "as",
+      "actionscript"
+    ]
+  },
+  {
+    "filename": "actionscript_3.xml",
+    "name": "ActionScript 3",
+    "description": "",
+    "aliases": [
+      "as3",
+      "actionscript3"
+    ]
+  },
+  {
+    "filename": "ada.xml",
+    "name": "Ada",
+    "description": "",
+    "aliases": [
+      "ada",
+      "ada95",
+      "ada2005"
+    ]
+  },
+  {
+    "filename": "agda.xml",
+    "name": "Agda",
+    "description": "",
+    "aliases": [
+      "agda"
+    ]
+  },
+  {
+    "filename": "al.xml",
+    "name": "AL",
+    "description": "",
+    "aliases": [
+      "al"
+    ]
+  },
+  {
+    "filename": "alloy.xml",
+    "name": "Alloy",
+    "description": "",
+    "aliases": [
+      "alloy"
+    ]
+  },
+  {
+    "filename": "angular2.xml",
+    "name": "Angular2",
+    "description": "",
+    "aliases": [
+      "ng2"
+    ]
+  },
+  {
+    "filename": "antlr.xml",
+    "name": "ANTLR",
+    "description": "",
+    "aliases": [
+      "antlr"
+    ]
+  },
+  {
+    "filename": "apacheconf.xml",
+    "name": "ApacheConf",
+    "description": "",
+    "aliases": [
+      "apacheconf",
+      "aconf",
+      "apache"
+    ]
+  },
+  {
+    "filename": "apl.xml",
+    "name": "APL",
+    "description": "",
+    "aliases": [
+      "apl"
+    ]
+  },
+  {
+    "filename": "applescript.xml",
+    "name": "AppleScript",
+    "description": "",
+    "aliases": [
+      "applescript"
+    ]
+  },
+  {
+    "filename": "arangodb_aql.xml",
+    "name": "ArangoDB AQL",
+    "description": "",
+    "aliases": [
+      "aql"
+    ]
+  },
+  {
+    "filename": "arduino.xml",
+    "name": "Arduino",
+    "description": "",
+    "aliases": [
+      "arduino"
+    ]
+  },
+  {
+    "filename": "armasm.xml",
+    "name": "ArmAsm",
+    "description": "",
+    "aliases": [
+      "armasm"
+    ]
+  },
+  {
+    "filename": "atl.xml",
+    "name": "ATL",
+    "description": "",
+    "aliases": [
+      "atl"
+    ]
+  },
+  {
+    "filename": "autohotkey.xml",
+    "name": "AutoHotkey",
+    "description": "",
+    "aliases": [
+      "autohotkey",
+      "ahk"
+    ]
+  },
+  {
+    "filename": "autoit.xml",
+    "name": "AutoIt",
+    "description": "",
+    "aliases": [
+      "autoit"
+    ]
+  },
+  {
+    "filename": "awk.xml",
+    "name": "Awk",
+    "description": "",
+    "aliases": [
+      "awk",
+      "gawk",
+      "mawk",
+      "nawk"
+    ]
+  },
+  {
+    "filename": "ballerina.xml",
+    "name": "Ballerina",
+    "description": "",
+    "aliases": [
+      "ballerina"
+    ]
+  },
+  {
+    "filename": "bash.xml",
+    "name": "Bash",
+    "description": "",
+    "aliases": [
+      "bash",
+      "sh",
+      "ksh",
+      "zsh",
+      "shell"
+    ]
+  },
+  {
+    "filename": "bash_session.xml",
+    "name": "Bash Session",
+    "description": "",
+    "aliases": [
+      "bash-session",
+      "console",
+      "shell-session"
+    ]
+  },
+  {
+    "filename": "batchfile.xml",
+    "name": "Batchfile",
+    "description": "",
+    "aliases": [
+      "bat",
+      "batch",
+      "dosbatch",
+      "winbatch"
+    ]
+  },
+  {
+    "filename": "bbcode.xml",
+    "name": "BBCode",
+    "description": "",
+    "aliases": [
+      "bbcode"
+    ]
+  },
+  {
+    "filename": "beef.xml",
+    "name": "Beef",
+    "description": "",
+    "aliases": [
+      "beef"
+    ]
+  },
+  {
+    "filename": "bibtex.xml",
+    "name": "BibTeX",
+    "description": "",
+    "aliases": [
+      "bib",
+      "bibtex"
+    ]
+  },
+  {
+    "filename": "bicep.xml",
+    "name": "Bicep",
+    "description": "",
+    "aliases": [
+      "bicep"
+    ]
+  },
+  {
+    "filename": "blitzbasic.xml",
+    "name": "BlitzBasic",
+    "description": "",
+    "aliases": [
+      "blitzbasic",
+      "b3d",
+      "bplus"
+    ]
+  },
+  {
+    "filename": "bnf.xml",
+    "name": "BNF",
+    "description": "",
+    "aliases": [
+      "bnf"
+    ]
+  },
+  {
+    "filename": "bqn.xml",
+    "name": "BQN",
+    "description": "",
+    "aliases": [
+      "bqn"
+    ]
+  },
+  {
+    "filename": "brainfuck.xml",
+    "name": "Brainfuck",
+    "description": "",
+    "aliases": [
+      "brainfuck",
+      "bf"
+    ]
+  },
+  {
+    "filename": "c.xml",
+    "name": "C",
+    "description": "",
+    "aliases": [
+      "c"
+    ]
+  },
+  {
+    "filename": "c#.xml",
+    "name": "C#",
+    "description": "",
+    "aliases": [
+      "csharp",
+      "c#"
+    ]
+  },
+  {
+    "filename": "c++.xml",
+    "name": "C++",
+    "description": "",
+    "aliases": [
+      "cpp",
+      "c++"
+    ]
+  },
+  {
+    "filename": "c3.xml",
+    "name": "C3",
+    "description": "",
+    "aliases": [
+      "c3"
+    ]
+  },
+  {
+    "filename": "cap_n_proto.xml",
+    "name": "Cap&#39;n Proto",
+    "description": "",
+    "aliases": [
+      "capnp"
+    ]
+  },
+  {
+    "filename": "cassandra_cql.xml",
+    "name": "Cassandra CQL",
+    "description": "",
+    "aliases": [
+      "cassandra",
+      "cql"
+    ]
+  },
+  {
+    "filename": "ceylon.xml",
+    "name": "Ceylon",
+    "description": "",
+    "aliases": [
+      "ceylon"
+    ]
+  },
+  {
+    "filename": "cfengine3.xml",
+    "name": "CFEngine3",
+    "description": "",
+    "aliases": [
+      "cfengine3",
+      "cf3"
+    ]
+  },
+  {
+    "filename": "cfstatement.xml",
+    "name": "cfstatement",
+    "description": "",
+    "aliases": [
+      "cfs"
+    ]
+  },
+  {
+    "filename": "chaiscript.xml",
+    "name": "ChaiScript",
+    "description": "",
+    "aliases": [
+      "chai",
+      "chaiscript"
+    ]
+  },
+  {
+    "filename": "chapel.xml",
+    "name": "Chapel",
+    "description": "",
+    "aliases": [
+      "chapel",
+      "chpl"
+    ]
+  },
+  {
+    "filename": "cheetah.xml",
+    "name": "Cheetah",
+    "description": "",
+    "aliases": [
+      "cheetah",
+      "spitfire"
+    ]
+  },
+  {
+    "filename": "clojure.xml",
+    "name": "Clojure",
+    "description": "",
+    "aliases": [
+      "clojure",
+      "clj",
+      "edn"
+    ]
+  },
+  {
+    "filename": "cmake.xml",
+    "name": "CMake",
+    "description": "",
+    "aliases": [
+      "cmake"
+    ]
+  },
+  {
+    "filename": "cobol.xml",
+    "name": "COBOL",
+    "description": "",
+    "aliases": [
+      "cobol"
+    ]
+  },
+  {
+    "filename": "coffeescript.xml",
+    "name": "CoffeeScript",
+    "description": "",
+    "aliases": [
+      "coffee-script",
+      "coffeescript",
+      "coffee"
+    ]
+  },
+  {
+    "filename": "common_lisp.xml",
+    "name": "Common Lisp",
+    "description": "",
+    "aliases": [
+      "common-lisp",
+      "cl",
+      "lisp"
+    ]
+  },
+  {
+    "filename": "coq.xml",
+    "name": "Coq",
+    "description": "",
+    "aliases": [
+      "coq"
+    ]
+  },
+  {
+    "filename": "core.xml",
+    "name": "Core",
+    "description": "",
+    "aliases": [
+      "core"
+    ]
+  },
+  {
+    "filename": "css.xml",
+    "name": "CSS",
+    "description": "",
+    "aliases": [
+      "css"
+    ]
+  },
+  {
+    "filename": "csv.xml",
+    "name": "CSV",
+    "description": "",
+    "aliases": [
+      "csv"
+    ]
+  },
+  {
+    "filename": "cue.xml",
+    "name": "CUE",
+    "description": "",
+    "aliases": [
+      "cue"
+    ]
+  },
+  {
+    "filename": "cython.xml",
+    "name": "Cython",
+    "description": "",
+    "aliases": [
+      "cython",
+      "pyx",
+      "pyrex"
+    ]
+  },
+  {
+    "filename": "d.xml",
+    "name": "D",
+    "description": "",
+    "aliases": [
+      "d"
+    ]
+  },
+  {
+    "filename": "dart.xml",
+    "name": "Dart",
+    "description": "",
+    "aliases": [
+      "dart"
+    ]
+  },
+  {
+    "filename": "dax.xml",
+    "name": "Dax",
+    "description": "",
+    "aliases": [
+      "dax"
+    ]
+  },
+  {
+    "filename": "desktop_entry.xml",
+    "name": "Desktop file",
+    "description": "",
+    "aliases": [
+      "desktop",
+      "desktop_entry"
+    ]
+  },
+  {
+    "filename": "devicetree.xml",
+    "name": "Devicetree",
+    "description": "",
+    "aliases": [
+      "devicetree",
+      "dts"
+    ]
+  },
+  {
+    "filename": "diff.xml",
+    "name": "Diff",
+    "description": "",
+    "aliases": [
+      "diff",
+      "udiff"
+    ]
+  },
+  {
+    "filename": "django_jinja.xml",
+    "name": "Django/Jinja",
+    "description": "",
+    "aliases": [
+      "django",
+      "jinja"
+    ]
+  },
+  {
+    "filename": "dns.xml",
+    "name": "dns",
+    "description": "",
+    "aliases": [
+      "zone",
+      "bind"
+    ]
+  },
+  {
+    "filename": "docker.xml",
+    "name": "Docker",
+    "description": "",
+    "aliases": [
+      "docker",
+      "dockerfile",
+      "containerfile"
+    ]
+  },
+  {
+    "filename": "dtd.xml",
+    "name": "DTD",
+    "description": "",
+    "aliases": [
+      "dtd"
+    ]
+  },
+  {
+    "filename": "dylan.xml",
+    "name": "Dylan",
+    "description": "",
+    "aliases": [
+      "dylan"
+    ]
+  },
+  {
+    "filename": "ebnf.xml",
+    "name": "EBNF",
+    "description": "",
+    "aliases": [
+      "ebnf"
+    ]
+  },
+  {
+    "filename": "elixir.xml",
+    "name": "Elixir",
+    "description": "",
+    "aliases": [
+      "elixir",
+      "ex",
+      "exs"
+    ]
+  },
+  {
+    "filename": "elm.xml",
+    "name": "Elm",
+    "description": "",
+    "aliases": [
+      "elm"
+    ]
+  },
+  {
+    "filename": "emacslisp.xml",
+    "name": "EmacsLisp",
+    "description": "",
+    "aliases": [
+      "emacs",
+      "elisp",
+      "emacs-lisp"
+    ]
+  },
+  {
+    "filename": "erlang.xml",
+    "name": "Erlang",
+    "description": "",
+    "aliases": [
+      "erlang"
+    ]
+  },
+  {
+    "filename": "factor.xml",
+    "name": "Factor",
+    "description": "",
+    "aliases": [
+      "factor"
+    ]
+  },
+  {
+    "filename": "fennel.xml",
+    "name": "Fennel",
+    "description": "",
+    "aliases": [
+      "fennel",
+      "fnl"
+    ]
+  },
+  {
+    "filename": "fish.xml",
+    "name": "Fish",
+    "description": "",
+    "aliases": [
+      "fish",
+      "fishshell"
+    ]
+  },
+  {
+    "filename": "forth.xml",
+    "name": "Forth",
+    "description": "",
+    "aliases": [
+      "forth"
+    ]
+  },
+  {
+    "filename": "fortran.xml",
+    "name": "Fortran",
+    "description": "",
+    "aliases": [
+      "fortran",
+      "f90"
+    ]
+  },
+  {
+    "filename": "fortranfixed.xml",
+    "name": "FortranFixed",
+    "description": "",
+    "aliases": [
+      "fortranfixed"
+    ]
+  },
+  {
+    "filename": "fsharp.xml",
+    "name": "FSharp",
+    "description": "",
+    "aliases": [
+      "fsharp"
+    ]
+  },
+  {
+    "filename": "gas.xml",
+    "name": "GAS",
+    "description": "",
+    "aliases": [
+      "gas",
+      "asm"
+    ]
+  },
+  {
+    "filename": "gdscript.xml",
+    "name": "GDScript",
+    "description": "",
+    "aliases": [
+      "gdscript",
+      "gd"
+    ]
+  },
+  {
+    "filename": "gdscript3.xml",
+    "name": "GDScript3",
+    "description": "",
+    "aliases": [
+      "gdscript3",
+      "gd3"
+    ]
+  },
+  {
+    "filename": "gherkin.xml",
+    "name": "Gherkin",
+    "description": "",
+    "aliases": [
+      "cucumber",
+      "Cucumber",
+      "gherkin",
+      "Gherkin"
+    ]
+  },
+  {
+    "filename": "gleam.xml",
+    "name": "Gleam",
+    "description": "",
+    "aliases": [
+      "gleam"
+    ]
+  },
+  {
+    "filename": "glsl.xml",
+    "name": "GLSL",
+    "description": "",
+    "aliases": [
+      "glsl"
+    ]
+  },
+  {
+    "filename": "gnuplot.xml",
+    "name": "Gnuplot",
+    "description": "",
+    "aliases": [
+      "gnuplot"
+    ]
+  },
+  {
+    "filename": "go.xml",
+    "name": "Go",
+    "description": "",
+    "aliases": [
+      "go",
+      "golang"
+    ]
+  },
+  {
+    "filename": "go_template.xml",
+    "name": "Go Template",
+    "description": "",
+    "aliases": [
+      "go-template"
+    ]
+  },
+  {
+    "filename": "graphql.xml",
+    "name": "GraphQL",
+    "description": "",
+    "aliases": [
+      "graphql",
+      "graphqls",
+      "gql"
+    ]
+  },
+  {
+    "filename": "groff.xml",
+    "name": "Groff",
+    "description": "",
+    "aliases": [
+      "groff",
+      "nroff",
+      "man"
+    ]
+  },
+  {
+    "filename": "groovy.xml",
+    "name": "Groovy",
+    "description": "",
+    "aliases": [
+      "groovy"
+    ]
+  },
+  {
+    "filename": "handlebars.xml",
+    "name": "Handlebars",
+    "description": "",
+    "aliases": [
+      "handlebars",
+      "hbs"
+    ]
+  },
+  {
+    "filename": "hare.xml",
+    "name": "Hare",
+    "description": "",
+    "aliases": [
+      "hare"
+    ]
+  },
+  {
+    "filename": "haskell.xml",
+    "name": "Haskell",
+    "description": "",
+    "aliases": [
+      "haskell",
+      "hs"
+    ]
+  },
+  {
+    "filename": "hcl.xml",
+    "name": "HCL",
+    "description": "",
+    "aliases": [
+      "hcl"
+    ]
+  },
+  {
+    "filename": "hexdump.xml",
+    "name": "Hexdump",
+    "description": "",
+    "aliases": [
+      "hexdump"
+    ]
+  },
+  {
+    "filename": "hlb.xml",
+    "name": "HLB",
+    "description": "",
+    "aliases": [
+      "hlb"
+    ]
+  },
+  {
+    "filename": "hlsl.xml",
+    "name": "HLSL",
+    "description": "",
+    "aliases": [
+      "hlsl"
+    ]
+  },
+  {
+    "filename": "holyc.xml",
+    "name": "HolyC",
+    "description": "",
+    "aliases": [
+      "holyc"
+    ]
+  },
+  {
+    "filename": "html.xml",
+    "name": "HTML",
+    "description": "",
+    "aliases": [
+      "html"
+    ]
+  },
+  {
+    "filename": "hy.xml",
+    "name": "Hy",
+    "description": "",
+    "aliases": [
+      "hylang"
+    ]
+  },
+  {
+    "filename": "idris.xml",
+    "name": "Idris",
+    "description": "",
+    "aliases": [
+      "idris",
+      "idr"
+    ]
+  },
+  {
+    "filename": "igor.xml",
+    "name": "Igor",
+    "description": "",
+    "aliases": [
+      "igor",
+      "igorpro"
+    ]
+  },
+  {
+    "filename": "ini.xml",
+    "name": "INI",
+    "description": "",
+    "aliases": [
+      "ini",
+      "cfg",
+      "dosini"
+    ]
+  },
+  {
+    "filename": "io.xml",
+    "name": "Io",
+    "description": "",
+    "aliases": [
+      "io"
+    ]
+  },
+  {
+    "filename": "iscdhcpd.xml",
+    "name": "ISCdhcpd",
+    "description": "",
+    "aliases": [
+      "iscdhcpd"
+    ]
+  },
+  {
+    "filename": "j.xml",
+    "name": "J",
+    "description": "",
+    "aliases": [
+      "j"
+    ]
+  },
+  {
+    "filename": "janet.xml",
+    "name": "Janet",
+    "description": "",
+    "aliases": [
+      "janet"
+    ]
+  },
+  {
+    "filename": "java.xml",
+    "name": "Java",
+    "description": "",
+    "aliases": [
+      "java"
+    ]
+  },
+  {
+    "filename": "javascript.xml",
+    "name": "JavaScript",
+    "description": "",
+    "aliases": [
+      "js",
+      "javascript"
+    ]
+  },
+  {
+    "filename": "json.xml",
+    "name": "JSON",
+    "description": "",
+    "aliases": [
+      "json"
+    ]
+  },
+  {
+    "filename": "jsonata.xml",
+    "name": "JSONata",
+    "description": "",
+    "aliases": [
+      "jsonata"
+    ]
+  },
+  {
+    "filename": "jsonnet.xml",
+    "name": "Jsonnet",
+    "description": "",
+    "aliases": [
+      "jsonnet"
+    ]
+  },
+  {
+    "filename": "julia.xml",
+    "name": "Julia",
+    "description": "",
+    "aliases": [
+      "julia",
+      "jl"
+    ]
+  },
+  {
+    "filename": "jungle.xml",
+    "name": "Jungle",
+    "description": "",
+    "aliases": [
+      "jungle"
+    ]
+  },
+  {
+    "filename": "kakoune.xml",
+    "name": "Kakoune",
+    "description": "",
+    "aliases": [
+      "kak",
+      "kakoune",
+      "kakrc",
+      "kakscript"
+    ]
+  },
+  {
+    "filename": "kotlin.xml",
+    "name": "Kotlin",
+    "description": "",
+    "aliases": [
+      "kotlin"
+    ]
+  },
+  {
+    "filename": "lean.xml",
+    "name": "Lean4",
+    "description": "",
+    "aliases": [
+      "lean4",
+      "lean"
+    ]
+  },
+  {
+    "filename": "lighttpd_configuration_file.xml",
+    "name": "Lighttpd configuration file",
+    "description": "",
+    "aliases": [
+      "lighty",
+      "lighttpd"
+    ]
+  },
+  {
+    "filename": "LiquidLexer.xml",
+    "name": "liquid",
+    "description": "",
+    "aliases": [
+      "liquid"
+    ]
+  },
+  {
+    "filename": "llvm.xml",
+    "name": "LLVM",
+    "description": "",
+    "aliases": [
+      "llvm"
+    ]
+  },
+  {
+    "filename": "lox.xml",
+    "name": "lox",
+    "description": ""
+  },
+  {
+    "filename": "lua.xml",
+    "name": "Lua",
+    "description": "",
+    "aliases": [
+      "lua",
+      "luau"
+    ]
+  },
+  {
+    "filename": "makefile.xml",
+    "name": "Makefile",
+    "description": "",
+    "aliases": [
+      "make",
+      "makefile",
+      "mf",
+      "bsdmake"
+    ]
+  },
+  {
+    "filename": "mako.xml",
+    "name": "Mako",
+    "description": "",
+    "aliases": [
+      "mako"
+    ]
+  },
+  {
+    "filename": "markdown.xml",
+    "name": "Markdown",
+    "description": "",
+    "aliases": [
+      "markdown",
+      "md"
+    ]
+  },
+  {
+    "filename": "mason.xml",
+    "name": "Mason",
+    "description": "",
+    "aliases": [
+      "mason"
+    ]
+  },
+  {
+    "filename": "materialize_sql_dialect.xml",
+    "name": "Materialize SQL dialect",
+    "description": "",
+    "aliases": [
+      "materialize",
+      "mzsql"
+    ]
+  },
+  {
+    "filename": "mathematica.xml",
+    "name": "Mathematica",
+    "description": "",
+    "aliases": [
+      "mathematica",
+      "mma",
+      "nb"
+    ]
+  },
+  {
+    "filename": "matlab.xml",
+    "name": "Matlab",
+    "description": "",
+    "aliases": [
+      "matlab"
+    ]
+  },
+  {
+    "filename": "mcfunction.xml",
+    "name": "MCFunction",
+    "description": "",
+    "aliases": [
+      "mcfunction",
+      "mcf"
+    ]
+  },
+  {
+    "filename": "meson.xml",
+    "name": "Meson",
+    "description": "",
+    "aliases": [
+      "meson",
+      "meson.build"
+    ]
+  },
+  {
+    "filename": "metal.xml",
+    "name": "Metal",
+    "description": "",
+    "aliases": [
+      "metal"
+    ]
+  },
+  {
+    "filename": "minizinc.xml",
+    "name": "MiniZinc",
+    "description": "",
+    "aliases": [
+      "minizinc",
+      "MZN",
+      "mzn"
+    ]
+  },
+  {
+    "filename": "mlir.xml",
+    "name": "MLIR",
+    "description": "",
+    "aliases": [
+      "mlir"
+    ]
+  },
+  {
+    "filename": "modelica.xml",
+    "name": "Modelica",
+    "description": "",
+    "aliases": [
+      "modelica"
+    ]
+  },
+  {
+    "filename": "modula-2.xml",
+    "name": "Modula-2",
+    "description": "",
+    "aliases": [
+      "modula2",
+      "m2"
+    ]
+  },
+  {
+    "filename": "moinwiki.xml",
+    "name": "MoinMoin/Trac Wiki markup",
+    "description": "",
+    "aliases": [
+      "trac-wiki",
+      "moin"
+    ]
+  },
+  {
+    "filename": "mojo.xml",
+    "name": "Mojo",
+    "description": "",
+    "aliases": [
+      "mojo",
+      "🔥"
+    ]
+  },
+  {
+    "filename": "monkeyc.xml",
+    "name": "MonkeyC",
+    "description": "",
+    "aliases": [
+      "monkeyc"
+    ]
+  },
+  {
+    "filename": "moonscript.xml",
+    "name": "MoonScript",
+    "description": "",
+    "aliases": [
+      "moonscript",
+      "moon"
+    ]
+  },
+  {
+    "filename": "morrowindscript.xml",
+    "name": "MorrowindScript",
+    "description": "",
+    "aliases": [
+      "morrowind",
+      "mwscript"
+    ]
+  },
+  {
+    "filename": "myghty.xml",
+    "name": "Myghty",
+    "description": "",
+    "aliases": [
+      "myghty"
+    ]
+  },
+  {
+    "filename": "mysql.xml",
+    "name": "MySQL",
+    "description": "",
+    "aliases": [
+      "mysql",
+      "mariadb"
+    ]
+  },
+  {
+    "filename": "nasm.xml",
+    "name": "NASM",
+    "description": "",
+    "aliases": [
+      "nasm"
+    ]
+  },
+  {
+    "filename": "natural.xml",
+    "name": "Natural",
+    "description": "",
+    "aliases": [
+      "natural"
+    ]
+  },
+  {
+    "filename": "ndisasm.xml",
+    "name": "NDISASM",
+    "description": "",
+    "aliases": [
+      "ndisasm"
+    ]
+  },
+  {
+    "filename": "newspeak.xml",
+    "name": "Newspeak",
+    "description": "",
+    "aliases": [
+      "newspeak"
+    ]
+  },
+  {
+    "filename": "nginx_configuration_file.xml",
+    "name": "Nginx configuration file",
+    "description": "",
+    "aliases": [
+      "nginx"
+    ]
+  },
+  {
+    "filename": "nim.xml",
+    "name": "Nim",
+    "description": "",
+    "aliases": [
+      "nim",
+      "nimrod"
+    ]
+  },
+  {
+    "filename": "nix.xml",
+    "name": "Nix",
+    "description": "",
+    "aliases": [
+      "nixos",
+      "nix"
+    ]
+  },
+  {
+    "filename": "nsis.xml",
+    "name": "NSIS",
+    "description": "",
+    "aliases": [
+      "nsis",
+      "nsi",
+      "nsh"
+    ]
+  },
+  {
+    "filename": "nu.xml",
+    "name": "Nu",
+    "description": "",
+    "aliases": [
+      "nu"
+    ]
+  },
+  {
+    "filename": "objective-c.xml",
+    "name": "Objective-C",
+    "description": "",
+    "aliases": [
+      "objective-c",
+      "objectivec",
+      "obj-c",
+      "objc"
+    ]
+  },
+  {
+    "filename": "objectpascal.xml",
+    "name": "ObjectPascal",
+    "description": "",
+    "aliases": [
+      "objectpascal"
+    ]
+  },
+  {
+    "filename": "ocaml.xml",
+    "name": "OCaml",
+    "description": "",
+    "aliases": [
+      "ocaml"
+    ]
+  },
+  {
+    "filename": "octave.xml",
+    "name": "Octave",
+    "description": "",
+    "aliases": [
+      "octave"
+    ]
+  },
+  {
+    "filename": "odin.xml",
+    "name": "Odin",
+    "description": "",
+    "aliases": [
+      "odin"
+    ]
+  },
+  {
+    "filename": "onesenterprise.xml",
+    "name": "OnesEnterprise",
+    "description": "",
+    "aliases": [
+      "ones",
+      "onesenterprise",
+      "1S",
+      "1S:Enterprise"
+    ]
+  },
+  {
+    "filename": "openedge_abl.xml",
+    "name": "OpenEdge ABL",
+    "description": "",
+    "aliases": [
+      "openedge",
+      "abl",
+      "progress",
+      "openedgeabl"
+    ]
+  },
+  {
+    "filename": "openscad.xml",
+    "name": "OpenSCAD",
+    "description": "",
+    "aliases": [
+      "openscad"
+    ]
+  },
+  {
+    "filename": "org_mode.xml",
+    "name": "Org Mode",
+    "description": "",
+    "aliases": [
+      "org",
+      "orgmode"
+    ]
+  },
+  {
+    "filename": "pacmanconf.xml",
+    "name": "PacmanConf",
+    "description": "",
+    "aliases": [
+      "pacmanconf"
+    ]
+  },
+  {
+    "filename": "perl.xml",
+    "name": "Perl",
+    "description": "",
+    "aliases": [
+      "perl",
+      "pl"
+    ]
+  },
+  {
+    "filename": "php.xml",
+    "name": "PHP",
+    "description": "",
+    "aliases": [
+      "php",
+      "php3",
+      "php4",
+      "php5"
+    ]
+  },
+  {
+    "filename": "pig.xml",
+    "name": "Pig",
+    "description": "",
+    "aliases": [
+      "pig"
+    ]
+  },
+  {
+    "filename": "pkgconfig.xml",
+    "name": "PkgConfig",
+    "description": "",
+    "aliases": [
+      "pkgconfig"
+    ]
+  },
+  {
+    "filename": "pl_pgsql.xml",
+    "name": "PL/pgSQL",
+    "description": "",
+    "aliases": [
+      "plpgsql"
+    ]
+  },
+  {
+    "filename": "plaintext.xml",
+    "name": "plaintext",
+    "description": "",
+    "aliases": [
+      "text",
+      "plain",
+      "no-highlight"
+    ]
+  },
+  {
+    "filename": "plutus_core.xml",
+    "name": "Plutus Core",
+    "description": "",
+    "aliases": [
+      "plutus-core",
+      "plc"
+    ]
+  },
+  {
+    "filename": "pony.xml",
+    "name": "Pony",
+    "description": "",
+    "aliases": [
+      "pony"
+    ]
+  },
+  {
+    "filename": "postgresql_sql_dialect.xml",
+    "name": "PostgreSQL SQL dialect",
+    "description": "",
+    "aliases": [
+      "postgresql",
+      "postgres"
+    ]
+  },
+  {
+    "filename": "postscript.xml",
+    "name": "PostScript",
+    "description": "",
+    "aliases": [
+      "postscript",
+      "postscr"
+    ]
+  },
+  {
+    "filename": "povray.xml",
+    "name": "POVRay",
+    "description": "",
+    "aliases": [
+      "pov"
+    ]
+  },
+  {
+    "filename": "powerquery.xml",
+    "name": "PowerQuery",
+    "description": "",
+    "aliases": [
+      "powerquery",
+      "pq"
+    ]
+  },
+  {
+    "filename": "powershell.xml",
+    "name": "PowerShell",
+    "description": "",
+    "aliases": [
+      "powershell",
+      "posh",
+      "ps1",
+      "psm1",
+      "psd1",
+      "pwsh"
+    ]
+  },
+  {
+    "filename": "prolog.xml",
+    "name": "Prolog",
+    "description": "",
+    "aliases": [
+      "prolog"
+    ]
+  },
+  {
+    "filename": "promela.xml",
+    "name": "Promela",
+    "description": "",
+    "aliases": [
+      "promela"
+    ]
+  },
+  {
+    "filename": "promql.xml",
+    "name": "PromQL",
+    "description": "",
+    "aliases": [
+      "promql"
+    ]
+  },
+  {
+    "filename": "properties.xml",
+    "name": "properties",
+    "description": "",
+    "aliases": [
+      "java-properties"
+    ]
+  },
+  {
+    "filename": "protocol_buffer.xml",
+    "name": "Protocol Buffer",
+    "description": "",
+    "aliases": [
+      "protobuf",
+      "proto"
+    ]
+  },
+  {
+    "filename": "txtpb.xml",
+    "name": "Protocol Buffer Text Format",
+    "description": "",
+    "aliases": [
+      "txtpb"
+    ]
+  },
+  {
+    "filename": "prql.xml",
+    "name": "PRQL",
+    "description": "",
+    "aliases": [
+      "prql"
+    ]
+  },
+  {
+    "filename": "psl.xml",
+    "name": "PSL",
+    "description": "",
+    "aliases": [
+      "psl"
+    ]
+  },
+  {
+    "filename": "puppet.xml",
+    "name": "Puppet",
+    "description": "",
+    "aliases": [
+      "puppet"
+    ]
+  },
+  {
+    "filename": "python.xml",
+    "name": "Python",
+    "description": "",
+    "aliases": [
+      "python",
+      "py",
+      "sage",
+      "python3",
+      "py3",
+      "starlark"
+    ]
+  },
+  {
+    "filename": "python_2.xml",
+    "name": "Python 2",
+    "description": "",
+    "aliases": [
+      "python2",
+      "py2"
+    ]
+  },
+  {
+    "filename": "qbasic.xml",
+    "name": "QBasic",
+    "description": "",
+    "aliases": [
+      "qbasic",
+      "basic"
+    ]
+  },
+  {
+    "filename": "qml.xml",
+    "name": "QML",
+    "description": "",
+    "aliases": [
+      "qml",
+      "qbs"
+    ]
+  },
+  {
+    "filename": "r.xml",
+    "name": "R",
+    "description": "",
+    "aliases": [
+      "splus",
+      "s",
+      "r"
+    ]
+  },
+  {
+    "filename": "racket.xml",
+    "name": "Racket",
+    "description": "",
+    "aliases": [
+      "racket",
+      "rkt"
+    ]
+  },
+  {
+    "filename": "ragel.xml",
+    "name": "Ragel",
+    "description": "",
+    "aliases": [
+      "ragel"
+    ]
+  },
+  {
+    "filename": "react.xml",
+    "name": "react",
+    "description": "",
+    "aliases": [
+      "jsx",
+      "react"
+    ]
+  },
+  {
+    "filename": "reasonml.xml",
+    "name": "ReasonML",
+    "description": "",
+    "aliases": [
+      "reason",
+      "reasonml"
+    ]
+  },
+  {
+    "filename": "reg.xml",
+    "name": "reg",
+    "description": "",
+    "aliases": [
+      "registry"
+    ]
+  },
+  {
+    "filename": "rego.xml",
+    "name": "Rego",
+    "description": "",
+    "aliases": [
+      "rego"
+    ]
+  },
+  {
+    "filename": "rst.xml",
+    "name": "reStructuredText",
+    "description": "",
+    "aliases": [
+      "restructuredtext",
+      "rst",
+      "rest"
+    ]
+  },
+  {
+    "filename": "rexx.xml",
+    "name": "Rexx",
+    "description": "",
+    "aliases": [
+      "rexx",
+      "arexx"
+    ]
+  },
+  {
+    "filename": "rgbasm.xml",
+    "name": "RGBDS Assembly",
+    "description": "",
+    "aliases": [
+      "rgbasm"
+    ]
+  },
+  {
+    "filename": "ring.xml",
+    "name": "Ring",
+    "description": "",
+    "aliases": [
+      "ring"
+    ]
+  },
+  {
+    "filename": "rpgle.xml",
+    "name": "RPGLE",
+    "description": "",
+    "aliases": [
+      "SQLRPGLE",
+      "RPG IV"
+    ]
+  },
+  {
+    "filename": "rpm_spec.xml",
+    "name": "RPMSpec",
+    "description": "",
+    "aliases": [
+      "spec"
+    ]
+  },
+  {
+    "filename": "ruby.xml",
+    "name": "Ruby",
+    "description": "",
+    "aliases": [
+      "rb",
+      "ruby",
+      "duby"
+    ]
+  },
+  {
+    "filename": "rust.xml",
+    "name": "Rust",
+    "description": "",
+    "aliases": [
+      "rust",
+      "rs"
+    ]
+  },
+  {
+    "filename": "sas.xml",
+    "name": "SAS",
+    "description": "",
+    "aliases": [
+      "sas"
+    ]
+  },
+  {
+    "filename": "sass.xml",
+    "name": "Sass",
+    "description": "",
+    "aliases": [
+      "sass"
+    ]
+  },
+  {
+    "filename": "scala.xml",
+    "name": "Scala",
+    "description": "",
+    "aliases": [
+      "scala"
+    ]
+  },
+  {
+    "filename": "scheme.xml",
+    "name": "Scheme",
+    "description": "",
+    "aliases": [
+      "scheme",
+      "scm"
+    ]
+  },
+  {
+    "filename": "scilab.xml",
+    "name": "Scilab",
+    "description": "",
+    "aliases": [
+      "scilab"
+    ]
+  },
+  {
+    "filename": "scss.xml",
+    "name": "SCSS",
+    "description": "",
+    "aliases": [
+      "scss"
+    ]
+  },
+  {
+    "filename": "sed.xml",
+    "name": "Sed",
+    "description": "",
+    "aliases": [
+      "sed",
+      "gsed",
+      "ssed"
+    ]
+  },
+  {
+    "filename": "sieve.xml",
+    "name": "Sieve",
+    "description": "",
+    "aliases": [
+      "sieve"
+    ]
+  },
+  {
+    "filename": "smali.xml",
+    "name": "Smali",
+    "description": "",
+    "aliases": [
+      "smali"
+    ]
+  },
+  {
+    "filename": "smalltalk.xml",
+    "name": "Smalltalk",
+    "description": "",
+    "aliases": [
+      "smalltalk",
+      "squeak",
+      "st"
+    ]
+  },
+  {
+    "filename": "smarty.xml",
+    "name": "Smarty",
+    "description": "",
+    "aliases": [
+      "smarty"
+    ]
+  },
+  {
+    "filename": "snbt.xml",
+    "name": "SNBT",
+    "description": "",
+    "aliases": [
+      "snbt"
+    ]
+  },
+  {
+    "filename": "snobol.xml",
+    "name": "Snobol",
+    "description": "",
+    "aliases": [
+      "snobol"
+    ]
+  },
+  {
+    "filename": "solidity.xml",
+    "name": "Solidity",
+    "description": "",
+    "aliases": [
+      "sol",
+      "solidity"
+    ]
+  },
+  {
+    "filename": "sourcepawn.xml",
+    "name": "SourcePawn",
+    "description": "",
+    "aliases": [
+      "sp"
+    ]
+  },
+  {
+    "filename": "sparql.xml",
+    "name": "SPARQL",
+    "description": "",
+    "aliases": [
+      "sparql"
+    ]
+  },
+  {
+    "filename": "sql.xml",
+    "name": "SQL",
+    "description": "",
+    "aliases": [
+      "sql"
+    ]
+  },
+  {
+    "filename": "squidconf.xml",
+    "name": "SquidConf",
+    "description": "",
+    "aliases": [
+      "squidconf",
+      "squid.conf",
+      "squid"
+    ]
+  },
+  {
+    "filename": "standard_ml.xml",
+    "name": "Standard ML",
+    "description": "",
+    "aliases": [
+      "sml"
+    ]
+  },
+  {
+    "filename": "stas.xml",
+    "name": "stas",
+    "description": ""
+  },
+  {
+    "filename": "stylus.xml",
+    "name": "Stylus",
+    "description": "",
+    "aliases": [
+      "stylus"
+    ]
+  },
+  {
+    "filename": "swift.xml",
+    "name": "Swift",
+    "description": "",
+    "aliases": [
+      "swift"
+    ]
+  },
+  {
+    "filename": "systemd.xml",
+    "name": "SYSTEMD",
+    "description": "",
+    "aliases": [
+      "systemd"
+    ]
+  },
+  {
+    "filename": "systemverilog.xml",
+    "name": "systemverilog",
+    "description": "",
+    "aliases": [
+      "systemverilog",
+      "sv"
+    ]
+  },
+  {
+    "filename": "tablegen.xml",
+    "name": "TableGen",
+    "description": "",
+    "aliases": [
+      "tablegen"
+    ]
+  },
+  {
+    "filename": "tal.xml",
+    "name": "Tal",
+    "description": "",
+    "aliases": [
+      "tal",
+      "uxntal"
+    ]
+  },
+  {
+    "filename": "tasm.xml",
+    "name": "TASM",
+    "description": "",
+    "aliases": [
+      "tasm"
+    ]
+  },
+  {
+    "filename": "tcl.xml",
+    "name": "Tcl",
+    "description": "",
+    "aliases": [
+      "tcl"
+    ]
+  },
+  {
+    "filename": "tcsh.xml",
+    "name": "Tcsh",
+    "description": "",
+    "aliases": [
+      "tcsh",
+      "csh"
+    ]
+  },
+  {
+    "filename": "termcap.xml",
+    "name": "Termcap",
+    "description": "",
+    "aliases": [
+      "termcap"
+    ]
+  },
+  {
+    "filename": "terminfo.xml",
+    "name": "Terminfo",
+    "description": "",
+    "aliases": [
+      "terminfo"
+    ]
+  },
+  {
+    "filename": "terraform.xml",
+    "name": "Terraform",
+    "description": "",
+    "aliases": [
+      "terraform",
+      "tf",
+      "hcl"
+    ]
+  },
+  {
+    "filename": "tex.xml",
+    "name": "TeX",
+    "description": "",
+    "aliases": [
+      "tex",
+      "latex"
+    ]
+  },
+  {
+    "filename": "thrift.xml",
+    "name": "Thrift",
+    "description": "",
+    "aliases": [
+      "thrift"
+    ]
+  },
+  {
+    "filename": "toml.xml",
+    "name": "TOML",
+    "description": "",
+    "aliases": [
+      "toml"
+    ]
+  },
+  {
+    "filename": "tradingview.xml",
+    "name": "TradingView",
+    "description": "",
+    "aliases": [
+      "tradingview",
+      "tv"
+    ]
+  },
+  {
+    "filename": "transact-sql.xml",
+    "name": "Transact-SQL",
+    "description": "",
+    "aliases": [
+      "tsql",
+      "t-sql"
+    ]
+  },
+  {
+    "filename": "turing.xml",
+    "name": "Turing",
+    "description": "",
+    "aliases": [
+      "turing"
+    ]
+  },
+  {
+    "filename": "turtle.xml",
+    "name": "Turtle",
+    "description": "",
+    "aliases": [
+      "turtle"
+    ]
+  },
+  {
+    "filename": "twig.xml",
+    "name": "Twig",
+    "description": "",
+    "aliases": [
+      "twig"
+    ]
+  },
+  {
+    "filename": "typescript.xml",
+    "name": "TypeScript",
+    "description": "",
+    "aliases": [
+      "ts",
+      "tsx",
+      "typescript"
+    ]
+  },
+  {
+    "filename": "typoscript.xml",
+    "name": "TypoScript",
+    "description": "",
+    "aliases": [
+      "typoscript"
+    ]
+  },
+  {
+    "filename": "typoscriptcssdata.xml",
+    "name": "TypoScriptCssData",
+    "description": "",
+    "aliases": [
+      "typoscriptcssdata"
+    ]
+  },
+  {
+    "filename": "typoscripthtmldata.xml",
+    "name": "TypoScriptHtmlData",
+    "description": "",
+    "aliases": [
+      "typoscripthtmldata"
+    ]
+  },
+  {
+    "filename": "typst.xml",
+    "name": "Typst",
+    "description": "",
+    "aliases": [
+      "typst"
+    ]
+  },
+  {
+    "filename": "ucode.xml",
+    "name": "ucode",
+    "description": ""
+  },
+  {
+    "filename": "v.xml",
+    "name": "V",
+    "description": "",
+    "aliases": [
+      "v",
+      "vlang"
+    ]
+  },
+  {
+    "filename": "v_shell.xml",
+    "name": "V shell",
+    "description": "",
+    "aliases": [
+      "vsh",
+      "vshell"
+    ]
+  },
+  {
+    "filename": "vala.xml",
+    "name": "Vala",
+    "description": "",
+    "aliases": [
+      "vala",
+      "vapi"
+    ]
+  },
+  {
+    "filename": "vb_net.xml",
+    "name": "VB.net",
+    "description": "",
+    "aliases": [
+      "vb.net",
+      "vbnet"
+    ]
+  },
+  {
+    "filename": "VelocityLexer.xml",
+    "name": "Velocity",
+    "description": "",
+    "aliases": [
+      "velocity"
+    ]
+  },
+  {
+    "filename": "verilog.xml",
+    "name": "verilog",
+    "description": "",
+    "aliases": [
+      "verilog",
+      "v"
+    ]
+  },
+  {
+    "filename": "vhdl.xml",
+    "name": "VHDL",
+    "description": "",
+    "aliases": [
+      "vhdl"
+    ]
+  },
+  {
+    "filename": "vhs.xml",
+    "name": "VHS",
+    "description": "",
+    "aliases": [
+      "vhs",
+      "tape",
+      "cassette"
+    ]
+  },
+  {
+    "filename": "viml.xml",
+    "name": "VimL",
+    "description": "",
+    "aliases": [
+      "vim"
+    ]
+  },
+  {
+    "filename": "vue.xml",
+    "name": "vue",
+    "description": "",
+    "aliases": [
+      "vue",
+      "vuejs"
+    ]
+  },
+  {
+    "filename": "wdte.xml",
+    "name": "WDTE",
+    "description": ""
+  },
+  {
+    "filename": "wat.xml",
+    "name": "WebAssembly Text Format",
+    "description": "",
+    "aliases": [
+      "wast",
+      "wat"
+    ]
+  },
+  {
+    "filename": "webgpu_shading_language.xml",
+    "name": "WebGPU Shading Language",
+    "description": "",
+    "aliases": [
+      "wgsl"
+    ]
+  },
+  {
+    "filename": "webvtt.xml",
+    "name": "WebVTT",
+    "description": "",
+    "aliases": [
+      "vtt"
+    ]
+  },
+  {
+    "filename": "whiley.xml",
+    "name": "Whiley",
+    "description": "",
+    "aliases": [
+      "whiley"
+    ]
+  },
+  {
+    "filename": "xml.xml",
+    "name": "XML",
+    "description": "",
+    "aliases": [
+      "xml"
+    ]
+  },
+  {
+    "filename": "xorg.xml",
+    "name": "Xorg",
+    "description": "",
+    "aliases": [
+      "xorg.conf"
+    ]
+  },
+  {
+    "filename": "yaml.xml",
+    "name": "YAML",
+    "description": "",
+    "aliases": [
+      "yaml"
+    ]
+  },
+  {
+    "filename": "yang.xml",
+    "name": "YANG",
+    "description": "",
+    "aliases": [
+      "yang"
+    ]
+  },
+  {
+    "filename": "z80_assembly.xml",
+    "name": "Z80 Assembly",
+    "description": "",
+    "aliases": [
+      "z80"
+    ]
+  },
+  {
+    "filename": "zed.xml",
+    "name": "Zed",
+    "description": "",
+    "aliases": [
+      "zed"
+    ]
+  },
+  {
+    "filename": "zig.xml",
+    "name": "Zig",
+    "description": "",
+    "aliases": [
+      "zig"
+    ]
+  }
+]

@@ -6,6 +6,31 @@ module Pasto
   def self.register_utility_routes
     base_path = Pasto.config.base_path
 
+    # Dummy endpoint for tartrazine.js theme loading
+    # Themes are already loaded via /syntax endpoint, so we return empty theme data
+    get Pasto::PathHelper.with_base_path("/styles/:filename", base_path) do |env|
+      filename = env.params.url["filename"]
+      if filename.ends_with?(".xml")
+        # Return minimal valid XML theme (CSS is already loaded via /syntax endpoint)
+        empty_theme = <<-XML
+<?xml version="1.0" encoding="UTF-8"?>
+<theme name="#{filename.gsub(".xml", "")}">
+  <settings>
+    <setting name="background-color" value="#ffffff"/>
+  </settings>
+  <styles>
+  </styles>
+</theme>
+XML
+        env.response.content_type = "text/xml"
+        env.response.headers["Cache-Control"] = "public, max-age=604800"
+        empty_theme
+      else
+        env.response.status_code = 404
+        "File not found"
+      end
+    end
+
     get Pasto::PathHelper.with_base_path("/syntax/:family/:variant", base_path) do |env|
       family = env.params.url["family"].gsub(/-dark$/, "").gsub(/-light$/, "")
       variant = env.params.url["variant"]
@@ -16,13 +41,13 @@ module Pasto
         formatter = Tartrazine::Html.new(theme: Tartrazine.theme(family, variant))
         css = formatter.style_defs
 
-        # Add highlight.js classes for compatibility with CodeJar editor
+        # Tartrazine CSS is now used directly (tartrazine.js on client, tartrazine on server)
+        # No need for highlight.js compatibility layer anymore
         Pasto::Logging.debug("Generating CSS for theme: #{theme_name}")
-        enhanced_css = Pasto.add_highlightjs_classes(css, theme_name)
 
         env.response.content_type = "text/css"
         env.response.headers["Cache-Control"] = "public, max-age=604800" # 1 week in seconds
-        enhanced_css
+        css
       rescue ex
         env.response.status_code = 404
         env.response.content_type = "text/plain"

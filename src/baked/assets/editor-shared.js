@@ -1,53 +1,105 @@
 // Shared editor functionality for Pasto
 // Common functions used across index.ecr and edit.ecr
 
-// Map common language names to highlight.js names
-function mapLanguage(lang) {
-  if (!lang) return 'plaintext';
-  const langLower = lang.toLowerCase();
-  const mapping = {
-    'c++': 'cpp',
-    'c#': 'csharp',
-    'objective-c': 'objectivec',
-    'shell': 'bash',
-    'dockerfile': 'docker',
-    'console': 'bash',
-    'text': 'plaintext',
-    'plain text': 'plaintext',
-    'crystal': 'ruby',  // Crystal is similar to Ruby
-    'auto-detect': 'plaintext'
+// Helper function to save cursor position
+function saveCursorPosition(editor) {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    return { offset: 0, text: '' };
+  }
+
+  const range = selection.getRangeAt(0);
+  const preCaretRange = range.cloneRange();
+  preCaretRange.selectNodeContents(editor);
+  preCaretRange.setEnd(range.endContainer, range.endOffset);
+
+  return {
+    offset: preCaretRange.toString().length,
+    text: editor.textContent
   };
-  return mapping[langLower] || langLower;
 }
 
-// Highlight function for CodeJar
-function highlight(editor, currentLanguage = '', syntaxTheme = null) {
+// Helper function to restore cursor position
+function restoreCursorPosition(editor, savedPosition) {
+  if (!savedPosition || savedPosition.offset === 0) {
+    return;
+  }
+
+  const selection = window.getSelection();
+  if (!selection) {
+    return;
+  }
+
+  const range = document.createRange();
+  const charCount = Math.min(savedPosition.offset, editor.textContent.length);
+
+  let currentCount = 0;
+  let found = false;
+
+  // Walk through the editor's text nodes to find the correct position
+  const walker = document.createTreeWalker(
+    editor,
+    NodeFilter.SHOW_TEXT,
+    null
+  );
+
+  let node;
+  while (node = walker.nextNode()) {
+    const nodeLength = node.textContent.length;
+
+    if (currentCount + nodeLength >= charCount) {
+      range.setStart(node, charCount - currentCount);
+      range.collapse(true);
+      found = true;
+      break;
+    }
+
+    currentCount += nodeLength;
+  }
+
+  // If we couldn't find the exact position, place cursor at the end
+  if (!found) {
+    range.selectNodeContents(editor);
+    range.collapse(false);
+  }
+
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+// Highlight function for CodeJar using tartrazine.js
+// This is now async to support the async tartrazine API
+async function highlight(editor, currentLanguage = '', syntaxTheme = null) {
   const code = editor.textContent;
   if (!code) return;
 
   const lang = currentLanguage || '';
-  const mappedLang = mapLanguage(lang);
 
-  // Get syntax theme from parameter or fallback to getter
+  // Get syntax theme from parameter or fallback to getter (for CSS class only)
   const theme = syntaxTheme || getThemeGetter();
 
+  // Normalize empty language to plaintext for tartrazine
+  const normalizedLang = (!lang || lang === '' || lang === 'Auto') ? 'plaintext' : lang;
+
+  // Save cursor position before updating
+  const savedCursor = saveCursorPosition(editor);
+
   try {
-    if (mappedLang !== 'plaintext' && hljs.getLanguage(mappedLang)) {
-      const result = hljs.highlight(code, { language: mappedLang, ignoreIllegals: true });
-      editor.innerHTML = result.value;
+    // Use tartrazine.js for highlighting (no theme parameter - CSS is pre-loaded)
+    if (typeof Tartrazine !== 'undefined' && Tartrazine.highlight) {
+      const html = await Tartrazine.highlight(code, normalizedLang, {
+        standalone: false,
+        lineNumbers: false
+      });
+      editor.innerHTML = html;
       // Apply syntax highlighting theme class
       editor.className = theme;
-    } else if (!lang || lang === '' || mappedLang === 'plaintext') {
-      // Auto-detect mode or plaintext
-      const result = hljs.highlightAuto(code);
-      editor.innerHTML = result.value;
-      // Apply syntax highlighting theme class
-      editor.className = theme;
+      // Restore cursor position after updating
+      restoreCursorPosition(editor, savedCursor);
     } else {
-      // Unknown language, try auto-detection
-      const result = hljs.highlightAuto(code);
-      editor.innerHTML = result.value;
-      // Apply syntax highlighting theme class
+      // Fallback if tartrazine is not loaded
+      console.warn('Tartrazine not loaded, using plain text');
+      editor.textContent = code;
       editor.className = theme;
     }
   } catch (e) {
@@ -375,7 +427,6 @@ window.getThemeGetter = getThemeGetter;
 window.initializeLucideIcons = initializeLucideIcons;
 window.restorePreviewVisibility = restorePreviewVisibility;
 window.initializeLanguageSelect = initializeLanguageSelect;
-window.mapLanguage = mapLanguage;
 window.highlight = highlight;
 window.debouncedUpdatePreview = debouncedUpdatePreview;
 window.setupKeyboardShortcuts = setupKeyboardShortcuts;
