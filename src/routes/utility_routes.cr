@@ -7,7 +7,8 @@ module Pasto
     base_path = Pasto.config.base_path
 
     # Serve lexer XML files from tartrazine's baked file system
-    get Pasto::PathHelper.with_base_path("/assets/lexers/:filename", base_path) do |env|
+    # Note: Using /lexers path instead of /assets/lexers to avoid conflict with BakedFileHandler
+    get Pasto::PathHelper.with_base_path("/lexers/:filename", base_path) do |env|
       filename = env.params.url["filename"]
 
       unless filename.ends_with?(".xml")
