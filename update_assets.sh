@@ -6,7 +6,6 @@ set -e
 TMPDIR=$(mktemp -d)
 LUCIDE_URL="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"
 MARKED_URL="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"
-HIGHLIGHT_URL="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
 CODEJAR_URL="https://cdn.jsdelivr.net/npm/codejar@4.2.0/dist/codejar.min.js"
 # Pico.css URLs
 PICO_VERSION="2.1.1"
@@ -36,8 +35,6 @@ PICO_FILES=(
 )
 LUCIDE_FILE="$TMPDIR/lucide.min.js"
 MARKED_FILE="$TMPDIR/marked.min.js"
-HIGHLIGHT_FILE="$TMPDIR/highlight.min.js"
-CODEJAR_FILE="$TMPDIR/codejar.min.js"
 BUNDLE_FILE="src/baked/assets/bundle.js"
 
 
@@ -55,20 +52,11 @@ if ! curl -fsSL "$MARKED_URL" -o "$MARKED_FILE"; then
 	exit 1
 fi
 
-# Download highlight.js
-if ! curl -fsSL "$HIGHLIGHT_URL" -o "$HIGHLIGHT_FILE"; then
-	echo "Error: Failed to download highlight.min.js from $HIGHLIGHT_URL" >&2
-	rm -rf "$TMPDIR"
-	exit 1
-fi
-
-# Concatenate into bundle.js (excluding CodeJar which will be a separate module)
+# Concatenate into bundle.js (lucide + marked only, no highlight.js)
 echo "// lucide.min.js" > "$BUNDLE_FILE"
 cat "$LUCIDE_FILE" >> "$BUNDLE_FILE"
 echo -e "\n// marked.min.js" >> "$BUNDLE_FILE"
 cat "$MARKED_FILE" >> "$BUNDLE_FILE"
-echo -e "\n// highlight.min.js" >> "$BUNDLE_FILE"
-cat "$HIGHLIGHT_FILE" >> "$BUNDLE_FILE"
 
 
 # Download all Pico.css files
