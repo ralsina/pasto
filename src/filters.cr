@@ -134,6 +134,7 @@ module Pasto
       "/auth/", "/api/", "/assets/", "/cache/", "/preview/",
       "/api/qr/", "/api/languages", "/api/themes",
       "/syntax/", "/profile/", "/mcp", "/syntax/",
+      "/lexers/",
     ]
 
     # Check if path needs paste access control
