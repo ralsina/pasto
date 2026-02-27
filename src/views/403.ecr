@@ -8,14 +8,14 @@
     if (controlsGroup) {
       // Define buttons for 403 page
       const buttons = [
-        {type: "link", href: `${basePath}/`, icon: "plus", title: "Create New Paste"},
-        {type: "link", href: `${basePath}/help`, icon: "help-circle", title: "Help"}
+        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
+        {type: "link", href: "/help", icon: "help-circle", title: "Help"}
         <% if current_user %>
         ,
-        {type: "link", href: `${basePath}/profile`, icon: "user", title: "Profile"}
+        {type: "link", href: "/profile", icon: "user", title: "Profile"}
         <% else %>
         ,
-        {type: "link", href: `${basePath}/auth/help`, icon: "log-in", title: "Login"}
+        {type: "link", href: "/auth/help", icon: "log-in", title: "Login"}
         <% end %>
       ];
 

@@ -9,8 +9,8 @@
     if (controlsGroup) {
       // Define buttons for profile page
       const buttons = [
-        {type: "link", href: `${basePath}/`, icon: "plus", title: "Create New Paste"},
-        {type: "link", href: `${basePath}/help`, icon: "help-circle", title: "Help"}
+        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
+        {type: "link", href: "/help", icon: "help-circle", title: "Help"}
         <% if current_user %>
         ,
         {type: "button", icon: "log-out", title: "Logout", action: "document.getElementById('logout-form').submit()", style: "danger"}
@@ -423,7 +423,7 @@ function confirmRevokeKey(apiKeyId) {
 
 function confirmRevokeSSHKey(fingerprint, keyType) {
   showConfirmDialog(`Are you sure you want to revoke SSH key "${keyType}"? This action cannot be undone and will immediately invalidate the key.`, () => {
-    fetch(basePath + '/profile/ssh-keys/revoke', {
+    fetch((window.PASTO_BASE_PATH === '/' ? '' : window.PASTO_BASE_PATH) + '/profile/ssh-keys/revoke', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -465,7 +465,7 @@ function createBackup() {
   button.disabled = true;
   button.innerHTML = '<i data-lucide="loader" class="spin" style="width: 16px; height: 16px; margin-right: 6px;"></i> Creating...';
 
-  fetch(basePath + '/profile/backups/create', {
+  fetch((window.PASTO_BASE_PATH === '/' ? '' : window.PASTO_BASE_PATH) + '/profile/backups/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

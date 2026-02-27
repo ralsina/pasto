@@ -843,10 +843,10 @@ async function createPaste(event) {
       controlsHTML += `<button onclick="window.togglePreview(window.jar, () => document.getElementById('language').value, () => (document.querySelector('#syntax-theme') || document.getElementById('syntax-theme'))?.value || '<%= theme_vars[:saved_syntax_theme] %>')" class="controls-button" title="Hide Preview" id="controls-hide-preview-button" aria-label="Hide Preview" style="display: flex;"><i data-lucide="eye-off" style="width: 20px; height: 20px;"></i></button>`;
 
       // Shared help and profile buttons
-      controlsHTML += `<a href="${basePath}/help" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+      controlsHTML += `<a href="${window.PASTO_BASE_PATH === '/' ? '/help' : window.PASTO_BASE_PATH + '/help'}" class="controls-button" title="Help" aria-label="Help" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
         </a>
-        <a href="${basePath}/profile" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+        <a href="${window.PASTO_BASE_PATH === '/' ? '/profile' : window.PASTO_BASE_PATH + '/profile'}" class="controls-button" title="Profile / Login" aria-label="Profile / Login" style="text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
           <i data-lucide="user" style="width: 20px; height: 20px;"></i>
         </a>`;
 

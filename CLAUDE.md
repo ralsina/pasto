@@ -23,8 +23,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 shards install
 
-# Build ALL binaries (required - there are 4 binaries)
-shards build pasto pasto-ssh pasto-backup pasto-crypto
+# Build ALL binaries (required - there are 5 binaries)
+shards build pasto pasto-ssh pasto-backup pasto-crypto pasto-cli
 
 # Run the web server (port 3000 by default)
 ./bin/pasto
@@ -37,6 +37,9 @@ shards build pasto pasto-ssh pasto-backup pasto-crypto
 
 # Run the crypto tool (encrypt/decrypt pastes)
 ./bin/pasto-crypto encrypt --random-pass --output encrypted.txt input.txt
+
+# Run the CLI tool (client for interacting with server)
+./bin/pasto-cli --server=localhost login
 
 # Linting and formatting
 ./bin/ameba --fix src/          # Auto-fix linting issues
@@ -58,11 +61,12 @@ docker compose down              # Stop services
 ## Architecture
 
 ### Multi-Binary Architecture
-The project builds **FOUR separate binaries** from shard.yml targets:
+The project builds **FIVE separate binaries** from shard.yml targets:
 1. **pasto** (`src/pasto.cr`): Main web server (Kemal) on port 3000
 2. **pasto-ssh** (`src/pasto_ssh.cr`): SSH server on port 2222
 3. **pasto-backup** (`src/pasto_backup.cr`): Backup tool for user data exports
 4. **pasto-crypto** (`src/pasto_crypto.cr`): Encryption/decryption CLI tool
+5. **pasto-cli** (`src/pasto_cli.cr`): CLI client for interacting with Pasto server
 
 All services share the same Sepia data directory for seamless integration.
 
@@ -89,6 +93,7 @@ All services share the same Sepia data directory for seamless integration.
 - `src/pasto_ssh.cr`: SSH server using Shirk framework
 - `src/pasto_backup.cr`: Backup utility for exporting user data
 - `src/pasto_crypto.cr`: CLI for zero-knowledge encryption
+- `src/pasto_cli.cr`: CLI client for server interaction
 
 #### Core Functionality
 - `src/server.cr` (~2300+ lines): All HTTP routes, middleware, web handlers
@@ -261,7 +266,7 @@ Three authentication methods:
 - **Docopt CLI**: Follow docopt pattern in `src/pasto.cr` for new CLI options
 
 ### Build Requirements
-- **Build ALL binaries**: Use `shards build pasto pasto-ssh pasto-backup pasto-crypto`
+- **Build ALL binaries**: Use `shards build pasto pasto-ssh pasto-backup pasto-crypto pasto-cli`
 - **Never use `--release`**: Build without optimization flag for faster compilation
 - **Code must work**: Non-working code is NOT considered done
 - **Test after changes**: Verify functionality before completing tasks
@@ -287,7 +292,7 @@ Three authentication methods:
 
 Standard sequence for any change:
 1. Make code changes
-2. Build ALL binaries: `shards build pasto pasto-ssh pasto-backup pasto-crypto`
+2. Build ALL binaries: `shards build pasto pasto-ssh pasto-backup pasto-crypto pasto-cli`
 3. Test functionality (manual or automated)
 4. Fix linting: `./bin/ameba --fix src/`
 5. Format code: `crystal tool format src/`
