@@ -1286,6 +1286,15 @@ async function createPaste(event) {
           return;
         }
 
+        // Special case: when at the very top, ensure preview is also at top
+        if (editorElement.scrollTop < 1) {
+          const previewScrollable = previewContent.scrollHeight > previewContent.clientHeight
+            ? previewContent
+            : previewPane;
+          previewScrollable.scrollTop = 0;
+          return;
+        }
+
         const editorScrollRatio = editorElement.scrollTop / (editorElement.scrollHeight - editorElement.clientHeight);
 
         // Use the actually scrollable preview element
