@@ -353,6 +353,22 @@
 
       // Update data-theme attribute
       document.documentElement.setAttribute('data-theme', resolvedTheme);
+
+      // Re-highlight editor if it exists to apply new syntax theme
+      if (window.jar && typeof window.highlight === 'function') {
+        const editorElement = document.getElementById('editor');
+        if (editorElement) {
+          // Get current language from dropdown
+          const getLanguageGetter = () => document.getElementById('language')?.value || '';
+          const currentLanguage = getLanguageGetter();
+
+          // Re-highlight with new theme
+          window.highlight(editorElement, currentLanguage, syntaxTheme);
+
+          // Update editor element class for theme-specific styling
+          editorElement.className = syntaxTheme;
+        }
+      }
     }
 
     // Save themes to server for logged-in users
