@@ -137,7 +137,47 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
     if (previewElement) {
       try {
         if (typeof marked !== 'undefined') {
-          previewElement.innerHTML = marked.parse(content);
+          // Configure marked with tartrazine for syntax highlighting in code blocks
+          const markedOptions = {
+            highlight: function(code, lang) {
+              // Use tartrazine to highlight code blocks
+              if (typeof Tartrazine !== 'undefined' && Tartrazine.highlight && lang) {
+                return Tartrazine.highlight(code, lang, {
+                  standalone: false,
+                  lineNumbers: false
+                }).then(html => html);
+              }
+              // Fallback for no language or tartrazine unavailable
+              return code;
+            },
+            langPrefix: 'language-',
+            breaks: true,
+            gfm: true
+          };
+
+          // Use marked with async highlight support
+          marked.use({
+            async: true,
+            highlight: async (code, lang) => {
+              if (typeof Tartrazine !== 'undefined' && Tartrazine.highlight && lang) {
+                const html = await Tartrazine.highlight(code, lang, {
+                  standalone: false,
+                  lineNumbers: false
+                });
+                return html;
+              }
+              return code;
+            }
+          });
+
+          marked.parse(content, markedOptions)
+            .then(html => {
+              previewElement.innerHTML = html;
+            })
+            .catch(err => {
+              console.error('Markdown parsing error:', err);
+              previewElement.innerHTML = '<pre><code>Error rendering Markdown</code></pre>';
+            });
         } else {
           previewElement.innerHTML = '<pre><code>marked.js not loaded</code></pre>';
         }
@@ -214,7 +254,32 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
       if (previewElement) {
         try {
           if (typeof marked !== 'undefined') {
-            previewElement.innerHTML = marked.parse(content);
+            // Configure marked with tartrazine for syntax highlighting in code blocks
+            marked.use({
+              async: true,
+              highlight: async (code, lang) => {
+                if (typeof Tartrazine !== 'undefined' && Tartrazine.highlight && lang) {
+                  const html = await Tartrazine.highlight(code, lang, {
+                    standalone: false,
+                    lineNumbers: false
+                  });
+                  return html;
+                }
+                return code;
+              }
+            });
+
+            marked.parse(content, {
+              breaks: true,
+              gfm: true
+            })
+            .then(html => {
+              previewElement.innerHTML = html;
+            })
+            .catch(err => {
+              console.error('Markdown parsing error:', err);
+              previewElement.innerHTML = '<pre><code>Error rendering Markdown</code></pre>';
+            });
           } else {
             previewElement.innerHTML = '<pre><code>marked.js not loaded</code></pre>';
           }

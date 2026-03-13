@@ -207,7 +207,7 @@
   }
 
   // Mode-specific functions
-  function updateLanguage() {
+  function updateLanguageLocal() {
     currentLanguage = document.getElementById('language').value;
     if (jar) {
       jar.updateCode(jar.toString());
@@ -878,7 +878,7 @@ async function createPaste(event) {
       controlsHTML += `<input type="text" id="paste-title" value="<%= initial_title || "" %>" placeholder="Title (optional)" class="controls-input">`;
 
       // Language selector - appears in both modes
-      controlsHTML += `<select id="language" onchange="updateLanguage()" class="controls-select" aria-label="Select programming language"><option value="">Auto</option></select>`;
+      controlsHTML += `<select id="language" class="controls-select" aria-label="Select programming language"><option value="">Auto</option></select>`;
 
       // Security Settings button - appears in both modes
       controlsHTML += `<button onclick="showSecuritySettingsDialog()" class="controls-button" id="security-settings-btn" title="Security Settings" aria-label="Security Settings"><i data-lucide="shield" style="width: 20px; height: 20px;"></i></button>`;
@@ -908,6 +908,14 @@ async function createPaste(event) {
         </a>`;
 
       controlsGroup.innerHTML = controlsHTML;
+
+      // Attach language change event listener
+      const languageSelect = document.getElementById('language');
+      if (languageSelect) {
+        languageSelect.addEventListener('change', () => {
+          updateLanguageLocal();
+        });
+      }
     }
 
     // Dynamically import CodeJar as ES module
@@ -1238,25 +1246,10 @@ async function createPaste(event) {
     const showButton = document.getElementById('controls-show-preview-button');
     const hideButton = document.getElementById('controls-hide-preview-button');
 
-    // Check if current language is markdown
-    const languageSelect = document.getElementById('language');
-    const currentLang = languageSelect ? languageSelect.value.toLowerCase() : '';
-    const isMarkdown = currentLang === 'markdown' || currentLang === 'md';
-
-    // Only show preview for markdown, otherwise hide it completely
-    if (!isMarkdown) {
-      container.classList.add('preview-hidden');
-      if (showButton) showButton.style.display = 'none';  // Hide show button
-      if (hideButton) hideButton.style.display = 'none';  // Hide hide button
-    } else if (previewHidden) {
-      container.classList.add('preview-hidden');
-      if (showButton) showButton.style.display = 'flex';
-      if (hideButton) hideButton.style.display = 'none';
-    } else {
-      container.classList.remove('preview-hidden');
-      if (showButton) showButton.style.display = 'none';
-      if (hideButton) hideButton.style.display = 'flex';
-    }
+    // Initially hide preview - will be shown after languages load if markdown
+    container.classList.add('preview-hidden');
+    if (showButton) showButton.style.display = 'none';
+    if (hideButton) hideButton.style.display = 'none';
 
     // Initialize Lucide icons
     if (window.lucide) {
@@ -1309,7 +1302,7 @@ async function createPaste(event) {
         }
 
         // Update preview visibility based on language
-        updateLanguage();
+        updateLanguageLocal();
 
         // Initialize preview after languages are loaded (only needed for create mode or fallback)
         if (mode === "create") {
