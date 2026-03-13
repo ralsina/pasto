@@ -1112,6 +1112,17 @@ async function createPaste(event) {
     // Force Chivo Mono font application
     editorElement.style.fontFamily = "'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace";
 
+    // Focus editor when clicking anywhere in the editor pane
+    const editorPane = editorElement.closest('.editor-pane');
+    if (editorPane) {
+      editorPane.addEventListener('click', (e) => {
+        // Only focus if not clicking on an interactive element
+        if (!e.target.closest('button, a, input, select, textarea')) {
+          editorElement.focus();
+        }
+      });
+    }
+
     // Set keyboard focus on the editor
     editorElement.focus();
 
