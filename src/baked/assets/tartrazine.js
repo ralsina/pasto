@@ -1,4 +1,4 @@
-var Tartrazine = (function (exports, fs) {
+var Tartrazine = (function (exports) {
   'use strict';
 
   var validator = {};
@@ -2157,6 +2157,7 @@ var Tartrazine = (function (exports, fs) {
 
   var fxpExports = requireFxp();
 
+  // fs replaced with fetch for browser
   const parser = new fxpExports.XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: '',
@@ -2197,7 +2198,7 @@ var Tartrazine = (function (exports, fs) {
       }
       return await response.text();
     } else {
-      return fs.readFileSync(fullPath, 'utf-8');
+      throw new Error('Cannot load local files in browser. Use loadLexer() which uses fetch() instead.');
     }
   }
 
@@ -2208,7 +2209,7 @@ var Tartrazine = (function (exports, fs) {
    */
   async function loadLexer(lexerName) {
     // Use the synced lexers directory for deployment/packaging
-    const xmlPath = `/lexers/${lexerName}.xml`;
+    const xmlPath = `lexers/${lexerName}.xml`;
     const xmlContent = await loadXmlFile(xmlPath);
 
     // Preprocess XML to handle duplicate attributes in <combined> and <push> elements
@@ -2243,7 +2244,7 @@ var Tartrazine = (function (exports, fs) {
       /<bygroups>([\s\S]*?)<\/bygroups>/g,
       (match, content) => {
         let order = 0;
-        const ordered = content.replace(/<(usingself|using|token)([^>]*)>/g, (m, tagName, attrs) => {
+        const ordered = content.replace(/<(usingself|using|token|UsingByGroup)([^>]*)>/g, (m, tagName, attrs) => {
           return `<${tagName} _order="${order++}"${attrs}>`;
         });
         return `<bygroups>${ordered}</bygroups>`;
@@ -2387,6 +2388,9 @@ var Tartrazine = (function (exports, fs) {
         // Extract using elements
         const usings = Array.isArray(rule.bygroups.using) ? rule.bygroups.using : (rule.bygroups.using ? [rule.bygroups.using] : []);
 
+        // Extract UsingByGroup elements
+        const usingByGroups = Array.isArray(rule.bygroups.UsingByGroup) ? rule.bygroups.UsingByGroup : (rule.bygroups.UsingByGroup ? [rule.bygroups.UsingByGroup] : []);
+
         // Use the _order attribute added during preprocessing to preserve original order
         // Collect all groups and sort by _order
         const allGroups = [];
@@ -2404,6 +2408,11 @@ var Tartrazine = (function (exports, fs) {
         // Add using elements
         for (const using of usings) {
           allGroups.push({ ...using, _kind: 'using' });
+        }
+
+        // Add UsingByGroup elements
+        for (const usingByGroup of usingByGroups) {
+          allGroups.push({ ...usingByGroup, _kind: 'usingbygroup' });
         }
 
         // Sort by _order attribute
@@ -2429,6 +2438,12 @@ var Tartrazine = (function (exports, fs) {
             groups.push({
               type: 'using',
               lexer: item.lexer,
+            });
+          } else if (item._kind === 'usingbygroup') {
+            groups.push({
+              type: 'usingbygroup',
+              lexerIndex: parseInt(item.lexer, 10),
+              contentIndex: item.content ? item.content.split(',').map(s => parseInt(s.trim(), 10)) : [],
             });
           }
         }
@@ -5750,6 +5765,31 @@ XID_Start XIDS`.split(/\s/).map((p) => [w(p), p])
                   await lexer.init();
                   const usingTokens = await lexer.tokenize(match[groupIndex]);
                   tokens.push(...usingTokens);
+                } else if (groupAction.type === 'usingbygroup') {
+                  // Shunt to a lexer specified by a capture group
+                  // Get the lexer name from the specified capture group
+                  const lexerName = match[groupAction.lexerIndex];
+                  if (lexerName) {
+                    // Get the content by concatenating the specified capture groups
+                    const content = groupAction.contentIndex.map(idx => match[idx] || '').join('');
+
+                    if (content) {
+                      try {
+                        // Normalize lexer name to lowercase
+                        const lexer = new Lexer(String(lexerName).toLowerCase());
+                        await lexer.init();
+                        const usingTokens = await lexer.tokenize(content);
+                        tokens.push(...usingTokens);
+                      } catch (error) {
+                        // Fallback to 'text' lexer if the specified lexer is not found
+                        console.warn(`Lexer '${lexerName}' not found, falling back to 'text'`);
+                        const textLexer = new Lexer('text');
+                        await textLexer.init();
+                        const textTokens = await textLexer.tokenize(content);
+                        tokens.push(...textTokens);
+                      }
+                    }
+                  }
                 } else if (groupAction.type === 'token') {
                   tokens.push({
                     type: groupAction.tokenType,
@@ -6388,5 +6428,5 @@ XID_Start XIDS`.split(/\s/).map((p) => [w(p), p])
 
   return exports;
 
-})({}, {});
+})({});
 //# sourceMappingURL=tartrazine.iife.js.map
