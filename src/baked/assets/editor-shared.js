@@ -138,46 +138,56 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
       try {
         if (typeof marked !== 'undefined') {
           // Configure marked with tartrazine for syntax highlighting in code blocks
-          const markedOptions = {
-            highlight: function(code, lang) {
-              // Use tartrazine to highlight code blocks
-              if (typeof Tartrazine !== 'undefined' && Tartrazine.highlight && lang) {
-                return Tartrazine.highlight(code, lang, {
-                  standalone: false,
-                  lineNumbers: false
-                }).then(html => html);
-              }
-              // Fallback for no language or tartrazine unavailable
-              return code;
-            },
-            langPrefix: 'language-',
-            breaks: true,
-            gfm: true
-          };
-
-          // Use marked with async highlight support
           marked.use({
-            async: true,
-            highlight: async (code, lang) => {
-              if (typeof Tartrazine !== 'undefined' && Tartrazine.highlight && lang) {
-                const html = await Tartrazine.highlight(code, lang, {
-                  standalone: false,
-                  lineNumbers: false
-                });
-                return html;
+            renderer: {
+              code(code, language) {
+                // Return a placeholder that we'll replace after highlighting
+                return `<pre><code class="language-${language || 'text'}" data-code="${encodeURIComponent(code)}" data-lang="${language || ''}">Loading...</code></pre>`;
               }
-              return code;
             }
           });
 
-          marked.parse(content, markedOptions)
-            .then(html => {
-              previewElement.innerHTML = html;
-            })
-            .catch(err => {
-              console.error('Markdown parsing error:', err);
+          // Parse markdown (synchronous)
+          const html = marked.parse(content, {
+            breaks: true,
+            gfm: true
+          });
+
+          // Now highlight all code blocks asynchronously
+          (async () => {
+            try {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = html;
+
+              const codeBlocks = tempDiv.querySelectorAll('code[data-code]');
+              for (const block of codeBlocks) {
+                const code = decodeURIComponent(block.getAttribute('data-code'));
+                const lang = block.getAttribute('data-lang');
+
+                if (lang && typeof Tartrazine !== 'undefined' && Tartrazine.highlight) {
+                  try {
+                    const highlighted = await Tartrazine.highlight(code, lang, {
+                      standalone: false,
+                      lineNumbers: false
+                    });
+                    block.innerHTML = highlighted;
+                    block.removeAttribute('data-code');
+                    block.removeAttribute('data-lang');
+                  } catch (e) {
+                    console.error('Error highlighting code block:', e);
+                    block.textContent = code;
+                  }
+                } else {
+                  block.textContent = code;
+                }
+              }
+
+              previewElement.innerHTML = tempDiv.innerHTML;
+            } catch (err) {
+              console.error('Markdown rendering error:', err);
               previewElement.innerHTML = '<pre><code>Error rendering Markdown</code></pre>';
-            });
+            }
+          })();
         } else {
           previewElement.innerHTML = '<pre><code>marked.js not loaded</code></pre>';
         }
@@ -256,30 +266,54 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
           if (typeof marked !== 'undefined') {
             // Configure marked with tartrazine for syntax highlighting in code blocks
             marked.use({
-              async: true,
-              highlight: async (code, lang) => {
-                if (typeof Tartrazine !== 'undefined' && Tartrazine.highlight && lang) {
-                  const html = await Tartrazine.highlight(code, lang, {
-                    standalone: false,
-                    lineNumbers: false
-                  });
-                  return html;
+              renderer: {
+                code(code, language) {
+                  return `<pre><code class="language-${language || 'text'}" data-code="${encodeURIComponent(code)}" data-lang="${language || ''}">Loading...</code></pre>`;
                 }
-                return code;
               }
             });
 
-            marked.parse(content, {
+            // Parse markdown (synchronous)
+            const html = marked.parse(content, {
               breaks: true,
               gfm: true
-            })
-            .then(html => {
-              previewElement.innerHTML = html;
-            })
-            .catch(err => {
-              console.error('Markdown parsing error:', err);
-              previewElement.innerHTML = '<pre><code>Error rendering Markdown</code></pre>';
             });
+
+            // Now highlight all code blocks asynchronously
+            (async () => {
+              try {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+
+                const codeBlocks = tempDiv.querySelectorAll('code[data-code]');
+                for (const block of codeBlocks) {
+                  const code = decodeURIComponent(block.getAttribute('data-code'));
+                  const lang = block.getAttribute('data-lang');
+
+                  if (lang && typeof Tartrazine !== 'undefined' && Tartrazine.highlight) {
+                    try {
+                      const highlighted = await Tartrazine.highlight(code, lang, {
+                        standalone: false,
+                        lineNumbers: false
+                      });
+                      block.innerHTML = highlighted;
+                      block.removeAttribute('data-code');
+                      block.removeAttribute('data-lang');
+                    } catch (e) {
+                      console.error('Error highlighting code block:', e);
+                      block.textContent = code;
+                    }
+                  } else {
+                    block.textContent = code;
+                  }
+                }
+
+                previewElement.innerHTML = tempDiv.innerHTML;
+              } catch (err) {
+                console.error('Markdown rendering error:', err);
+                previewElement.innerHTML = '<pre><code>Error rendering Markdown</code></pre>';
+              }
+            })();
           } else {
             previewElement.innerHTML = '<pre><code>marked.js not loaded</code></pre>';
           }
