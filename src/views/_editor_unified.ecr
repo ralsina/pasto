@@ -91,6 +91,32 @@
       line-height: 1.5 !important;
     }
 
+    /* Remove Pico CSS padding from editor pre > code */
+    .editor-pane pre > code,
+    .editor-pane code,
+    pre > #editor,
+    #editor {
+      padding: 0 !important;
+    }
+
+    /* Specifically target the structure created by tartrazine */
+    .editor-pane pre,
+    .editor-pane code {
+      padding: 0 !important;
+    }
+
+    /* Ensure consistent font family and size in editor, preventing jump when syntax highlighting activates */
+    .editor-pane,
+    .editor-pane .codejar-editor,
+    .editor-pane .codejar-editor *,
+    .editor-pane pre,
+    .editor-pane code,
+    #editor,
+    #editor * {
+      font-family: 'Chivo Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+      font-size: 16px !important;
+    }
+
     .preview-content pre,
     .preview-content code,
     .preview-content .token,
@@ -186,7 +212,38 @@
     if (jar) {
       jar.updateCode(jar.toString());
     }
-    // Update preview
+
+    // Check if language is markdown (only show preview for markdown)
+    const lang = currentLanguage.toLowerCase();
+    const isMarkdown = lang === 'markdown' || lang === 'md';
+
+    // Auto-hide preview if not markdown
+    const container = document.getElementById('editor-preview-container');
+    const showButton = document.getElementById('controls-show-preview-button');
+    const hideButton = document.getElementById('controls-hide-preview-button');
+
+    if (container) {
+      if (!isMarkdown) {
+        // Hide preview for non-markdown languages
+        container.classList.add('preview-hidden');
+        if (showButton) showButton.style.display = 'none';  // Hide show button
+        if (hideButton) hideButton.style.display = 'none';  // Hide hide button
+      } else {
+        // For markdown, respect user's preference or default to hidden
+        const previewHidden = localStorage.getItem('previewHidden') !== 'false';
+        if (previewHidden) {
+          container.classList.add('preview-hidden');
+          if (showButton) showButton.style.display = 'flex';
+          if (hideButton) hideButton.style.display = 'none';
+        } else {
+          container.classList.remove('preview-hidden');
+          if (showButton) showButton.style.display = 'none';
+          if (hideButton) hideButton.style.display = 'flex';
+        }
+      }
+    }
+
+    // Update preview (only meaningful for markdown)
     if (typeof window.updatePreview === 'function') {
       window.updatePreview(jar, window.getLanguageGetter, window.getThemeGetter);
     }
@@ -1128,11 +1185,18 @@ async function createPaste(event) {
 
     // Apply theme class to editor element immediately
     const currentTheme = localStorage.getItem('syntaxTheme') || '<%= theme_vars[:theme] %>';
-    console.log('DEBUG: Applying initial theme class on startup:', currentTheme);
     editorElement.className = currentTheme;
 
     // Set initial content
     jar.updateCode(initialContent || "");
+
+    // Trigger initial syntax highlighting to establish correct styling before user types
+    // This prevents the visual jump when syntax highlighting first activates
+    if (typeof window.highlight === 'function' && jar) {
+      const currentLang = document.getElementById('language')?.value || '';
+      const normalizedLang = (!currentLang || currentLang === '' || currentLang === 'Auto') ? 'plaintext' : currentLang;
+      window.highlight(editorElement, normalizedLang, currentTheme);
+    }
 
     // Trigger preview update to initialize everything
     window.updatePreview(window.jar,
@@ -1174,7 +1238,17 @@ async function createPaste(event) {
     const showButton = document.getElementById('controls-show-preview-button');
     const hideButton = document.getElementById('controls-hide-preview-button');
 
-    if (previewHidden) {
+    // Check if current language is markdown
+    const languageSelect = document.getElementById('language');
+    const currentLang = languageSelect ? languageSelect.value.toLowerCase() : '';
+    const isMarkdown = currentLang === 'markdown' || currentLang === 'md';
+
+    // Only show preview for markdown, otherwise hide it completely
+    if (!isMarkdown) {
+      container.classList.add('preview-hidden');
+      if (showButton) showButton.style.display = 'none';  // Hide show button
+      if (hideButton) hideButton.style.display = 'none';  // Hide hide button
+    } else if (previewHidden) {
       container.classList.add('preview-hidden');
       if (showButton) showButton.style.display = 'flex';
       if (hideButton) hideButton.style.display = 'none';
@@ -1233,6 +1307,9 @@ async function createPaste(event) {
             mobileLanguageSelect.value = desktopLanguageSelect.value;
           });
         }
+
+        // Update preview visibility based on language
+        updateLanguage();
 
         // Initialize preview after languages are loaded (only needed for create mode or fallback)
         if (mode === "create") {
