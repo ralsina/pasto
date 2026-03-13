@@ -330,6 +330,8 @@
       const picoColor = document.getElementById('pico-color').value;
       const syntaxTheme = document.getElementById('syntax-theme').value;
 
+      console.log('updateThemes called with:', { picoTheme, picoColor, syntaxTheme });
+
       // Check if user is logged in using current_user variable
       const isUserLoggedIn = <%= current_user ? "true" : "false" %>;
 
@@ -344,7 +346,29 @@
       const syntaxLink = document.getElementById('highlight-css-link');
       if (syntaxLink) {
         const themePath = (window.PASTO_BASE_PATH === '/' ? '/syntax/' : window.PASTO_BASE_PATH + '/syntax/') + syntaxTheme + '/' + (picoTheme === 'dark' ? 'dark' : 'light');
-        syntaxLink.href = themePath;
+        console.log('Setting syntax CSS path to:', themePath);
+
+        // Test if the theme loads successfully, fall back to default if it fails
+        fetch(themePath)
+          .then(response => {
+            if (!response.ok) {
+              console.warn(`Theme ${syntaxTheme} failed to load (${response.status}), falling back to default-dark`);
+              const fallbackPath = (window.PASTO_BASE_PATH === '/' ? '/syntax/' : window.PASTO_BASE_PATH + '/syntax/') + 'default-dark/' + (picoTheme === 'dark' ? 'dark' : 'light');
+              syntaxLink.href = fallbackPath;
+              // Update the select to show the fallback theme
+              const syntaxSelect = document.getElementById('syntax-theme');
+              if (syntaxSelect) {
+                syntaxSelect.value = 'default-dark';
+              }
+            } else {
+              syntaxLink.href = themePath;
+            }
+          })
+          .catch(error => {
+            console.error('Error loading theme CSS:', error);
+            const fallbackPath = (window.PASTO_BASE_PATH === '/' ? '/syntax/' : window.PASTO_BASE_PATH + '/syntax/') + 'default-dark/' + (picoTheme === 'dark' ? 'dark' : 'light');
+            syntaxLink.href = fallbackPath;
+          });
       }
 
       // CodeJar theme is now handled by the enhanced /syntax endpoint
@@ -366,38 +390,19 @@
       document.documentElement.setAttribute('data-theme', resolvedTheme);
 
       // Re-highlight editor if it exists to apply new syntax theme
-      if (window.jar && typeof window.highlight === 'function') {
-        const editorElement = document.getElementById('editor');
-        if (editorElement) {
-          // Get current language from dropdown
-          const languageSelect = document.getElementById('language');
-          let currentLanguage = '';
+      if (window.jar) {
+        console.log('Theme change detected - triggering CodeJar update');
 
-          if (languageSelect) {
-            currentLanguage = languageSelect.value || '';
-
-            // Handle auto-detect case - extract detected language from dropdown text
-            if (currentLanguage === '' || currentLanguage === 'Auto') {
-              const autoOption = languageSelect.options[0];
-              if (autoOption?.textContent?.includes('(')) {
-                const match = autoOption.textContent.match(/\(([^)]+)\)/);
-                if (match) {
-                  currentLanguage = match[1];
-                }
-              }
-            }
-          }
-
-          // Add a small delay to ensure CSS has loaded before re-highlighting
-          setTimeout(async () => {
-            try {
-              await window.highlight(editorElement, currentLanguage, syntaxTheme);
-              console.log('Successfully re-highlighted with theme:', syntaxTheme, 'language:', currentLanguage);
-            } catch (e) {
-              console.error('Failed to re-highlight after theme change:', e);
-            }
-          }, 50);
+        // Use CodeJar's updateCode method to trigger proper re-highlighting
+        // This is more reliable than calling highlight() directly
+        try {
+          window.jar.updateCode(window.jar.toString());
+          console.log('Successfully triggered CodeJar update for theme change');
+        } catch (e) {
+          console.error('Failed to trigger CodeJar update:', e);
         }
+      } else {
+        console.log('Skipping re-highlight - jar not available');
       }
     }
 
