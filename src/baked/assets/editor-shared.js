@@ -204,10 +204,16 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
       );
 
       if (autoDetectOption) {
+        const oldText = autoDetectOption.textContent;
         if (data.language) {
           autoDetectOption.textContent = `Auto (${data.language})`;
         } else {
           autoDetectOption.textContent = 'Auto';
+        }
+
+        // Only trigger re-highlighting if the detected language actually changed
+        if (jar && data.language && oldText !== autoDetectOption.textContent) {
+          jar.updateCode(jar.toString());
         }
       }
 
