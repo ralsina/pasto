@@ -117,20 +117,39 @@
       font-size: 16px !important;
     }
 
-    .preview-content pre,
-    .preview-content code,
-    .preview-content .token,
-    .preview-content .token.keyword,
-    .preview-content .token.string,
-    .preview-content .token.comment,
-    .preview-content .token.function,
-    .preview-content .token.number,
-    .preview-content .token.operator,
-    .preview-content .token.class-name,
-    .preview-content .token.variable,
-    .preview-content [class^="token"] {
-      font-size: 16px !important;
-      line-height: 1.5 !important;
+    /* Ensure both panes are scrollable for synced scrolling */
+    .editor-pane {
+      overflow-y: visible !important;  /* Editor element itself scrolls, not the pane */
+    }
+
+    .editor-pane > * {
+      /* The actual scrollable editor */
+    }
+
+    .preview-pane {
+      overflow-y: auto !important;
+      position: relative;
+    }
+
+    /* Don't override markdown preview CSS - let it use defaults */
+    .preview-content pre {
+      /* Let markdown use its default styling */
+    }
+
+    /* Fix inline code in markdown preview - override Pico CSS */
+    .preview-content code {
+      display: inline !important;
+      padding: 0.1em 0.3em !important;
+      font-size: 0.9em !important;
+      background: var(--pico-code-background-color) !important;
+      border-radius: 4px !important;
+    }
+
+    /* Code blocks should still be blocks */
+    .preview-content pre code {
+      display: block !important;
+      padding: 0 !important;
+      background: transparent !important;
     }
 
         </style>
@@ -1250,6 +1269,72 @@ async function createPaste(event) {
     container.classList.add('preview-hidden');
     if (showButton) showButton.style.display = 'none';
     if (hideButton) hideButton.style.display = 'none';
+
+    // Setup synced scrolling between editor and preview
+    const previewPane = document.querySelector('.preview-pane');
+    const previewContent = document.getElementById('preview');
+
+    console.log('Setting up synced scrolling');
+    console.log('editorElement:', editorElement);
+    console.log('previewPane:', previewPane);
+    console.log('previewContent:', previewContent);
+
+    if (editorElement && previewPane && previewContent) {
+      let isScrolling = false;
+      let scrollTimeout;
+
+      // The editor element itself is scrollable (has overflow-y: auto)
+      const scrollHandler = () => {
+        if (isScrolling) {
+          return;
+        }
+
+        const editorScrollRatio = editorElement.scrollTop / (editorElement.scrollHeight - editorElement.clientHeight);
+
+        // Use the actually scrollable preview element
+        const previewScrollable = previewContent.scrollHeight > previewContent.clientHeight
+          ? previewContent
+          : previewPane;
+
+        const previewScrollTop = editorScrollRatio * (previewScrollable.scrollHeight - previewScrollable.clientHeight);
+
+        isScrolling = true;
+        previewScrollable.scrollTop = previewScrollTop;
+
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          isScrolling = false;
+        }, 100);
+      };
+
+      editorElement.addEventListener('scroll', scrollHandler);
+
+      // Sync preview scroll to editor
+      previewPane.addEventListener('scroll', () => {
+        if (isScrolling) {
+          return;
+        }
+
+        const previewScrollable = previewContent.scrollHeight > previewContent.clientHeight
+          ? previewContent
+          : previewPane;
+
+        const previewScrollRatio = previewScrollable.scrollTop / (previewScrollable.scrollHeight - previewScrollable.clientHeight);
+        const editorScrollTop = previewScrollRatio * (editorElement.scrollHeight - editorElement.clientHeight);
+
+        isScrolling = true;
+        editorElement.scrollTop = editorScrollTop;
+
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          isScrolling = false;
+        }, 100);
+      });
+
+      console.log('Scroll event listeners attached to editor element and preview pane');
+    } else {
+      console.log('Cannot setup synced scrolling - missing elements');
+    }
 
     // Initialize Lucide icons
     if (window.lucide) {
