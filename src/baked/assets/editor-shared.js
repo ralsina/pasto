@@ -210,6 +210,9 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
           autoDetectOption.textContent = 'Auto';
         }
       }
+
+      // Update preview button visibility based on detected language
+      updatePreviewVisibility();
     }
 
     const previewElement = document.getElementById('preview');
@@ -370,6 +373,59 @@ function getLanguageGetter() {
   // Fallback to raw value
   return selectValue || '';
 }
+
+// Update preview button visibility based on current language
+function updatePreviewVisibility() {
+  const languageSelect = document.getElementById('language');
+  if (!languageSelect) return;
+
+  const currentLang = languageSelect.value.toLowerCase();
+
+  // Check if auto-detection is active (empty, "Auto", or "Detected:")
+  const isAutoDetect = currentLang === '' || currentLang === 'auto' || currentLang === 'detected:';
+
+  // Extract detected language from dropdown text if auto-detect is active
+  let detectedLang = '';
+  if (isAutoDetect) {
+    const autoOption = languageSelect.options[0];
+    if (autoOption?.textContent) {
+      const match = autoOption.textContent.match(/\(([^)]+)\)/);
+      if (match) {
+        detectedLang = match[1].toLowerCase();
+      }
+    }
+  }
+
+  const isMarkdown = currentLang === 'markdown' || currentLang === 'md' ||
+                      detectedLang === 'markdown' || detectedLang === 'md';
+
+  const container = document.getElementById('editor-preview-container');
+  const showButton = document.getElementById('controls-show-preview-button');
+  const hideButton = document.getElementById('controls-hide-preview-button');
+
+  if (container && showButton && hideButton) {
+    if (!isMarkdown) {
+      // Hide preview for non-markdown languages
+      container.classList.add('preview-hidden');
+      showButton.style.display = 'none';
+      hideButton.style.display = 'none';
+    } else {
+      // For markdown, show the toggle buttons
+      const previewHidden = localStorage.getItem('previewHidden') !== 'false';
+      if (previewHidden) {
+        container.classList.add('preview-hidden');
+        showButton.style.display = 'flex';
+        hideButton.style.display = 'none';
+      } else {
+        container.classList.remove('preview-hidden');
+        showButton.style.display = 'none';
+        hideButton.style.display = 'flex';
+      }
+    }
+  }
+}
+
+window.updatePreviewVisibility = updatePreviewVisibility;
 
 // Get theme value from select element
 function getThemeGetter() {
