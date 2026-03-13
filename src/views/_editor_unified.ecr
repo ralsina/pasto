@@ -1310,8 +1310,10 @@ async function createPaste(event) {
       editorElement.addEventListener('scroll', scrollHandler);
 
       // Sync preview scroll to editor
-      previewPane.addEventListener('scroll', () => {
+      const previewScrollHandler = () => {
+        console.log('Preview scroll event triggered');
         if (isScrolling) {
+          console.log('Skipping preview scroll - already scrolling');
           return;
         }
 
@@ -1319,8 +1321,12 @@ async function createPaste(event) {
           ? previewContent
           : previewPane;
 
+        console.log('Preview scrollable:', previewScrollable.tagName, 'scrollTop:', previewScrollable.scrollTop);
+
         const previewScrollRatio = previewScrollable.scrollTop / (previewScrollable.scrollHeight - previewScrollable.clientHeight);
         const editorScrollTop = previewScrollRatio * (editorElement.scrollHeight - editorElement.clientHeight);
+
+        console.log('Preview scroll ratio:', previewScrollRatio.toFixed(3), 'Editor scroll top:', editorScrollTop.toFixed(1));
 
         isScrolling = true;
         editorElement.scrollTop = editorScrollTop;
@@ -1329,7 +1335,14 @@ async function createPaste(event) {
         scrollTimeout = setTimeout(() => {
           isScrolling = false;
         }, 100);
-      });
+      };
+
+      previewPane.addEventListener('scroll', previewScrollHandler);
+
+      // Also attach to previewContent if it's different from previewPane
+      if (previewContent !== previewPane) {
+        previewContent.addEventListener('scroll', previewScrollHandler);
+      }
 
       console.log('Scroll event listeners attached to editor element and preview pane');
     } else {
