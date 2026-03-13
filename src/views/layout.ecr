@@ -313,6 +313,17 @@
       }
     });
 
+    // Debounced theme save to avoid too many server requests
+    let themeSaveTimeout = null;
+    const debouncedSaveThemes = (picoTheme, picoColor, syntaxTheme) => {
+      if (themeSaveTimeout) {
+        clearTimeout(themeSaveTimeout);
+      }
+      themeSaveTimeout = setTimeout(() => {
+        saveThemesToServer(picoTheme, picoColor, syntaxTheme);
+      }, 500); // Wait 500ms after last theme change before saving
+    };
+
     // Theme update functions
     function updateThemes() {
       const picoTheme = document.getElementById('pico-theme').checked ? 'dark' : 'light';
@@ -341,9 +352,9 @@
       // Use the theme directly since we no longer have auto
       const resolvedTheme = picoTheme;
 
-      // Save to server for logged-in users
+      // Save to server for logged-in users (debounced to avoid too many requests)
       if (isUserLoggedIn) {
-        saveThemesToServer(picoTheme, picoColor, syntaxTheme);
+        debouncedSaveThemes(picoTheme, picoColor, syntaxTheme);
       } else {
         // For anonymous users, save to localStorage only
         localStorage.setItem('picoTheme', picoTheme);

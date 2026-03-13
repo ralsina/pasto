@@ -2209,7 +2209,9 @@ var Tartrazine = (function (exports) {
    */
   async function loadLexer(lexerName) {
     // Use the synced lexers directory for deployment/packaging
-    const xmlPath = `lexers/${lexerName}.xml`;
+    // URL-encode the lexer name to handle special characters like # in C#
+    const encodedLexerName = encodeURIComponent(lexerName);
+    const xmlPath = `lexers/${encodedLexerName}.xml`;
     const xmlContent = await loadXmlFile(xmlPath);
 
     // Preprocess XML to handle duplicate attributes in <combined> and <push> elements

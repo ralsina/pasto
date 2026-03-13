@@ -39,22 +39,31 @@ module Pasto
       current_user.syntax_theme = env.params.body["syntax_theme"]?.try(&.strip)
     end
 
-    if current_user.save
-      Pasto::Logging.info("User #{current_user.sepia_id} updated")
-      if is_ajax
-        env.response.content_type = "application/json"
-        {"status" => "ok"}.to_json
+    begin
+      if current_user.save
+        Pasto::Logging.info("User #{current_user.sepia_id} updated")
+        if is_ajax
+          env.response.content_type = "application/json"
+          {"status" => "ok"}.to_json
+        else
+          env.redirect "/profile?updated=true"
+        end
       else
-        env.redirect "/profile?updated=true"
+        if is_ajax
+          env.response.status_code = 500
+          env.response.content_type = "application/json"
+          {"status" => "error"}.to_json
+        else
+          env.redirect "/profile?error=save_failed"
+        end
       end
-    else
-      if is_ajax
-        env.response.status_code = 500
-        env.response.content_type = "application/json"
-        {"status" => "error"}.to_json
-      else
-        env.redirect "/profile?error=save_failed"
-      end
+    rescue ex : IO::Error
+      # Client closed the connection before response could be sent
+      # This is harmless and can happen when users navigate away quickly
+      Pasto::Logging.debug("Client closed connection during profile update: #{ex.message}")
+    rescue ex : Exception
+      # Log other exceptions but don't crash
+      Pasto::Logging.error("Unexpected error in profile update: #{ex.class} - #{ex.message}")
     end
   end
 
