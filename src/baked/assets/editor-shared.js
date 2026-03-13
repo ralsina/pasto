@@ -213,7 +213,71 @@ function updatePreview(jar, getLanguageValue, getSyntaxThemeValue) {
 
         // Only trigger re-highlighting if the detected language actually changed
         if (jar && data.language && oldText !== autoDetectOption.textContent) {
+          // Save cursor position and scroll position
+          const editorElement = document.getElementById('editor');
+          let cursorPosition = 0;
+          let scrollTop = 0;
+
+          if (editorElement) {
+            // Get current cursor position
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              const preCaretRange = range.cloneRange();
+              preCaretRange.selectNodeContents(editorElement);
+              preCaretRange.setEnd(range.endContainer, range.endOffset);
+              cursorPosition = preCaretRange.toString().length;
+            }
+
+            // Get scroll position
+            scrollTop = editorElement.scrollTop;
+          }
+
           jar.updateCode(jar.toString());
+
+          // Restore cursor position and scroll position
+          if (editorElement && cursorPosition > 0) {
+            setTimeout(() => {
+              try {
+                const range = document.createRange();
+                const selection = window.getSelection();
+
+                let charCount = 0;
+                let found = false;
+
+                const traverseNodes = (node) => {
+                  if (found) return;
+
+                  if (node.nodeType === Node.TEXT_NODE) {
+                    const nextCount = charCount + node.length;
+                    if (cursorPosition <= nextCount) {
+                      range.setStart(node, cursorPosition - charCount);
+                      range.collapse(true);
+                      found = true;
+                    }
+                    charCount = nextCount;
+                  } else {
+                    for (const child of node.childNodes) {
+                      traverseNodes(child);
+                      if (found) break;
+                    }
+                  }
+                };
+
+                traverseNodes(editorElement);
+
+                if (found) {
+                  selection.removeAllRanges();
+                  selection.addRange(range);
+                }
+
+                // Restore scroll position
+                editorElement.scrollTop = scrollTop;
+              } catch (e) {
+                console.warn('Could not restore cursor position:', e);
+              }
+            }, 0);
+          }
         }
       }
 
