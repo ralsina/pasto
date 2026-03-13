@@ -862,7 +862,6 @@ async function createPaste(event) {
     jar = CodeJar(editorElement, async (editor) => {
       if (typeof window.highlight === 'function') {
         const currentTheme = localStorage.getItem('syntaxTheme') || '<%= theme_vars[:theme] %>';
-        console.log('DEBUG: Applying theme class:', currentTheme);
         await window.highlight(editor, getCurrentLanguage(), currentTheme);
       }
     }, {
@@ -872,7 +871,7 @@ async function createPaste(event) {
       spellcheck: false,
       catchTab: true,
       preserveIdent: true,
-      addClosing: true,
+      addClosing: false,  // Disabled to fix markdown fenced code block closing issue
       history: true
     });
 
@@ -1213,6 +1212,16 @@ async function createPaste(event) {
 
         // Update currentLanguage to match the selected value
         currentLanguage = languageSelect.value || '';
+
+        // Sync desktop and mobile language dropdowns
+        const desktopLanguageSelect = document.getElementById('language');
+        const mobileLanguageSelect = document.getElementById('mobile-language');
+        if (desktopLanguageSelect && mobileLanguageSelect) {
+          // When desktop changes, update mobile
+          desktopLanguageSelect.addEventListener('change', () => {
+            mobileLanguageSelect.value = desktopLanguageSelect.value;
+          });
+        }
 
         // Initialize preview after languages are loaded (only needed for create mode or fallback)
         if (mode === "create") {

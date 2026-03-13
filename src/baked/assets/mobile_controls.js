@@ -145,6 +145,9 @@ function handleMobileControls() {
           if (mobileControl.matches('select')) {
             if (originalControl.onchange || originalControl.getAttribute('onchange')) {
               mobileControl.addEventListener('change', () => {
+                // Sync the original (desktop) dropdown with the mobile dropdown
+                originalControl.value = mobileControl.value;
+
                 if (typeof window.updateLanguage === 'function') {
                   window.updateLanguage();
                 }
