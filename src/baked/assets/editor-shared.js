@@ -13,17 +13,9 @@ function saveCursorPosition(editor) {
   preCaretRange.selectNodeContents(editor);
   preCaretRange.setEnd(range.endContainer, range.endOffset);
 
-  const textBefore = editor.textContent;
-  const offset = preCaretRange.toString().length;
-
-  console.log('=== SAVE CURSOR ===');
-  console.log('Text before:', JSON.stringify(textBefore));
-  console.log('Cursor offset:', offset);
-  console.log('Last 20 chars:', JSON.stringify(textBefore.slice(-20)));
-
   return {
-    offset: offset,
-    text: textBefore
+    offset: preCaretRange.toString().length,
+    text: editor.textContent
   };
 }
 
@@ -37,16 +29,6 @@ function restoreCursorPosition(editor, savedPosition) {
   if (!selection) {
     return;
   }
-
-  const textAfter = editor.textContent;
-  console.log('=== RESTORE CURSOR ===');
-  console.log('Saved offset:', savedPosition.offset);
-  console.log('Saved text:', JSON.stringify(savedPosition.text));
-  console.log('Current text:', JSON.stringify(textAfter));
-  console.log('Text length changed:', savedPosition.text.length !== textAfter.length);
-  console.log('Text changed:', savedPosition.text !== textAfter);
-  console.log('Last 20 chars before:', JSON.stringify(savedPosition.text.slice(-20)));
-  console.log('Last 20 chars after:', JSON.stringify(textAfter.slice(-20)));
 
   const range = document.createRange();
   const charCount = Math.min(savedPosition.offset, editor.textContent.length);
@@ -99,9 +81,6 @@ async function highlight(editor, currentLanguage = '', syntaxTheme = null) {
   // Normalize empty language to plaintext for tartrazine
   const normalizedLang = (!lang || lang === '' || lang === 'Auto') ? 'plaintext' : lang;
 
-  // DEBUG: Alert to show this function is being called
-  // alert('Highlight called! Language: ' + normalizedLang + '\nText: ' + code);
-
   // Save cursor position before updating
   const savedCursor = saveCursorPosition(editor);
 
@@ -112,23 +91,7 @@ async function highlight(editor, currentLanguage = '', syntaxTheme = null) {
         standalone: false,
         lineNumbers: false
       });
-
-      console.log('=== HIGHLIGHT DEBUG ===');
-      console.log('Language:', normalizedLang);
-      console.log('Input:', JSON.stringify(code));
-      console.log('Input length:', code.length);
-
       editor.innerHTML = html;
-
-      const outputText = editor.textContent;
-      console.log('Output:', JSON.stringify(outputText));
-      console.log('Output length:', outputText.length);
-      console.log('Text changed?', code !== outputText);
-      if (code !== outputText) {
-        console.error('TEXT CONTENT MODIFIED!');
-        alert('Text was modified!\nBefore: ' + code + '\nAfter: ' + outputText);
-      }
-
       // Apply syntax highlighting theme class
       editor.className = theme;
       // Restore cursor position after updating
