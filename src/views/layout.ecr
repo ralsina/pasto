@@ -359,14 +359,33 @@
         const editorElement = document.getElementById('editor');
         if (editorElement) {
           // Get current language from dropdown
-          const getLanguageGetter = () => document.getElementById('language')?.value || '';
-          const currentLanguage = getLanguageGetter();
+          const languageSelect = document.getElementById('language');
+          let currentLanguage = '';
 
-          // Re-highlight with new theme
-          window.highlight(editorElement, currentLanguage, syntaxTheme);
+          if (languageSelect) {
+            currentLanguage = languageSelect.value || '';
 
-          // Update editor element class for theme-specific styling
-          editorElement.className = syntaxTheme;
+            // Handle auto-detect case - extract detected language from dropdown text
+            if (currentLanguage === '' || currentLanguage === 'Auto') {
+              const autoOption = languageSelect.options[0];
+              if (autoOption?.textContent?.includes('(')) {
+                const match = autoOption.textContent.match(/\(([^)]+)\)/);
+                if (match) {
+                  currentLanguage = match[1];
+                }
+              }
+            }
+          }
+
+          // Add a small delay to ensure CSS has loaded before re-highlighting
+          setTimeout(async () => {
+            try {
+              await window.highlight(editorElement, currentLanguage, syntaxTheme);
+              console.log('Successfully re-highlighted with theme:', syntaxTheme, 'language:', currentLanguage);
+            } catch (e) {
+              console.error('Failed to re-highlight after theme change:', e);
+            }
+          }, 50);
         }
       }
     }

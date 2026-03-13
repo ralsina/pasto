@@ -91,7 +91,22 @@ async function highlight(editor, currentLanguage = '', syntaxTheme = null) {
         standalone: false,
         lineNumbers: false
       });
-      editor.innerHTML = html;
+
+      // Check if highlighting produced meaningful output (not just a single span)
+      if (html && html.includes('class="t"') && !html.includes('class="token')) {
+        console.warn(`Tartrazine produced poor highlighting for language: ${normalizedLang}, falling back to plain text`);
+        // Fallback to plain text if highlighting is poor
+        const pre = document.createElement('pre');
+        const codeEl = document.createElement('code');
+        codeEl.textContent = code;
+        codeEl.className = theme;
+        pre.appendChild(codeEl);
+        editor.innerHTML = '';
+        editor.appendChild(pre.firstElementChild);
+      } else {
+        editor.innerHTML = html;
+      }
+
       // Apply syntax highlighting theme class
       editor.className = theme;
       // Restore cursor position after updating
@@ -103,7 +118,7 @@ async function highlight(editor, currentLanguage = '', syntaxTheme = null) {
       editor.className = theme;
     }
   } catch (e) {
-    console.error('Highlight error:', e);
+    console.error('Highlight error for language', normalizedLang, ':', e);
     // Fallback to plain text
     editor.textContent = code;
     editor.className = theme;
