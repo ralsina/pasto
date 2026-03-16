@@ -47,7 +47,7 @@ shards:
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
-    version: 1.9.0
+    version: 1.10.0
 
   kemal-session:
     git: https://github.com/kemalcr/kemal-session.git
