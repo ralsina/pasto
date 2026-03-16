@@ -482,8 +482,8 @@ DOC
     # Syntax highlighting API - cache for 1 hour
     Pasto::Cache.add_cache_config(/^\/highlight$/, "application/json", 3600)
 
-    # CSS syntax themes - cache for 24 hours
-    Pasto::Cache.add_cache_config(/^\/syntax\/[^\/]+\/[^\/]+$/, "text/css", 86400)
+    # CSS syntax themes are NOT cached by middleware because they handle their own caching via Cache-Control headers
+    # The middleware's response capture was causing hanging on first request
 
     # Paste image previews for social media - cache for 6 hours
     Pasto::Cache.add_cache_config(/^\/paste\/[^\/]+\/preview$/, "image/png", 21600)
