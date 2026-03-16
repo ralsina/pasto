@@ -55,23 +55,38 @@ XML
     end
 
     get Pasto::PathHelper.with_base_path("/syntax/:family/:variant", base_path) do |env|
+      Pasto::Logging.info("SYNTAX_HANDLER: Starting request for #{env.request.path}")
+
       family = env.params.url["family"].gsub(/-dark$/, "").gsub(/-light$/, "")
       variant = env.params.url["variant"]
       theme_name = "#{family}/#{variant}"
 
+      Pasto::Logging.info("SYNTAX_HANDLER: Parsed params - family: #{family}, variant: #{variant}")
+
       begin
+        Pasto::Logging.info("SYNTAX_HANDLER: About to call Tartrazine.theme")
         # Use Tartrazine theme CSS for the specified theme and variant
-        formatter = Tartrazine::Html.new(theme: Tartrazine.theme(family, variant))
+        theme = Tartrazine.theme(family, variant)
+        Pasto::Logging.info("SYNTAX_HANDLER: Got theme object, creating formatter")
+
+        formatter = Tartrazine::Html.new(theme: theme)
+        Pasto::Logging.info("SYNTAX_HANDLER: Created formatter, getting style_defs")
+
         css = formatter.style_defs
+        Pasto::Logging.info("SYNTAX_HANDLER: Got CSS, size: #{css.size} bytes")
 
         # Tartrazine CSS is now used directly (tartrazine.js on client, tartrazine on server)
         # No need for highlight.js compatibility layer anymore
         Pasto::Logging.debug("Generating CSS for theme: #{theme_name}")
 
+        Pasto::Logging.info("SYNTAX_HANDLER: Setting content type and headers")
         env.response.content_type = "text/css"
         env.response.headers["Cache-Control"] = "public, max-age=604800" # 1 week in seconds
+
+        Pasto::Logging.info("SYNTAX_HANDLER: About to return CSS response")
         css
       rescue ex
+        Pasto::Logging.error("SYNTAX_HANDLER: Error - #{ex.class}: #{ex.message}")
         env.response.status_code = 404
         env.response.content_type = "text/plain"
         "Theme not found: #{theme_name}"
