@@ -102,7 +102,14 @@
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
       "Bash(/tmp/lucide_part.js)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git reset:*)",
+      "Bash(./compress_assets.sh:*)",
+      "Bash(grep:*)",
+      "Bash(gh release:*)",
+      "Bash(./scripts/compress_assets.sh:*)",
+      "Bash(git restore:*)",
+      "Bash(git:*)"
     ],
     "deny": [],
     "ask": []

@@ -24,6 +24,7 @@
 
 - Simplified Dockerfile to use pre-built static binaries
 - Remove -Dinotify flag from build scripts
+- *(release)* V0.11.0
 ## [0.10.0] - 2026-01-03
 
 ### 🚀 Features
