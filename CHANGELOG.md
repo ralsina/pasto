@@ -2,6 +2,16 @@
 
 ### 🐛 Bug Fixes
 
+- Use window.PASTO_BASE_PATH in help page JavaScript for proper base path support
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* V0.12.1
+- *(release)* V0.12.2
+## [0.12.1] - 2026-03-16
+
+### 🐛 Bug Fixes
+
 - Preserve cursor position when auto-detected language changes
 - Re-highlight directly to preserve cursor position on language change
 - Re-highlight directly to preserve cursor position on language change
@@ -16,6 +26,7 @@
 
 - Update deps
 - Random files
+- *(release)* V0.12.1
 ## [0.12.0] - 2026-03-13
 
 ### 🚀 Features
