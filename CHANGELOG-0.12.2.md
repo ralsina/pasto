@@ -8,6 +8,7 @@
 
 - *(release)* V0.12.1
 - *(release)* V0.12.2
+- *(release)* V0.12.2
 ## [0.12.1] - 2026-03-16
 
 ### 🐛 Bug Fixes
