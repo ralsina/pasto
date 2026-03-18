@@ -4,7 +4,7 @@
 
 <div class="help-markdown" id="help-markdown"></div>
 <script>
-  fetch(basePath + '/assets/HELP.md')
+  fetch((window.PASTO_BASE_PATH === '/' ? '/assets/' : window.PASTO_BASE_PATH + '/assets/') + 'HELP.md')
     .then(response => response.text())
     .then(helpMarkdown => {
       document.getElementById('help-markdown').innerHTML = marked.parse(helpMarkdown);
@@ -35,9 +35,9 @@
     if (controlsGroup) {
       // Define buttons for help page
       const buttons = [
-        {type: "link", href: "/", icon: "plus", title: "Create New Paste"},
-        {type: "link", href: "/help", icon: "help-circle", title: "Help"},
-        {type: "link", href: "/profile", icon: "user", title: "Profile / Login"}
+        {type: "link", href: window.PASTO_BASE_PATH === '/' ? '/' : window.PASTO_BASE_PATH + '/', icon: "plus", title: "Create New Paste"},
+        {type: "link", href: window.PASTO_BASE_PATH === '/' ? '/help' : window.PASTO_BASE_PATH + '/help', icon: "help-circle", title: "Help"},
+        {type: "link", href: window.PASTO_BASE_PATH === '/' ? '/profile' : window.PASTO_BASE_PATH + '/profile', icon: "user", title: "Profile / Login"}
       ];
 
       // Use shared controls component
