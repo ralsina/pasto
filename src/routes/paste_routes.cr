@@ -489,33 +489,11 @@ module Pasto
       host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
       base_url = "#{scheme}://#{host}"
 
-      # Check cache for anonymous users
-      current_user = Pasto.get_current_user(env)
-      unless current_user
-        cache_key = Pasto::Cache.generate_cache_key(env)
+      # Render the embed view
+      # kemal-cache middleware handles caching automatically for anonymous users
+      content = render "src/views/embed.ecr"
 
-        if cached_metadata = Pasto::Cache.get(cache_key)
-          # Serve cached content
-          if cached_body = Pasto::Cache.get_body(cache_key)
-            env.response.content_type = cached_metadata.mime_type
-            # Restore cached headers
-            cached_metadata.headers.each do |key, value|
-              env.response.headers[key] = value
-            end
-            next cached_body
-          end
-        end
-
-        # Render the embed view
-        content = render "src/views/embed.ecr"
-
-        # Cache the rendered HTML (1 hour cache for embeds)
-        headers = Hash(String, String).new
-        headers["X-Embed-Cache"] = "HIT"
-        Pasto::Cache.set(cache_key, content, "text/html", 3600, headers)
-
-        next content
-      end
+      next content
 
       # Render embed view (minimal layout, no sidebar)
       render "src/views/embed.ecr"
@@ -558,22 +536,7 @@ module Pasto
       # Get current user for theme setup
       current_user = Pasto.get_current_user(env)
 
-      # Only use cache for anonymous users (not logged in)
-      unless current_user
-        cache_key = Pasto::Cache.generate_cache_key(env)
-        if cached_metadata = Pasto::Cache.get(cache_key)
-          # Get cached body from disk
-          if cached_body = Pasto::Cache.get_body(cache_key)
-            # Serve cached content
-            env.response.content_type = cached_metadata.mime_type
-            # Restore cached headers
-            cached_metadata.headers.each do |key, value|
-              env.response.headers[key] = value
-            end
-            halt env, 200, cached_body
-          end
-        end
-      end
+      # kemal-cache middleware handles caching automatically for anonymous users
 
       # Apply language mapping from stored extension if present
       if stored_ext
@@ -622,23 +585,7 @@ module Pasto
       content = render "src/views/show.ecr"
       rendered_html = render "src/views/layout.ecr"
 
-      # Cache the rendered HTML for anonymous users
-      unless current_user
-        cache_key = Pasto::Cache.generate_cache_key(env)
-
-        # Capture response headers for caching
-        headers = Hash(String, String).new
-        env.response.headers.each do |key, value|
-          case value
-          when Array
-            headers[key] = value.join(", ")
-          else
-            headers[key] = value.to_s
-          end
-        end
-
-        Pasto::Cache.set(cache_key, rendered_html, "text/html", 3600, headers)
-      end
+      # kemal-cache middleware handles caching automatically for anonymous users
 
       rendered_html
     end

@@ -1,59 +1,11 @@
-require "file_utils"
-require "json"
+require "kemal-cache"
 
 # Cache management for Pasto application
 module Pasto
-  # Cache entry metadata
-  class CacheEntry
-    property content : String
-    property mime_type : String
-    property created_at : Time
-    property ttl : Int32? # Time to live in seconds, nil means no expiration
-
-    def initialize(@content : String, @mime_type : String, @ttl : Int32? = nil)
-      @created_at = Time.utc
-    end
-
-    def expired? : Bool
-      return false unless ttl_val = ttl
-      (Time.utc - @created_at).total_seconds > ttl_val
-    end
-
-    def to_json : String
-      {
-        content:    @content,
-        mime_type:  @mime_type,
-        created_at: @created_at.to_unix,
-        ttl:        @ttl,
-      }.to_json
-    end
-
-    def self.from_json(json : String) : CacheEntry
-      data = Hash(String, JSON::Any).from_json(json)
-      content = data["content"].as_s
-      mime_type = data["mime_type"].as_s
-      created_at = Time.unix(data["created_at"].as_i)
-      ttl = data["ttl"]?.try(&.as_i?)
-
-      entry = CacheEntry.new(content, mime_type, ttl)
-      entry.created_at = created_at
-      entry
-    end
-  end
-
-  # Cache configuration for endpoints
-  struct CacheConfig
-    property path_regex : Regex
-    property mime_type : String
-    property ttl : Int32?
-
-    def initialize(@path_regex : Regex, @mime_type : String, @ttl : Int32? = nil)
-    end
-  end
-
+  # Cache wrapper that uses Kemal::Cache for automatic HTTP caching
   class Cache
+    @@cache_config : Kemal::Cache::Config?
     @@cache_dir : String = "./public/cache"
-    @@cache_configs = [] of CacheConfig
 
     def self.cache_dir=(dir : String)
       @@cache_dir = dir
@@ -63,95 +15,44 @@ module Pasto
       @@cache_dir
     end
 
-    def self.cache_configs
-      @@cache_configs
+    # Initialize the cache configuration
+    def self.init(cache_dir : String, default_ttl : Int32 = 3600)
+      @@cache_dir = cache_dir
+      Dir.mkdir_p(cache_dir)
+
+      # Create Kemal::Cache config with MemoryStore
+      # kemal-cache has built-in security: it skips caching for requests with
+      # Authorization headers, Cookie headers, or responses with Set-Cookie
+      @@cache_config = Kemal::Cache::Config.new(
+        expires_in: default_ttl.seconds,
+        store: Kemal::Cache::MemoryStore.new
+      )
     end
 
-    def self.add_cache_config(path_regex : Regex, mime_type : String, ttl : Int32? = nil)
-      @@cache_configs << CacheConfig.new(path_regex, mime_type, ttl)
-    end
-
-    def self.find_cache_config(path : String) : CacheConfig?
-      @@cache_configs.find(&.path_regex.matches?(path))
-    end
-
-    # Enhanced cache methods with metadata support
-    def self.get(key : String) : CacheEntry?
-      file_path = File.join(@@cache_dir, "#{key}.cache")
-      return nil unless File.exists?(file_path)
-
-      begin
-        json = File.read(file_path)
-        entry = CacheEntry.from_json(json)
-        return nil if entry.expired?
-        entry
-      rescue
-        nil
+    # Get the cache config instance
+    def self.config : Kemal::Cache::Config
+      if config = @@cache_config
+        config
+      else
+        init(@@cache_dir)
+        @@cache_config ||= Kemal::Cache::Config.new(expires_in: 3600.seconds)
       end
     end
 
-    def self.set(key : String, content : String, mime_type : String, ttl : Int32? = nil) : Bool
-      file_path = File.join(@@cache_dir, "#{key}.cache")
-
-      begin
-        entry = CacheEntry.new(content, mime_type, ttl)
-        File.write(file_path, entry.to_json)
-        true
-      rescue
-        false
-      end
-    end
-
+    # Invalidate cache entries
+    # Since we use MemoryStore without prefix support, we clear the entire cache
     def self.invalidate(id : String) : Bool
-      pattern = File.join(@@cache_dir, "#{id}*.cache")
-
-      begin
-        Dir.glob(pattern).each do |file|
-          File.delete(file)
-        end
-        true
-      rescue
-        false
-      end
-    end
-
-    # Generate cache key from request
-    def self.generate_cache_key(env) : String
-      path = env.request.path
-      method = env.request.method
-      query = env.request.query_params.to_a.sort_by(&.first.[](0)).map { |k, v| "#{k}=#{v}" }.join("&")
-
-      # Include request body hash for POST/PUT requests
-      body_hash = ""
-      if env.request.method.in?("POST", "PUT") && (request_body = env.request.body)
-        body = request_body.gets_to_end
-        body_hash = OpenSSL::Digest.new("sha256").update(body).final.hexstring[0..15]
-        # Reset body for downstream handlers
-        env.request.body = IO::Memory.new(body)
-      end
-
-      key_data = "#{method}:#{path}:#{query}:#{body_hash}"
-      OpenSSL::Digest.new("sha256").update(key_data).final.hexstring
+      store = config.store
+      store.clear
+      true
+    rescue
+      false
     end
   end
 
   # Initialize cache directory in the main app
   def self.init_cache(cache_dir : String)
-    Cache.cache_dir = cache_dir
-    Dir.mkdir_p(cache_dir)
-  end
-end
-
-# Serve cached files directly if they exist
-get "/cache/*" do |env|
-  cache_path = env.params.url["path"]
-  file_path = File.join(Pasto::Cache.cache_dir, cache_path)
-
-  if File.exists?(file_path) && File.file?(file_path)
-    send_file env, file_path
-  else
-    env.response.status_code = 404
-    "Cached file not found"
+    Cache.init(cache_dir)
   end
 end
 

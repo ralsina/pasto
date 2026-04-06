@@ -1,6 +1,7 @@
 require "docopt-config"
 require "sepia"
 require "kemal"
+require "kemal-cache"
 require "./paste"
 require "./logging"
 require "./preview_generator"
@@ -13,7 +14,6 @@ require "./routes/profile_routes"
 require "./routes/utility_routes"
 require "./theme_helper"
 require "./rate_limit_helper"
-require "pasto-cache"
 require "./models/user"
 require "kemal-session"
 
@@ -478,21 +478,10 @@ DOC
     # Initialize cache
     Pasto::Cache.cache_dir = config.cache_dir
 
-    # Configure cacheable endpoints
-    # Syntax highlighting API - cache for 1 hour
-    Pasto::Cache.add_cache_config(/^\/highlight$/, "application/json", 3600)
-
-    # CSS syntax themes are NOT cached by middleware because they handle their own caching via Cache-Control headers
-    # The middleware's response capture was causing hanging on first request
-
-    # Paste image previews for social media - cache for 6 hours
-    Pasto::Cache.add_cache_config(/^\/paste\/[^\/]+\/preview$/, "image/png", 21600)
-
-    # Cache test endpoint - cache for 5 seconds
-    Pasto::Cache.add_cache_config(/^\/api\/cache-test$/, "text/x-cache-test", 5)
-
-    # Add caching middleware (backup routes will bypass cache automatically if no config matches)
-    PastoCache.add_cache_middleware
+    # Add kemal-cache middleware
+    # Automatically caches GET requests for anonymous users (no session cookie)
+    # Kemal::Cache handles cache-control headers, etags, and conditional requests
+    use Kemal::Cache::Handler.new(Pasto::Cache.config)
 
     # Initialize rate limiters with config values
     RateLimits.init(config)

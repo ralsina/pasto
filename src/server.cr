@@ -1,7 +1,6 @@
 require "openssl"
 require "./api"
 require "./assets"
-require "pasto-cache"
 require "./filters"
 require "./health"
 require "./help"

@@ -49,6 +49,10 @@ shards:
     git: https://github.com/kemalcr/kemal.git
     version: 1.10.0
 
+  kemal-cache:
+    git: https://github.com/kemalcr/kemal-cache.git
+    version: 1.2.0
+
   kemal-session:
     git: https://github.com/kemalcr/kemal-session.git
     version: 1.4.0
@@ -56,10 +60,6 @@ shards:
   mcp:
     git: https://github.com/ralsina/mcp.git
     version: 0.1.1
-
-  pasto-cache:
-    git: https://github.com/ralsina/pasto-cache.git
-    version: 0.2.2
 
   radix:
     git: https://github.com/luislavena/radix.git
