@@ -519,16 +519,10 @@ module Pasto
           paste_id = parts[0..-2].join(".")
           ext = parts[-1]
 
-          # Check if extension is numeric (version number) or file extension
+          # Check if extension is numeric (version number)
           if ext.match(/^\d+$/)
-            # This is a versioned URL like {id}.{gen}, don't treat as file extension
+            # This is a versioned URL like {id}.{gen}, strip the version number
             id = paste_id
-            # Don't set stored_ext - let paste use its own language detection
-          else
-            # This is a file extension for language override
-            id = paste_id
-            # Store extension for language mapping after access control
-            stored_ext = ext
           end
         end
       end
@@ -550,11 +544,6 @@ module Pasto
       current_user = Pasto.get_current_user(env)
 
       # kemal-cache middleware handles caching automatically for anonymous users
-
-      # Apply language mapping from stored extension if present
-      if stored_ext
-        language_override = paste.language_for_extension(stored_ext)
-      end
 
       # Get all theme-related template variables
       theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)

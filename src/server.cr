@@ -175,9 +175,14 @@ module Pasto
       return id.gsub(/\.png$/, "")
     end
 
-    # Handle file extensions in main paste view (/:id.py)
-    if path.count('.') > 1 && !path.includes?("/api/")
-      return id.split(".")[0..-2].join(".")
+    # Handle numeric version suffixes in main paste view (/:id.8)
+    # Only strip the extension if it's purely numeric (a version number)
+    if path.count('.') >= 1 && !path.includes?("/api/")
+      parts = id.split(".")
+      if parts.size >= 2 && parts[-1].match(/^\d+$/)
+        # Last part is numeric, so it's a version number - strip it
+        return parts[0..-2].join(".")
+      end
     end
 
     id
