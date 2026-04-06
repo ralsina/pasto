@@ -47,7 +47,7 @@ shards:
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
-    version: 1.10.0
+    version: 1.10.1
 
   kemal-cache:
     git: https://github.com/kemalcr/kemal-cache.git

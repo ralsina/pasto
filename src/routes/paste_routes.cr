@@ -282,8 +282,15 @@ module Pasto
       # Get all theme-related template variables
       theme_vars = Pasto::ThemeHelper.setup_vars(current_user, Pasto.config)
 
-      # Generate highlighted content from versioned paste
-      highlighted_content = paste_content.highlight(nil)[0]
+      # Get language override from URL parameter if present
+      url_lang_override = env.params.query["lang"]?
+      language_override = nil
+      if url_lang_override && !url_lang_override.empty?
+        language_override = url_lang_override
+      end
+
+      # Generate highlighted content from versioned paste with language override
+      highlighted_content = paste_content.highlight(language_override)[0]
 
       # Version count for the history button (owner can see history)
       version_count = 0
@@ -512,11 +519,17 @@ module Pasto
           paste_id = parts[0..-2].join(".")
           ext = parts[-1]
 
-          # Use the paste_id as the id for the rest of the route
-          id = paste_id
-
-          # Store extension for language mapping after access control
-          stored_ext = ext
+          # Check if extension is numeric (version number) or file extension
+          if ext.match(/^\d+$/)
+            # This is a versioned URL like {id}.{gen}, don't treat as file extension
+            id = paste_id
+            # Don't set stored_ext - let paste use its own language detection
+          else
+            # This is a file extension for language override
+            id = paste_id
+            # Store extension for language mapping after access control
+            stored_ext = ext
+          end
         end
       end
 
