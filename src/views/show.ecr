@@ -349,6 +349,84 @@
     font-size: 0.9em;
   }
 
+  /* Markdown content styling with optimal reading width */
+  .markdown-content {
+    max-width: 65ch;
+    margin: 0 auto;
+    padding: 1rem 0;
+    line-height: 1.7;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3,
+  .markdown-content h4,
+  .markdown-content h5,
+  .markdown-content h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
+  }
+
+  .markdown-content p {
+    margin-bottom: 1em;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    padding-left: 2em;
+    margin-bottom: 1em;
+  }
+
+  .markdown-content li {
+    margin-bottom: 0.5em;
+  }
+
+  .markdown-content code {
+    background: var(--pico-code-background-color);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+
+  .markdown-content pre {
+    background: var(--pico-code-background-color);
+    padding: 1em;
+    border-radius: var(--pico-border-radius);
+    overflow-x: auto;
+    margin-bottom: 1em;
+  }
+
+  .markdown-content pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .markdown-content blockquote {
+    border-left: 4px solid var(--pico-primary);
+    padding-left: 1em;
+    margin-left: 0;
+    color: var(--pico-muted-color);
+    font-style: italic;
+  }
+
+  .markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+  }
+
+  .markdown-content th,
+  .markdown-content td {
+    border: 1px solid var(--pico-muted-color);
+    padding: 0.5em;
+  }
+
+  .markdown-content img {
+    max-width: 100%;
+    height: auto;
+  }
+
   </style>
 
 <%# Include shared utilities, styles, and security components %>

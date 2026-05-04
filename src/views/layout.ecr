@@ -9,10 +9,10 @@
   <%# Include shared utilities and styles %>
   <%= render "src/views/_shared_utils.ecr" %>
   <%= render "src/views/_shared_styles.ecr" %>
-  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="icon" type="image/png" href="<%= theme_vars[:path].call("/assets/favicon.png") %>">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="assets/manifest.json">
+  <link rel="manifest" href="<%= theme_vars[:path].call("/assets/manifest.json") %>">
   <meta name="theme-color" content="#0172ad">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -95,22 +95,22 @@
     window.PASTO_BASE_PATH = '<%= theme_vars[:base_path] %>';
     window.__tartrazine_asset_base = (window.PASTO_BASE_PATH === '/' ? '' : window.PASTO_BASE_PATH);
   </script>
-  <script src="assets/bundle.js" defer></script>
+  <script src="<%= theme_vars[:path].call("/assets/bundle.js") %>" defer></script>
   <!-- Encryption functionality -->
-  <script src="assets/crypto.js" defer></script>
+  <script src="<%= theme_vars[:path].call("/assets/crypto.js") %>" defer></script>
   <!-- Tartrazine syntax highlighting (client/server consistency) -->
-  <script src="assets/tartrazine.js" defer></script>
+  <script src="<%= theme_vars[:path].call("/assets/tartrazine.js") %>" defer></script>
   <!-- Language mapping for syntax highlighting -->
-  <script src="assets/language-mapping.js" defer></script>
+  <script src="<%= theme_vars[:path].call("/assets/language-mapping.js") %>" defer></script>
   <!-- Shared editor functionality -->
-  <script src="assets/editor-shared.js" defer></script>
-  <script src="assets/mobile_controls.js" defer></script>
+  <script src="<%= theme_vars[:path].call("/assets/editor-shared.js") %>" defer></script>
+  <script src="<%= theme_vars[:path].call("/assets/mobile_controls.js") %>" defer></script>
   <!-- Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         // Register service worker - scope will be /pasto/assets/ (the directory containing sw.js)
-        navigator.serviceWorker.register('assets/sw.js')
+        navigator.serviceWorker.register('<%= theme_vars[:path].call("/assets/sw.js") %>')
           .then(function(registration) {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           })

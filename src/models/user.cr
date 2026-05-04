@@ -72,10 +72,22 @@ module Pasto
 
     # Get pastes for a specific range without loading all pastes first
     def get_pastes_for_range(from : Int, to : Int) : Array(Paste)
-      all_paste_refs = @keys.flat_map(&.pastes).compact.reverse! # Already sorted by date
+      # Get all paste references and remove duplicates by sepia_id
+      all_paste_refs = @keys.flat_map(&.pastes).compact
+
+      # Remove duplicates (same paste might be referenced by multiple keys)
+      seen_ids = Set(String).new
+      unique_pastes = all_paste_refs.select do |paste|
+        if seen_ids.includes?(paste.sepia_id)
+          false
+        else
+          seen_ids.add(paste.sepia_id)
+          true
+        end
+      end.reverse!
 
       # Load ONLY the pastes for this range
-      all_paste_refs[from...to].compact_map do |paste|
+      unique_pastes[from...to].compact_map do |paste|
         begin
           Paste.from_file(paste.sepia_id)
         rescue
@@ -86,7 +98,16 @@ module Pasto
 
     # Helper to get total count without loading all pastes
     def all_pastes_count : Int32
-      @keys.flat_map(&.pastes).compact.size
+      # Count unique pastes across all keys
+      seen_ids = Set(String).new
+      @keys.flat_map(&.pastes).compact.count do |paste|
+        if seen_ids.includes?(paste.sepia_id)
+          false
+        else
+          seen_ids.add(paste.sepia_id)
+          true
+        end
+      end
     end
 
     # Return all related objects for Sepia backup traversal
