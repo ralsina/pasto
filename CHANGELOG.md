@@ -1,18 +1,14 @@
-## [unreleased]
+## [0.12.3] - 2026-04-06
 
 ### 🐛 Bug Fixes
 
+- Use window.PASTO_BASE_PATH in help page JavaScript for proper base path support
 - Properly handle versioned URLs for syntax highlighting
 - Properly handle versioned URLs and remove file extension language override
 
 ### 🚜 Refactor
 
 - Migrate from pasto-cache to kemal-cache
-## [0.12.2] - 2026-03-18
-
-### 🐛 Bug Fixes
-
-- Use window.PASTO_BASE_PATH in help page JavaScript for proper base path support
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -20,6 +16,7 @@
 - *(release)* V0.12.2
 - *(release)* V0.12.2
 - *(release)* V0.12.2
+- *(release)* V0.12.3
 ## [0.12.1] - 2026-03-16
 
 ### 🐛 Bug Fixes
